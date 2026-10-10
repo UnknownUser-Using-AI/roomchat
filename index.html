@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f4ef" />
+  <meta name="description" content="닉네임만으로 가볍게 모이는 실시간 공개 채팅방" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>roomchat — 가볍게 모이는 대화</title>
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar" aria-label="채팅방 목록">
+      <a class="brand" href="./" aria-label="roomchat 홈">
+        <span class="brand-mark" aria-hidden="true"><i></i><b></b></span>
+        <span>roomchat<span class="brand-period">.</span></span>
+      </a>
+      <div class="side-intro">
+        <span class="eyebrow">OPEN ROOMS</span>
+        <p>이름만 정하고,<br />대화에 합류해요.</p>
+      </div>
+      <div class="room-heading">
+        <span>둘러볼 방</span>
+        <button id="new-room-button" class="icon-button small" type="button" aria-label="새 방 만들기" title="새 방 만들기">＋</button>
+      </div>
+      <div id="room-list" class="room-list" aria-live="polite"></div>
+      <div class="sidebar-bottom">
+        <div class="privacy-note"><span class="live-dot"></span><span>모든 방은 공개 대화예요.</span></div>
+        <div class="brand-caption">가볍게 머물다 가는 곳</div>
+      </div>
+    </aside>
+
+    <section class="chat-panel" aria-label="채팅">
+      <header class="topbar">
+        <div class="room-context">
+          <span class="eyebrow">NOW IN</span>
+          <span id="current-room-name" class="current-room-name">연결 중…</span>
+        </div>
+        <div class="top-actions">
+          <span id="connection-state" class="connection-state"><i></i> 연결 중</span>
+          <button id="notification-button" class="notification-button" type="button" aria-pressed="false">
+            <span class="bell-icon" aria-hidden="true">◌</span><span id="notification-label">알림 켜기</span>
+          </button>
+          <button id="nickname-button" class="nickname-chip" type="button" title="닉네임 바꾸기"><span class="avatar-dot">?</span><span id="nickname-label">닉네임</span><span aria-hidden="true">⌄</span></button>
+        </div>
+      </header>
+
+      <div class="mobile-room-strip">
+        <span class="eyebrow">ROOMS</span>
+        <div id="mobile-room-list" class="mobile-room-list"></div>
+        <button id="mobile-new-room-button" class="mobile-add-room" type="button" aria-label="새 방 만들기">＋</button>
+      </div>
+
+      <section class="room-banner" aria-label="현재 방 정보">
+        <div class="banner-copy">
+          <div class="banner-kicker"><span class="banner-star">✳</span><span id="room-topic">가볍게 인사하고 시작해요</span></div>
+          <h1 id="banner-room-name">오늘의 대화</h1>
+          <p>떠오르는 이야기를 나눠보세요. 사진도 함께 보낼 수 있어요.</p>
+        </div>
+        <div class="presence-card"><span class="presence-icon" aria-hidden="true">◉</span><div><strong id="presence-count">—</strong><span>함께 있는 사람</span></div></div>
+        <span class="banner-orbit orbit-one"></span><span class="banner-orbit orbit-two"></span>
+      </section>
+
+      <div class="messages-heading"><span>대화</span><span id="message-count-label" class="muted-label">최근 메시지</span></div>
+      <section id="message-list" class="message-list" aria-label="메시지" aria-live="polite" aria-relevant="additions text">
+        <div class="loading-state"><span class="spinner"></span><span>대화를 불러오는 중</span></div>
+      </section>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+      <footer class="composer-wrap">
+        <div id="attachment-preview" class="attachment-preview" hidden>
+          <img id="attachment-thumbnail" alt="전송할 이미지 미리보기" />
+          <div class="attachment-meta"><strong id="attachment-name">이미지 첨부</strong><span>메시지와 함께 보낼 수 있어요</span></div>
+          <button id="remove-attachment" class="icon-button" type="button" aria-label="첨부 이미지 제거">×</button>
+        </div>
+        <div id="paste-hint" class="paste-hint">PC에서는 이미지를 복사해 이곳에 붙여넣을 수 있어요.</div>
+        <form id="message-form" class="composer">
+          <label class="attach-button" for="image-file" title="이미지 파일 선택" aria-label="이미지 파일 선택"><span aria-hidden="true">＋</span><input id="image-file" type="file" accept="image/*" hidden /></label>
+          <textarea id="message-input" rows="1" maxlength="2000" placeholder="이 방에 한마디 남겨보세요…" aria-label="메시지 입력"></textarea>
+          <button id="send-button" class="send-button" type="submit"><span>보내기</span><span aria-hidden="true">↗</span></button>
+        </form>
+        <div class="composer-foot"><span>Enter로 전송 · Shift + Enter로 줄바꿈</span><span id="char-count">0 / 2000</span></div>
+      </footer>
+    </section>
+  </main>
+
+  <dialog id="nickname-dialog" class="modal">
+    <form id="nickname-form" method="dialog" class="modal-card">
+      <span class="modal-icon">✳</span>
+      <span class="eyebrow">NO ACCOUNT NEEDED</span>
+      <h2>어떤 이름으로<br />인사할까요?</h2>
+      <p>닉네임은 로그인 없이 사용할 수 있고, 브라우저를 닫으면 따로 저장되지 않아요.</p>
+      <label class="field-label" for="nickname-input">닉네임</label>
+      <input id="nickname-input" class="text-field" type="text" maxlength="24" minlength="1" autocomplete="off" placeholder="예: 느긋한 고양이" required />
+      <button class="primary-button" type="submit">대화에 들어가기 <span aria-hidden="true">↗</span></button>
+    </form>
+  </dialog>
+
+  <dialog id="room-dialog" class="modal">
+    <form id="room-form" method="dialog" class="modal-card compact-modal">
+      <span class="eyebrow">MAKE A SPACE</span>
+      <h2>새 방 만들기</h2>
+      <p>방 이름은 모두에게 공개됩니다.</p>
+      <label class="field-label" for="room-input">방 이름</label>
+      <input id="room-input" class="text-field" type="text" maxlength="32" minlength="2" autocomplete="off" placeholder="예: 야식 수다방" required />
+      <div class="modal-actions"><button class="secondary-button" type="button" id="cancel-room">취소</button><button class="primary-button" type="submit">방 만들기 <span aria-hidden="true">↗</span></button></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
