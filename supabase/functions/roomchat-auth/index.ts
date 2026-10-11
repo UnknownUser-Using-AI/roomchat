@@ -9,7 +9,7 @@ const allowedOrigins = new Set([
   "http://127.0.0.1:8080",
 ]);
 const encoder = new TextEncoder();
-const ADMIN_NAMES = new Set(["[인증됨] 천사", "[인증됨] 크리스탈"]);
+const ADMIN_INITIAL_NAMES = new Set(["천사", "크리스탈"]);
 
 const admin = createClient(supabaseUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -99,10 +99,10 @@ Deno.serve(async (request: Request) => {
     if (action === "register") {
       const code = typeof input?.adminClaimCode === "string" ? input.adminClaimCode.trim() : "";
       const isReserved = nickname.includes("인증됨");
-      if (isReserved && !ADMIN_NAMES.has(nickname)) {
-        return jsonResponse({ error: "‘인증됨’은 지정된 두 관리자 닉네임에만 사용할 수 있습니다." }, 400, origin);
+      if (isReserved) {
+        return jsonResponse({ error: "‘인증됨’은 닉네임에 넣을 수 없고 관리자에게만 별도 배지로 표시됩니다." }, 400, origin);
       }
-      if (ADMIN_NAMES.has(nickname) && code.length < 20) {
+      if (ADMIN_INITIAL_NAMES.has(nickname) && code.length < 20) {
         return jsonResponse({ error: "이 관리자 계정은 1회용 관리자 초대코드가 필요합니다." }, 400, origin);
       }
       if (!await allowRequest(request, "register")) {
@@ -115,7 +115,7 @@ Deno.serve(async (request: Request) => {
       const userMetadata: Record<string, unknown> = {
         nickname,
       };
-      if (ADMIN_NAMES.has(nickname)) userMetadata.admin_claim_code = code;
+      if (ADMIN_INITIAL_NAMES.has(nickname)) userMetadata.admin_claim_code = code;
 
       const { data: created, error: createError } = await admin.auth.admin.createUser({
         email,
