@@ -134,9 +134,16 @@ DECLARE
   v_candidate text;
   v_suffix integer;
   v_used boolean;
+  v_admin_name_change boolean := false;
 BEGIN
+  IF p_exclude_user_id IS NOT NULL AND v_requested IN ('천사', '크리스탈') THEN
+    SELECT EXISTS (
+      SELECT 1 FROM roomchat_private.member_roles r
+      WHERE r.user_id = p_exclude_user_id AND r.role = 'admin'
+    ) INTO v_admin_name_change;
+  END IF;
   IF position('인증됨' IN v_requested) > 0
-     OR lower(v_requested) IN ('[인증됨] 천사', '[인증됨] 크리스탈')
+     OR (v_requested IN ('천사', '크리스탈') AND NOT v_admin_name_change)
      OR roomchat_private.is_weird_nickname(v_requested) THEN
     v_base := '크리스탈 시청자';
   ELSE
@@ -205,6 +212,7 @@ DECLARE
   v_claim_code text;
   v_invite roomchat_private.admin_invites%ROWTYPE;
   v_effective text;
+  v_invite_name text;
 BEGIN
   IF coalesce(new.raw_app_meta_data ->> 'roomchat_managed', 'false') <> 'true' THEN
     RETURN new;
@@ -215,24 +223,37 @@ BEGIN
     RAISE EXCEPTION '닉네임은 1~24자로 입력해 주세요.';
   END IF;
 
-  IF v_name IN ('[인증됨] 천사', '[인증됨] 크리스탈') THEN
+  IF v_name IN ('천사', '크리스탈', '[인증됨] 천사', '[인증됨] 크리스탈') THEN
     v_claim_code := coalesce(new.raw_user_meta_data ->> 'admin_claim_code', '');
+    v_invite_name := CASE
+      WHEN v_name IN ('천사', '[인증됨] 천사') THEN '[인증됨] 천사'
+      ELSE '[인증됨] 크리스탈'
+    END;
+    v_effective := CASE
+      WHEN v_name IN ('천사', '[인증됨] 천사') THEN '천사'
+      ELSE '크리스탈'
+    END;
     SELECT * INTO v_invite
     FROM roomchat_private.admin_invites i
-    WHERE i.nickname = v_name AND i.claimed_by IS NULL
+    WHERE i.nickname = v_invite_name AND i.claimed_by IS NULL
       AND i.code_sha256 = encode(extensions.digest(v_claim_code, 'sha256'), 'hex')
     FOR UPDATE;
     IF NOT FOUND THEN
       RAISE EXCEPTION '이 관리자 닉네임은 올바른 1회용 초대 코드가 필요합니다.';
     END IF;
+    PERFORM pg_advisory_xact_lock(hashtext(lower(v_effective)));
+    IF EXISTS (SELECT 1 FROM public.roomchat_profiles p WHERE p.nickname_key = lower(v_effective))
+       OR EXISTS (SELECT 1 FROM roomchat_private.guest_sessions g WHERE g.nickname_key = lower(v_effective) AND g.expires_at > now()) THEN
+      v_effective := roomchat_private.allocate_nickname('크리스탈 시청자', NULL, NULL);
+    END IF;
     INSERT INTO public.roomchat_profiles(id, nickname, is_verified)
-    VALUES (new.id, v_name, true);
+    VALUES (new.id, v_effective, true);
     INSERT INTO roomchat_private.member_roles(user_id, role) VALUES (new.id, 'admin');
     UPDATE roomchat_private.admin_invites
       SET claimed_by = new.id, claimed_at = now()
-      WHERE nickname = v_name;
+      WHERE nickname = v_invite_name;
     UPDATE auth.users
-      SET raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) - 'admin_claim_code'
+      SET raw_user_meta_data = (jsonb_set(coalesce(raw_user_meta_data, '{}'::jsonb), '{nickname}', to_jsonb(v_effective), true) - 'admin_claim_code')
       WHERE id = new.id;
   ELSE
     IF position('인증됨' IN v_name) > 0 THEN
@@ -528,9 +549,8 @@ AS $function$
 DECLARE v_name text;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION '계정 로그인이 필요합니다.'; END IF;
-  IF roomchat_private.is_admin() THEN RAISE EXCEPTION '관리자 인증 닉네임은 보호되어 있어 변경할 수 없습니다.'; END IF;
   v_name := roomchat_private.allocate_nickname(p_requested, NULL, auth.uid());
-  UPDATE public.roomchat_profiles SET nickname = v_name, updated_at = now(), is_verified = false WHERE id = auth.uid();
+  UPDATE public.roomchat_profiles SET nickname = v_name, updated_at = now() WHERE id = auth.uid();
   IF NOT FOUND THEN RAISE EXCEPTION '계정 프로필을 찾을 수 없습니다.'; END IF;
   RETURN v_name;
 END

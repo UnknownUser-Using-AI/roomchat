@@ -46,7 +46,7 @@
             <span class="bell-icon" aria-hidden="true">◌</span><span id="notification-label">알림 켜기</span>
           </button>
           <button id="nickname-button" class="nickname-chip" type="button" title="닉네임 및 계정 관리">
-            <span class="avatar-dot">?</span><span id="nickname-label">닉네임</span><span class="verified-box" hidden aria-label="인증됨">✓</span><span aria-hidden="true">⌄</span>
+            <span class="avatar-dot">?</span><span id="nickname-label">닉네임</span><span class="verified-box" hidden aria-label="인증된 관리자">[인증됨]</span><span aria-hidden="true">⌄</span>
           </button>
         </div>
       </header>
@@ -119,7 +119,7 @@
       <button id="nickname-submit-button" class="primary-button" type="submit">게스트로 입장 <span aria-hidden="true">↗</span></button>
       <button id="account-open-button" class="secondary-button account-open" type="button">계정 만들기 · 로그인</button>
       <button id="sign-out-button" class="text-button" type="button" hidden>계정 로그아웃</button>
-      <span class="safety-caption">닉네임의 ‘인증됨’ 표시는 두 관리자 계정만 사용할 수 있어요.</span>
+      <span class="safety-caption">[인증됨]은 이름과 분리된 배지예요. 관리자는 이름을 바꿔도 배지가 유지돼요.</span>
     </form>
   </dialog>
 
@@ -140,7 +140,7 @@
       <div id="admin-code-wrap" class="admin-code-wrap" hidden>
         <label class="field-label" for="admin-claim-code">1회용 관리자 초대코드</label>
         <input id="admin-claim-code" class="text-field" type="password" autocomplete="off" placeholder="관리자 본인에게 전달된 코드" />
-        <span class="safety-caption">두 지정 닉네임 중 하나를 만들 때만 필요하며, 사용 즉시 폐기돼요.</span>
+        <span class="safety-caption">관리자 최초 가입 이름은 천사 또는 크리스탈이에요. 이후 이름을 바꿔도 인증 배지는 유지되며, 코드는 1회만 사용돼요.</span>
       </div>
       <button id="account-submit-button" class="primary-button" type="submit">계정 만들기 <span aria-hidden="true">↗</span></button>
       <button id="account-cancel-button" class="secondary-button account-open" type="button">돌아가기</button>

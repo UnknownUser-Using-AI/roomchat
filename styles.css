@@ -18,7 +18,7 @@
 .admin-room-delete:hover { background:#fff; }
 .admin-name { font-weight:850 !important; color:transparent !important; background:linear-gradient(95deg,#ef5467 0%,#ee9e3a 18%,#8caf40 36%,#24a9a6 54%,#6b7bea 72%,#c05cc2 90%,#ef5467 100%); background-size:220% auto; background-clip:text; -webkit-background-clip:text; animation:roomchat-rainbow 4s linear infinite; }
 @keyframes roomchat-rainbow { to { background-position:220% center; } }
-.verified-box { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; flex:0 0 15px; border:1.5px solid #659aa4; border-radius:4px; color:#367c86; background:#e6f4f0; font-size:10px; line-height:1; font-weight:900; vertical-align:middle; margin-left:2px; }
+.verified-box { display:inline-flex; align-items:center; justify-content:center; width:auto; min-height:16px; flex:0 0 auto; padding:2px 5px; border:1px solid #9bc5b8; border-radius:999px; color:#28766c; background:#eaf5f0; font-size:8px; line-height:1; font-weight:800; letter-spacing:-.2px; white-space:nowrap; vertical-align:middle; margin-left:2px; }
 .message-meta .verified-box { margin-left:1px; }
 .message-delete { align-self:flex-start; opacity:.65; }
 .message-delete:hover { opacity:1; }

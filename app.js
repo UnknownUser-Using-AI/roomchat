@@ -30,7 +30,7 @@ const GUEST_TOKEN_KEY = 'roomchat:guest-token';
 const ROOM_OWNER_PREFIX = 'roomchat:owner:';
 const FIXED_ROOM_NAME = '슬랩배틀 라이벌 입양 피기';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const ADMIN_NAMES = new Set(['[인증됨] 천사', '[인증됨] 크리스탈']);
+const ADMIN_INITIAL_NAMES = new Set(['천사', '크리스탈']);
 
 function sessionValue(key, makeValue) {
   try {
@@ -83,9 +83,14 @@ function makeAvatar(name) {
 function addVerifiedMark(parent) {
   const mark = document.createElement('span');
   mark.className = 'verified-box';
-  mark.textContent = '✓';
+  mark.textContent = '[인증됨]';
   mark.setAttribute('aria-label', '인증된 관리자');
+  mark.title = '인증된 관리자';
   parent.append(mark);
+}
+function displayNickname(value, verified = false) {
+  const name = typeof value === 'string' ? value : '익명';
+  return verified ? name.replace(/^\[인증됨\]\s*/u, '') || '관리자' : name;
 }
 function formatTime(value) {
   return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
@@ -160,17 +165,18 @@ function renderMessage(message) {
   if (ui.messages.querySelector(`[data-message-id="${CSS.escape(key)}"]`)) return;
   ui.messages.querySelector('.empty-state, .loading-state')?.remove();
   const isOwn = (state.user && message.user_id === state.user.id) || (!state.user && message.guest_session_id === guestSessionId);
+  const nickname = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
   const row = document.createElement('article');
   row.className = `message-row${isOwn ? ' own-message' : ''}${message.is_verified ? ' verified-message' : ''}`;
   row.dataset.messageId = key;
-  row.append(makeAvatar(message.nickname || '익명'));
+  row.append(makeAvatar(nickname));
   const body = document.createElement('div');
   body.className = 'message-body';
   const meta = document.createElement('div');
   meta.className = 'message-meta';
   const name = document.createElement('strong');
   name.className = message.is_verified ? 'admin-name' : '';
-  name.textContent = message.nickname || '익명';
+  name.textContent = nickname;
   meta.append(name);
   if (message.is_verified) addVerifiedMark(meta);
   const time = document.createElement('time');
@@ -260,8 +266,8 @@ function renderMembers() {
   members.sort((a, b) => String(a.nickname || '').localeCompare(String(b.nickname || ''), 'ko'));
   for (const member of members) {
     const rawNickname = typeof member.nickname === 'string' ? member.nickname : '익명';
-    const nickname = rawNickname.includes('인증됨') ? '크리스탈 시청자' : rawNickname;
-    const verifiedAdmin = Boolean(member.isVerified && ADMIN_NAMES.has(rawNickname));
+    const verifiedAdmin = Boolean(member.isVerified);
+    const nickname = displayNickname(rawNickname, verifiedAdmin);
     const row = document.createElement('div');
     row.className = 'member-row';
     row.append(makeAvatar(nickname));
@@ -533,7 +539,7 @@ function setAccountMode(mode) {
 }
 function updateAdminCodeVisibility() {
   const name = ui.accountNickname.value.normalize('NFC').trim().replace(/\s+/gu, ' ');
-  const required = state.accountMode === 'register' && ADMIN_NAMES.has(name);
+  const required = state.accountMode === 'register' && ADMIN_INITIAL_NAMES.has(name);
   ui.adminCodeWrap.hidden = !required;
   ui.adminCode.required = required;
   if (!required) ui.adminCode.value = '';
@@ -542,7 +548,7 @@ function showNicknameDialog() {
   ui.nicknameEyebrow.textContent = state.user ? 'ACCOUNT NICKNAME' : 'GUEST MODE';
   ui.nicknameTitle.innerHTML = state.user ? '닉네임을<br />바꿀까요?' : '어떤 이름으로<br />인사할까요?';
   ui.nicknameDescription.textContent = state.user
-    ? '계정 닉네임은 저장되어 다음에도 사용할 수 있어요. 관리자의 인증 닉네임은 보호됩니다.'
+    ? '계정 닉네임은 저장되어 다음에도 사용할 수 있어요. 관리자도 이름을 바꿀 수 있고 [인증됨] 표시는 유지돼요.'
     : '게스트 닉네임은 이 탭에서만 사용돼요. 계정을 만들면 닉네임이 저장되고 언제든 바꿀 수 있어요.';
   ui.nicknameSubmit.innerHTML = `${state.user ? '닉네임 저장' : '게스트로 입장'} <span aria-hidden="true">↗</span>`;
   ui.nicknameInput.value = state.nickname;
