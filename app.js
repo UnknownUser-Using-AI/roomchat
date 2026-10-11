@@ -50,7 +50,7 @@ const state = {
   nickname: '', isVerified: false, isAdmin: false, user: null,
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
   attachment: null, attachmentUrl: '', notifications: false, toastTimer: 0,
-  roomRequest: 0, kickTimer: 0, identityTimer: 0, kickedRooms: new Set(),
+  roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register',
 };
 
@@ -243,19 +243,8 @@ async function loadRooms() {
     await switchRoom(room);
   }
 }
-function presenceEntries(channel = state.roomChannel) {
-  if (!channel) return [];
-  const all = Object.values(channel.presenceState()).flat();
-  const unique = new Map();
-  for (const member of all) {
-    const key = member.userId ? `u:${member.userId}` : `g:${member.guestSessionId || member.nickname}`;
-    if (!unique.has(key)) unique.set(key, member);
-  }
-  return [...unique.values()];
-}
 function renderMembers() {
-  const members = presenceEntries();
-  state.members = members;
+  const members = state.members;
   ui.presence.textContent = String(members.length);
   ui.memberList.replaceChildren();
   ui.membersNote.textContent = canManageRoom(state.room)
@@ -270,16 +259,19 @@ function renderMembers() {
   }
   members.sort((a, b) => String(a.nickname || '').localeCompare(String(b.nickname || ''), 'ko'));
   for (const member of members) {
+    const rawNickname = typeof member.nickname === 'string' ? member.nickname : '익명';
+    const nickname = rawNickname.includes('인증됨') ? '크리스탈 시청자' : rawNickname;
+    const verifiedAdmin = Boolean(member.isVerified && ADMIN_NAMES.has(rawNickname));
     const row = document.createElement('div');
     row.className = 'member-row';
-    row.append(makeAvatar(member.nickname || '익명'));
+    row.append(makeAvatar(nickname));
     const label = document.createElement('span');
-    label.className = `member-name${member.isVerified ? ' admin-name' : ''}`;
-    label.textContent = member.nickname || '익명';
+    label.className = `member-name${verifiedAdmin ? ' admin-name' : ''}`;
+    label.textContent = nickname;
     row.append(label);
-    if (member.isVerified) addVerifiedMark(row);
+    if (verifiedAdmin) addVerifiedMark(row);
     if (canManageRoom(state.room)) {
-      if (state.isAdmin && member.userId && !member.isVerified) {
+      if (state.isAdmin && !verifiedAdmin && (member.userId || member.guestSessionId)) {
         const clean = document.createElement('button');
         clean.className = 'admin-action';
         clean.type = 'button';
@@ -297,14 +289,35 @@ function renderMembers() {
     ui.memberList.append(row);
   }
 }
+async function refreshMembers(roomId = state.room?.id) {
+  if (!roomId) return;
+  const { data, error } = await supabase.rpc('roomchat_list_members', { p_room_id: roomId });
+  if (error || state.room?.id !== roomId) return;
+  state.members = (data || []).map((member) => ({
+    userId: member.user_id,
+    guestSessionId: member.guest_session_id,
+    nickname: member.nickname,
+    isVerified: Boolean(member.is_verified),
+  }));
+  renderMembers();
+}
 function presencePayload() {
-  return {
-    nickname: state.nickname,
-    userId: state.user?.id || null,
-    guestSessionId: state.user ? null : guestSessionId,
-    isVerified: state.isVerified,
-    joinedAt: new Date().toISOString(),
-  };
+  // Presence is only a change signal. Identity and verified flags come from a server RPC.
+  return { online: true };
+}
+async function trackActiveMember(roomId, request) {
+  if (!state.nickname || !state.room || state.room.id !== roomId || request !== state.roomRequest) return false;
+  const { error } = await supabase.rpc('roomchat_track_member', {
+    p_room_id: roomId,
+    p_guest_session_id: state.user ? null : guestSessionId,
+    p_guest_token: state.user ? null : guestToken,
+  });
+  if (error) {
+    if (String(error.message || '').includes('참여를 제한')) await checkForKick(roomId, request);
+    return false;
+  }
+  await refreshMembers(roomId);
+  return request === state.roomRequest;
 }
 async function subscribeCurrentRoom(request) {
   const room = state.room;
@@ -324,7 +337,7 @@ async function subscribeCurrentRoom(request) {
   }
   const channel = supabase.channel(`room:${room.id}`, { config: { presence: { key: state.user?.id || `guest:${guestSessionId}` }, broadcast: { self: false } } });
   channel
-    .on('presence', { event: 'sync' }, renderMembers)
+    .on('presence', { event: 'sync' }, () => refreshMembers(room.id))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `room_id=eq.${room.id}` }, (payload) => {
       if (payload.eventType === 'DELETE') removeMessage(payload.old?.id);
       else if (payload.new) {
@@ -332,20 +345,24 @@ async function subscribeCurrentRoom(request) {
         if (payload.new.nickname !== state.nickname && state.notifications) notifyIncoming(payload.new);
       }
     })
-    .on('broadcast', { event: 'message-deleted' }, ({ payload }) => removeMessage(payload?.id))
     .subscribe(async (status) => {
       if (request !== state.roomRequest) return;
       if (status === 'SUBSCRIBED') {
         setConnection(true);
+        const active = await trackActiveMember(room.id, request);
+        if (!active || request !== state.roomRequest) return;
         const { error } = await channel.track(presencePayload());
         if (error) console.warn('presence tracking failed');
-        renderMembers();
+        window.clearInterval(state.memberTimer);
+        state.memberTimer = window.setInterval(() => trackActiveMember(room.id, request), 30000);
+        await refreshMembers(room.id);
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         setConnection(false, '재연결 중');
       }
     });
   state.roomChannel = channel;
   window.clearInterval(state.kickTimer);
+  window.clearInterval(state.memberTimer);
   state.kickTimer = window.setInterval(() => checkForKick(room.id, request), 4500);
 }
 async function checkForKick(roomId, request) {
@@ -373,6 +390,8 @@ async function switchRoom(room) {
     await supabase.removeChannel(previous);
   }
   window.clearInterval(state.kickTimer);
+  window.clearInterval(state.memberTimer);
+  state.members = [];
   updateRoomHeading(room);
   state.messages = [];
   showLoading();
@@ -452,7 +471,9 @@ function updateIdentityUI() {
   ui.signOut.hidden = !state.user;
   renderRoomLists();
   if (state.room) updateRoomHeading(state.room);
-  if (state.roomChannel) state.roomChannel.track(presencePayload()).then(renderMembers).catch(() => {});
+  if (state.roomChannel) {
+    state.roomChannel.track(presencePayload()).then(() => trackActiveMember(state.room.id, state.roomRequest)).catch(() => {});
+  }
   renderMessages();
 }
 async function applySession(session, nicknameHint = '') {
@@ -649,7 +670,6 @@ async function deleteMessage(message) {
     const { error } = await supabase.rpc('roomchat_admin_delete_message', { p_message_id: message.id });
     if (error) throw error;
     removeMessage(message.id);
-    state.roomChannel?.send({ type: 'broadcast', event: 'message-deleted', payload: { id: message.id } });
     showToast('메시지를 삭제했어요.');
   } catch (error) { showToast(errorText(error, '메시지를 삭제하지 못했어요.')); }
 }
@@ -667,7 +687,6 @@ async function deleteRoom() {
     const fallback = sortedRooms().find((item) => item.is_featured) || sortedRooms()[0];
     state.room = null;
     renderRoomLists();
-    await state.roomsChannel?.send({ type: 'broadcast', event: 'room-deleted', payload: { id: room.id } });
     if (fallback) await switchRoom(fallback);
     showToast('방과 메시지를 삭제했어요.');
   } catch (error) { showToast(errorText(error, '방을 삭제하지 못했어요.')); }
@@ -693,11 +712,12 @@ async function moderateNickname(member) {
   const { data, error } = await call;
   if (error) return showToast(errorText(error, '닉네임을 정리하지 못했어요.'));
   showToast(`닉네임을 “${data}”로 바꿨어요.`);
-  renderMembers();
+  await refreshMembers();
 }
 function openMembers() {
   renderMembers();
   ui.membersDialog.showModal();
+  refreshMembers();
 }
 async function refreshIdentity() {
   if (!state.nickname) return;
@@ -800,14 +820,23 @@ async function boot() {
     const { data } = await supabase.auth.getSession();
     if (data.session) await applySession(data.session);
   } catch (error) { console.warn('Could not restore account session'); }
+  if (!state.user) {
+    const { data: guestName, error: guestError } = await supabase.rpc('roomchat_refresh_guest', {
+      p_guest_session_id: guestSessionId, p_guest_token: guestToken,
+    });
+    if (!guestError && guestName) {
+      state.nickname = guestName;
+      updateIdentityUI();
+    }
+  }
   try {
     await loadRooms();
     state.roomsChannel = supabase.channel('public:rooms', { config: { broadcast: { self: false } } })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rooms' }, ({ new: room }) => {
         if (!state.rooms.some((item) => item.id === room.id)) { state.rooms.push(room); renderRoomLists(); }
       })
-      .on('broadcast', { event: 'room-deleted' }, ({ payload }) => {
-        const deletedId = payload?.id;
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'rooms' }, ({ old: room }) => {
+        const deletedId = room?.id;
         if (!deletedId) return;
         state.rooms = state.rooms.filter((room) => room.id !== deletedId);
         if (state.room?.id === deletedId) {
@@ -822,7 +851,7 @@ async function boot() {
     setConnection(false, '연결 확인 필요');
     showToast('채팅 서버에 연결하지 못했어요. Supabase 설정을 확인해 주세요.');
   }
-  if (!state.user) showNicknameDialog();
+  if (!state.user && !state.nickname) showNicknameDialog();
   state.identityTimer = window.setInterval(refreshIdentity, 45000);
 }
 
