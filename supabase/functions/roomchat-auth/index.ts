@@ -51,9 +51,8 @@ async function hmacIp(ip: string): Promise<string> {
 }
 
 async function allowRequest(request: Request, bucket: "register" | "login"): Promise<boolean> {
-  // Supabase's edge gateway supplies this forwarding header. Only its digest is persisted.
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const ip = forwarded || request.headers.get("cf-connecting-ip") || "unknown-client";
+  // Cloudflare overwrites this header at the edge; never trust caller-controlled X-Forwarded-For.
+  const ip = request.headers.get("cf-connecting-ip")?.trim() || "unknown-client";
   const { data, error } = await admin.rpc("roomchat_consume_rate_limit", {
     p_key_hash: await hmacIp(ip),
     p_bucket: bucket,
