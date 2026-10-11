@@ -26,7 +26,7 @@ SQL 변경은 기존 사이트와 이용 기록을 보존하며 기능을 단계
 2. `admin_name_badge_migration.sql`을 적용합니다. 관리자 최초 이름을 `천사`/`크리스탈`로 저장하고 `[인증됨]`을 분리된 배지로 표시하며, 이름 변경 후에도 관리자 인증을 유지합니다.
 3. `supabase/functions/roomchat-auth/index.ts`의 `roomchat-auth` Edge Function을 `verify_jwt=false`로 배포합니다. 이 함수는 누구나 호출할 수 있는 가입·로그인 창구지만, 비밀번호 인증과 일회용 관리자 코드를 서버에서 검증합니다. `service_role` 키는 Edge Function에서만 사용해야 합니다.
 4. 저장소 루트의 `index.html`, `app.js`, `styles.css`를 GitHub Pages에 배포합니다.
-5. 새 앱이 작동하는 것을 확인한 다음 `security_migration.sql`을 적용합니다. 방·메시지의 직접 INSERT 권한을 제거하고 지정된 서버 RPC만 쓰기 경로로 남깁니다.
+5. 새 앱이 작동하는 것을 확인한 다음 `security_migration.sql`을 적용합니다. 방·메시지 테이블과 메시지 ID 시퀀스의 직접 쓰기·TRUNCATE·트리거·참조 권한을 `PUBLIC`, `anon`, `authenticated`에서 회수하고, 방·메시지는 읽기 전용으로 둡니다. 쓰기는 권한을 검사하는 서버 RPC만 사용합니다.
 
 `migration.sql`은 기존 기본 스키마입니다. 이미 적용된 운영 프로젝트에서 다시 실행할 필요는 없습니다. 웹의 공개 publishable key는 `config.js`에 두어도 되지만 `service_role` 키·비밀번호·일회용 관리자 초대코드는 공개 저장소에 올리지 마세요.
 
