@@ -29,6 +29,7 @@ ALTER TABLE public.messages
   ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS guest_session_id uuid,
   ADD COLUMN IF NOT EXISTS is_verified boolean NOT NULL DEFAULT false;
+ALTER TABLE public.rooms REPLICA IDENTITY FULL;
 ALTER TABLE public.messages REPLICA IDENTITY FULL;
 
 CREATE TABLE IF NOT EXISTS roomchat_private.member_roles (
@@ -53,12 +54,24 @@ CREATE TABLE IF NOT EXISTS roomchat_private.guest_sessions (
   nickname text NOT NULL,
   nickname_key text GENERATED ALWAYS AS (lower(nickname)) STORED,
   updated_at timestamptz NOT NULL DEFAULT now(),
-  expires_at timestamptz NOT NULL DEFAULT (now() + interval '3 minutes')
+  expires_at timestamptz NOT NULL DEFAULT (now() + interval '12 hours')
 );
 -- The live lease window changes with time, so active guest-name uniqueness is enforced
 -- inside the security-definer claim routine rather than with a clock-dependent index.
 CREATE INDEX IF NOT EXISTS roomchat_guest_nickname_idx
   ON roomchat_private.guest_sessions (nickname_key, expires_at);
+CREATE TABLE IF NOT EXISTS roomchat_private.active_members (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  room_id uuid NOT NULL REFERENCES public.rooms(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  guest_session_id uuid,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT roomchat_active_member_exactly_one_identity CHECK ((user_id IS NOT NULL) <> (guest_session_id IS NOT NULL))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS roomchat_active_members_user_uidx
+  ON roomchat_private.active_members(room_id, user_id) WHERE user_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS roomchat_active_members_guest_uidx
+  ON roomchat_private.active_members(room_id, guest_session_id) WHERE guest_session_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS roomchat_private.room_owners (
   room_id uuid PRIMARY KEY REFERENCES public.rooms(id) ON DELETE CASCADE,
@@ -87,6 +100,8 @@ CREATE TABLE IF NOT EXISTS roomchat_private.auth_rate_limits (
   hit_count integer NOT NULL,
   PRIMARY KEY (key_hash, bucket)
 );
+CREATE INDEX IF NOT EXISTS roomchat_auth_rate_limits_window_idx
+  ON roomchat_private.auth_rate_limits (window_started);
 REVOKE ALL ON ALL TABLES IN SCHEMA roomchat_private FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION roomchat_private.is_weird_nickname(p_name text)
@@ -118,6 +133,7 @@ DECLARE
   v_base text;
   v_candidate text;
   v_suffix integer;
+  v_used boolean;
 BEGIN
   IF position('인증됨' IN v_requested) > 0
      OR lower(v_requested) IN ('[인증됨] 천사', '[인증됨] 크리스탈')
@@ -127,11 +143,27 @@ BEGIN
     v_base := v_requested;
   END IF;
 
+  IF v_base <> '크리스탈 시청자' THEN
+    PERFORM pg_advisory_xact_lock(hashtext(lower(v_base)));
+    SELECT EXISTS (
+      SELECT 1 FROM public.roomchat_profiles p
+      WHERE p.nickname_key = lower(v_base)
+        AND (p_exclude_user_id IS NULL OR p.id <> p_exclude_user_id)
+    ) OR EXISTS (
+      SELECT 1 FROM roomchat_private.guest_sessions g
+      WHERE g.nickname_key = lower(v_base)
+        AND g.expires_at > now()
+        AND (p_guest_session_id IS NULL OR g.session_id <> p_guest_session_id)
+    ) INTO v_used;
+    IF NOT v_used THEN RETURN v_base; END IF;
+    v_base := '크리스탈 시청자';
+  END IF;
+
   FOR v_suffix IN 0..999 LOOP
     IF v_suffix = 0 THEN
       v_candidate := v_base;
     ELSE
-      v_candidate := left(v_base, greatest(1, 24 - char_length(' ' || v_suffix::text))) || ' ' || v_suffix::text;
+      v_candidate := left(v_base, greatest(1, 24 - char_length(' ' || (v_suffix + 1)::text))) || ' ' || (v_suffix + 1)::text;
     END IF;
     PERFORM pg_advisory_xact_lock(hashtext(lower(v_candidate)));
     IF NOT EXISTS (
@@ -254,6 +286,7 @@ BEGIN
       WHEN roomchat_private.auth_rate_limits.window_started + make_interval(secs => p_window_seconds) <= now()
       THEN 1 ELSE roomchat_private.auth_rate_limits.hit_count + 1 END
   RETURNING hit_count <= p_limit INTO v_allowed;
+  DELETE FROM roomchat_private.auth_rate_limits WHERE window_started < now() - interval '1 day';
   RETURN v_allowed;
 END
 $function$;
@@ -281,11 +314,12 @@ BEGIN
   IF FOUND AND v_existing <> v_hash THEN
     RAISE EXCEPTION '게스트 세션이 다른 기기에서 사용 중입니다.';
   END IF;
+  DELETE FROM roomchat_private.guest_sessions WHERE expires_at <= now();
   v_name := roomchat_private.allocate_nickname(p_requested, p_guest_session_id, NULL);
   INSERT INTO roomchat_private.guest_sessions(session_id, token_sha256, nickname, updated_at, expires_at)
-    VALUES (p_guest_session_id, v_hash, v_name, now(), now() + interval '3 minutes')
+    VALUES (p_guest_session_id, v_hash, v_name, now(), now() + interval '12 hours')
   ON CONFLICT (session_id) DO UPDATE
-    SET nickname = EXCLUDED.nickname, updated_at = now(), expires_at = now() + interval '3 minutes'
+    SET nickname = EXCLUDED.nickname, updated_at = now(), expires_at = now() + interval '12 hours'
     WHERE roomchat_private.guest_sessions.token_sha256 = v_hash;
   RETURN v_name;
 END
@@ -301,13 +335,75 @@ AS $function$
 DECLARE v_name text;
 BEGIN
   UPDATE roomchat_private.guest_sessions
-    SET updated_at = now(), expires_at = now() + interval '3 minutes'
+    SET updated_at = now(), expires_at = now() + interval '12 hours'
     WHERE session_id = p_guest_session_id
+      AND expires_at > now()
       AND token_sha256 = encode(extensions.digest(coalesce(p_guest_token, ''), 'sha256'), 'hex')
     RETURNING nickname INTO v_name;
   IF v_name IS NULL THEN RAISE EXCEPTION '게스트 세션이 만료되었습니다.'; END IF;
   RETURN v_name;
 END
+$function$;
+
+CREATE OR REPLACE FUNCTION public.roomchat_track_member(
+  p_room_id uuid, p_guest_session_id uuid DEFAULT NULL, p_guest_token text DEFAULT NULL
+)
+RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_nickname text;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.rooms r WHERE r.id = p_room_id) THEN
+    RAISE EXCEPTION '방을 찾을 수 없습니다.';
+  END IF;
+  DELETE FROM roomchat_private.active_members WHERE updated_at < now() - interval '1 day';
+  IF v_user_id IS NOT NULL THEN
+    SELECT nickname INTO v_nickname FROM public.roomchat_profiles WHERE id = v_user_id;
+    IF v_nickname IS NULL THEN RAISE EXCEPTION '계정 닉네임을 확인할 수 없습니다.'; END IF;
+    IF EXISTS (SELECT 1 FROM roomchat_private.room_kicks k WHERE k.room_id = p_room_id AND k.user_id = v_user_id) THEN
+      RAISE EXCEPTION '이 방의 운영자가 참여를 제한했습니다.';
+    END IF;
+    INSERT INTO roomchat_private.active_members(room_id, user_id, updated_at)
+      VALUES (p_room_id, v_user_id, now())
+      ON CONFLICT (room_id, user_id) WHERE user_id IS NOT NULL DO UPDATE SET updated_at = now();
+  ELSE
+    UPDATE roomchat_private.guest_sessions
+      SET updated_at = now(), expires_at = now() + interval '12 hours'
+      WHERE session_id = p_guest_session_id
+        AND expires_at > now()
+        AND token_sha256 = encode(extensions.digest(coalesce(p_guest_token, ''), 'sha256'), 'hex')
+      RETURNING nickname INTO v_nickname;
+    IF v_nickname IS NULL THEN RAISE EXCEPTION '게스트 이름을 먼저 정해 주세요.'; END IF;
+    IF EXISTS (SELECT 1 FROM roomchat_private.room_kicks k WHERE k.room_id = p_room_id AND k.guest_session_id = p_guest_session_id) THEN
+      RAISE EXCEPTION '이 방의 운영자가 참여를 제한했습니다.';
+    END IF;
+    INSERT INTO roomchat_private.active_members(room_id, guest_session_id, updated_at)
+      VALUES (p_room_id, p_guest_session_id, now())
+      ON CONFLICT (room_id, guest_session_id) WHERE guest_session_id IS NOT NULL DO UPDATE SET updated_at = now();
+  END IF;
+  RETURN true;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION public.roomchat_list_members(p_room_id uuid)
+RETURNS TABLE(user_id uuid, guest_session_id uuid, nickname text, is_verified boolean)
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = ''
+AS $function$
+  SELECT a.user_id, a.guest_session_id, coalesce(p.nickname, g.nickname), coalesce(p.is_verified, false)
+  FROM roomchat_private.active_members a
+  LEFT JOIN public.roomchat_profiles p ON p.id = a.user_id
+  LEFT JOIN roomchat_private.guest_sessions g ON g.session_id = a.guest_session_id
+  WHERE a.room_id = p_room_id
+    AND a.updated_at > now() - interval '70 seconds'
+    AND ((a.user_id IS NOT NULL AND p.id IS NOT NULL AND NOT EXISTS (
+      SELECT 1 FROM roomchat_private.room_kicks k WHERE k.room_id = a.room_id AND k.user_id = a.user_id
+    )) OR (a.guest_session_id IS NOT NULL AND g.session_id IS NOT NULL AND g.expires_at > now() AND NOT EXISTS (
+      SELECT 1 FROM roomchat_private.room_kicks k WHERE k.room_id = a.room_id AND k.guest_session_id = a.guest_session_id
+    )))
 $function$;
 
 CREATE OR REPLACE FUNCTION public.roomchat_create_room(
@@ -474,6 +570,9 @@ BEGIN
   INSERT INTO roomchat_private.room_kicks(room_id, user_id, guest_session_id, kicked_by)
     VALUES (p_room_id, p_user_id, p_guest_session_id, auth.uid())
   ON CONFLICT DO NOTHING;
+  DELETE FROM roomchat_private.active_members
+    WHERE room_id = p_room_id AND ((p_user_id IS NOT NULL AND user_id = p_user_id)
+      OR (p_guest_session_id IS NOT NULL AND guest_session_id = p_guest_session_id));
   RETURN true;
 END
 $function$;
@@ -487,7 +586,7 @@ DECLARE v_name text;
 BEGIN
   IF NOT roomchat_private.is_admin() THEN RAISE EXCEPTION '관리자만 닉네임을 정리할 수 있습니다.'; END IF;
   v_name := roomchat_private.allocate_nickname('크리스탈 시청자', p_guest_session_id, NULL);
-  UPDATE roomchat_private.guest_sessions SET nickname = v_name, updated_at = now(), expires_at = now() + interval '3 minutes'
+  UPDATE roomchat_private.guest_sessions SET nickname = v_name, updated_at = now(), expires_at = now() + interval '12 hours'
     WHERE session_id = p_guest_session_id AND expires_at > now();
   IF NOT FOUND THEN RAISE EXCEPTION '활동 중인 게스트를 찾을 수 없습니다.'; END IF;
   RETURN v_name;
@@ -580,14 +679,21 @@ CREATE POLICY "roomchat anyone can post messages" ON public.messages FOR INSERT 
 );
 
 DROP POLICY IF EXISTS "roomchat anonymous image upload" ON storage.objects;
+DROP POLICY IF EXISTS "roomchat image upload" ON storage.objects;
 CREATE POLICY "roomchat image upload" ON storage.objects FOR INSERT TO anon, authenticated
-  WITH CHECK (bucket_id = 'chat-images');
+  WITH CHECK (
+    bucket_id = 'chat-images'
+    AND name ~ '^[0-9a-fA-F-]{36}/[A-Za-z0-9_-]{1,128}[.](jpg|png|webp|gif|avif)$'
+    AND EXISTS (SELECT 1 FROM public.rooms r WHERE r.id::text = split_part(storage.objects.name, '/', 1))
+  );
 DROP POLICY IF EXISTS "roomchat administrators can delete images" ON storage.objects;
 CREATE POLICY "roomchat administrators can delete images" ON storage.objects FOR DELETE TO authenticated
   USING (bucket_id = 'chat-images' AND public.roomchat_is_admin());
 
 REVOKE ALL ON FUNCTION public.roomchat_claim_guest_nickname(uuid, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.roomchat_refresh_guest(uuid, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.roomchat_track_member(uuid, uuid, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.roomchat_list_members(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.roomchat_create_room(text, uuid, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.roomchat_post_message(uuid, text, text, uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.roomchat_is_kicked(uuid, uuid, text) FROM PUBLIC;
@@ -600,6 +706,8 @@ REVOKE ALL ON FUNCTION public.roomchat_admin_room_image_paths(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.roomchat_admin_delete_room(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.roomchat_claim_guest_nickname(uuid, text, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.roomchat_refresh_guest(uuid, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.roomchat_track_member(uuid, uuid, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.roomchat_list_members(uuid) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.roomchat_create_room(text, uuid, text, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.roomchat_post_message(uuid, text, text, uuid, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.roomchat_is_kicked(uuid, uuid, text) TO anon, authenticated;
