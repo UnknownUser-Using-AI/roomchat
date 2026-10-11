@@ -240,7 +240,7 @@ function addMessage(message) {
 function normalizeRpcRow(data) { return Array.isArray(data) ? data[0] : data; }
 async function loadRooms() {
   const { data, error } = await supabase.from('rooms')
-    .select('id,name,created_at,created_by,is_featured').order('created_at', { ascending: true }).limit(100);
+    .select('id,name,created_at,created_by,is_featured').order('is_featured', { ascending: false }).order('created_at', { ascending: true }).limit(100);
   if (error) throw error;
   state.rooms = data || [];
   renderRoomLists();
