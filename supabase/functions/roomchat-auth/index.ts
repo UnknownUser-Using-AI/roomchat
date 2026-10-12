@@ -129,13 +129,16 @@ Deno.serve(async (request: Request) => {
         return jsonResponse({ error: "계정을 만들지 못했습니다. 닉네임이나 초대코드를 확인해 주세요." }, 400, origin);
       }
 
+      const { data: profileData, error: profileError } = await admin.rpc("roomchat_materialize_auth_profile", {
+        p_user_id: created.user.id,
+      });
+      const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+      if (profileError || !profile) {
+        return jsonResponse({ error: "계정은 만들어졌지만 프로필 설정을 마치지 못했습니다. 잠시 후 로그인해 주세요." }, 500, origin);
+      }
+
       const session = await makeSession(email, password);
       if (!session) return jsonResponse({ error: "계정은 만들어졌지만 로그인에 실패했습니다. 다시 로그인해 주세요." }, 500, origin);
-      const { data: profile } = await admin.from("roomchat_profiles")
-        .select("nickname,is_verified")
-        .eq("id", created.user.id)
-        .maybeSingle();
-      if (!profile) return jsonResponse({ error: "계정 프로필을 만들지 못했습니다. 잠시 후 다시 시도해 주세요." }, 500, origin);
       return jsonResponse({ session, nickname: profile.nickname, isVerified: profile.is_verified }, 200, origin);
     }
 
