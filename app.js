@@ -24,6 +24,10 @@ const ui = {
   send: $('#send-button'), imageFile: $('#image-file'), preview: $('#attachment-preview'),
   thumbnail: $('#attachment-thumbnail'), attachmentName: $('#attachment-name'), removeAttachment: $('#remove-attachment'),
   toast: $('#toast'), charCount: $('#char-count'),
+  accountModeGroup: $('#account-mode-group'), adminCodeHelp: $('#admin-code-help'),
+  adminPanelButton: $('#admin-panel-button'), adminPanelDialog: $('#admin-panel-dialog'),
+  adminPanelClose: $('#admin-panel-close'), adminPanelSummary: $('#admin-panel-summary'),
+  adminPanelContent: $('#admin-panel-content'),
 };
 const GUEST_ID_KEY = 'roomchat:guest-id';
 const GUEST_TOKEN_KEY = 'roomchat:guest-token';
@@ -51,8 +55,32 @@ const state = {
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
   attachment: null, attachmentUrl: '', notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
-  accountMode: 'register',
+  accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null,
 };
+
+const ADMIN_INVITE_STORAGE_KEY = 'roomchat:admin-invite';
+function restoreAdminInvite() {
+  const readStored = () => {
+    try {
+      const value = JSON.parse(sessionStorage.getItem(ADMIN_INVITE_STORAGE_KEY) || 'null');
+      return value && ['천사', '크리스탈'].includes(value.nickname) && /^[0-9a-f]{64}$/u.test(value.code)
+        ? value : null;
+    } catch { return null; }
+  };
+  const fragment = new URLSearchParams(location.hash.slice(1));
+  const match = fragment.get('admin-invite')?.match(/^(angel|crystal)\.([0-9a-f]{64})$/u);
+  if (match) {
+    state.pendingAdminInvite = { nickname: match[1] === 'angel' ? '천사' : '크리스탈', code: match[2] };
+    try { sessionStorage.setItem(ADMIN_INVITE_STORAGE_KEY, JSON.stringify(state.pendingAdminInvite)); } catch { /* Keep the invite in memory for this tab. */ }
+    history.replaceState(history.state, '', `${location.pathname}${location.search}`);
+    return;
+  }
+  state.pendingAdminInvite = readStored();
+}
+function clearAdminInvite() {
+  state.pendingAdminInvite = null;
+  try { sessionStorage.removeItem(ADMIN_INVITE_STORAGE_KEY); } catch { /* Storage may be unavailable. */ }
+}
 
 function showToast(message) {
   ui.toast.textContent = message;
@@ -159,6 +187,7 @@ function removeMessage(messageId) {
   const node = ui.messages.querySelector(`[data-message-id="${CSS.escape(id)}"]`);
   node?.remove();
   if (!state.messages.length) renderMessages();
+  if (ui.adminPanelDialog.open) renderAdminPanel();
 }
 function renderMessage(message) {
   const key = String(message.id);
@@ -236,6 +265,7 @@ function addMessage(message) {
   state.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   renderMessage(message);
   ui.messages.scrollTop = ui.messages.scrollHeight;
+  if (ui.adminPanelDialog.open) renderAdminPanel();
 }
 function normalizeRpcRow(data) { return Array.isArray(data) ? data[0] : data; }
 async function loadRooms() {
@@ -306,6 +336,7 @@ async function refreshMembers(roomId = state.room?.id) {
     isVerified: Boolean(member.is_verified),
   }));
   renderMembers();
+  if (ui.adminPanelDialog.open) renderAdminPanel();
 }
 function presencePayload() {
   // Presence is only a change signal. Identity and verified flags come from a server RPC.
@@ -415,6 +446,7 @@ async function switchRoom(room) {
   state.messages = data || [];
   renderMessages();
   if (state.nickname) await subscribeCurrentRoom(request);
+  if (ui.adminPanelDialog.open) renderAdminPanel();
 }
 async function createRoom(name) {
   const cleanName = name.trim().replace(/\s+/gu, ' ');
@@ -475,6 +507,8 @@ function updateIdentityUI() {
   ui.nicknameButton.querySelector('.verified-box').hidden = !state.isVerified;
   ui.accountOpen.hidden = Boolean(state.user);
   ui.signOut.hidden = !state.user;
+  ui.adminPanelButton.hidden = !state.isAdmin;
+  if (!state.isAdmin && ui.adminPanelDialog.open) ui.adminPanelDialog.close();
   renderRoomLists();
   if (state.room) updateRoomHeading(state.room);
   if (state.roomChannel) {
@@ -525,7 +559,9 @@ async function callAuth(action, nickname, password, adminClaimCode = '') {
   return result;
 }
 function setAccountMode(mode) {
+  if (state.pendingAdminInvite && !state.user) mode = 'register';
   state.accountMode = mode;
+  ui.accountModeGroup.hidden = Boolean(state.pendingAdminInvite && !state.user);
   for (const button of document.querySelectorAll('[data-account-mode]')) {
     button.classList.toggle('active', button.dataset.accountMode === mode);
   }
@@ -542,7 +578,13 @@ function updateAdminCodeVisibility() {
   const required = state.accountMode === 'register' && ADMIN_INITIAL_NAMES.has(name);
   ui.adminCodeWrap.hidden = !required;
   ui.adminCode.required = required;
-  if (!required) ui.adminCode.value = '';
+  const fromInvite = Boolean(state.pendingAdminInvite && state.pendingAdminInvite.nickname === name);
+  ui.adminCode.readOnly = fromInvite;
+  ui.adminCodeHelp.textContent = fromInvite
+    ? '초대 링크가 확인됐어요. 일회용 코드가 가입 때 자동 적용됩니다.'
+    : '관리자 최초 가입 이름은 천사 또는 크리스탈이에요. 이후 이름을 바꿔도 인증 배지는 유지되며, 코드는 1회만 사용돼요.';
+  if (fromInvite) ui.adminCode.value = state.pendingAdminInvite.code;
+  else if (!required) ui.adminCode.value = '';
 }
 function showNicknameDialog() {
   ui.nicknameEyebrow.textContent = state.user ? 'ACCOUNT NICKNAME' : 'GUEST MODE';
@@ -559,9 +601,12 @@ function showNicknameDialog() {
 }
 function showAccountDialog() {
   setAccountMode('register');
-  ui.accountNickname.value = state.nickname && !state.user ? state.nickname : '';
+  const invite = state.pendingAdminInvite && !state.user ? state.pendingAdminInvite : null;
+  ui.accountNickname.readOnly = Boolean(invite);
+  ui.accountNickname.value = invite?.nickname || (state.nickname && !state.user ? state.nickname : '');
   ui.accountPassword.value = '';
-  ui.adminCode.value = '';
+  ui.adminCode.value = invite?.code || '';
+  updateAdminCodeVisibility();
   ui.accountDialog.showModal();
   window.setTimeout(() => ui.accountNickname.focus(), 80);
 }
@@ -676,11 +721,11 @@ async function deleteMessage(message) {
     const { error } = await supabase.rpc('roomchat_admin_delete_message', { p_message_id: message.id });
     if (error) throw error;
     removeMessage(message.id);
+    renderAdminPanel();
     showToast('메시지를 삭제했어요.');
   } catch (error) { showToast(errorText(error, '메시지를 삭제하지 못했어요.')); }
 }
-async function deleteRoom() {
-  const room = state.room;
+async function deleteRoomRecord(room) {
   if (!state.isAdmin || !room || room.is_featured) return;
   if (!window.confirm(`“${room.name}” 방과 그 방의 메시지 기록을 삭제할까요?`)) return;
   try {
@@ -690,13 +735,17 @@ async function deleteRoom() {
     const { error } = await supabase.rpc('roomchat_admin_delete_room', { p_room_id: room.id });
     if (error) throw error;
     state.rooms = state.rooms.filter((item) => item.id !== room.id);
-    const fallback = sortedRooms().find((item) => item.is_featured) || sortedRooms()[0];
-    state.room = null;
     renderRoomLists();
-    if (fallback) await switchRoom(fallback);
+    if (state.room?.id === room.id) {
+      const fallback = sortedRooms().find((item) => item.is_featured) || sortedRooms()[0];
+      state.room = null;
+      if (fallback) await switchRoom(fallback);
+    }
+    renderAdminPanel();
     showToast('방과 메시지를 삭제했어요.');
   } catch (error) { showToast(errorText(error, '방을 삭제하지 못했어요.')); }
 }
+async function deleteRoom() { return deleteRoomRecord(state.room); }
 async function kickMember(member) {
   if (!canManageRoom(state.room)) return showToast('이 방의 운영자만 참여자를 내보낼 수 있어요.');
   if (!window.confirm(`${member.nickname || '이 참여자'}를 이 방에서 내보낼까요?`)) return;
@@ -708,6 +757,7 @@ async function kickMember(member) {
   });
   if (error) return showToast(errorText(error, '참여자를 내보내지 못했어요.'));
   showToast(`${member.nickname || '참여자'}가 이 방에서 내보내졌어요.`);
+  await refreshMembers();
 }
 async function moderateNickname(member) {
   if (!state.isAdmin) return;
@@ -724,6 +774,117 @@ function openMembers() {
   renderMembers();
   ui.membersDialog.showModal();
   refreshMembers();
+}
+function panelElement(tag, className, text = '') {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text) element.textContent = text;
+  return element;
+}
+function panelAction(label, className, handler) {
+  const button = panelElement('button', `admin-action admin-panel-action ${className || ''}`, label);
+  button.type = 'button';
+  button.addEventListener('click', handler);
+  return button;
+}
+function renderAdminPanel() {
+  if (!state.isAdmin) return;
+  ui.adminPanelSummary.replaceChildren();
+  const metrics = [
+    ['공개 방', state.rooms.length],
+    ['현재 방 참여자', state.members.length],
+    ['불러온 메시지', state.messages.length],
+  ];
+  for (const [label, value] of metrics) {
+    const card = panelElement('div', 'admin-metric');
+    card.append(panelElement('strong', '', String(value)), panelElement('span', '', label));
+    ui.adminPanelSummary.append(card);
+  }
+  document.querySelectorAll('[data-admin-panel-tab]').forEach((tab) => {
+    const active = tab.dataset.adminPanelTab === state.adminPanelTab;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+  });
+  ui.adminPanelContent.replaceChildren();
+  if (state.adminPanelTab === 'overview') {
+    ui.adminPanelContent.append(
+      panelElement('h3', 'admin-panel-section-title', '빠른 관리'),
+      panelElement('p', 'admin-panel-note', `현재 방: ${state.room?.name || '선택된 방 없음'} · 관리자 초대 링크는 역할별 1회만 사용할 수 있어요.`),
+    );
+    const shortcuts = panelElement('div', 'admin-shortcuts');
+    for (const [tab, label, detail] of [
+      ['rooms', '방 관리', '방을 열거나 고정 기본방을 제외한 방을 삭제합니다.'],
+      ['members', '참여자 관리', '현재 방에서 닉네임을 정리하거나 참여자를 내보냅니다.'],
+      ['messages', '메시지 관리', '현재 방에 불러온 최근 메시지를 검토하고 삭제합니다.'],
+    ]) {
+      const shortcut = panelElement('button', 'admin-shortcut');
+      shortcut.type = 'button';
+      shortcut.append(panelElement('strong', '', label), panelElement('span', '', detail), panelElement('i', '', '↗'));
+      shortcut.addEventListener('click', () => { state.adminPanelTab = tab; renderAdminPanel(); });
+      shortcuts.append(shortcut);
+    }
+    ui.adminPanelContent.append(shortcuts);
+    return;
+  }
+  if (state.adminPanelTab === 'rooms') {
+    ui.adminPanelContent.append(panelElement('h3', 'admin-panel-section-title', '모든 공개 방'));
+    const list = panelElement('div', 'admin-panel-list');
+    if (!state.rooms.length) list.append(panelElement('p', 'admin-panel-empty', '표시할 방이 없습니다.'));
+    sortedRooms().forEach((room) => {
+      const row = panelElement('article', 'admin-panel-row');
+      const copy = panelElement('div', 'admin-panel-row-copy');
+      copy.append(panelElement('strong', '', room.name), panelElement('span', 'admin-panel-row-meta', room.is_featured ? '고정 기본방 · 삭제 보호' : '공개 방'));
+      const actions = panelElement('div', 'admin-panel-row-actions');
+      actions.append(panelAction('열기', '', async () => { await switchRoom(room); renderAdminPanel(); }));
+      if (!room.is_featured) actions.append(panelAction('삭제', 'danger-action', () => deleteRoomRecord(room)));
+      row.append(copy, actions);
+      list.append(row);
+    });
+    ui.adminPanelContent.append(list);
+    return;
+  }
+  if (state.adminPanelTab === 'members') {
+    ui.adminPanelContent.append(panelElement('h3', 'admin-panel-section-title', `참여자 · ${state.room?.name || '방 미선택'}`));
+    const list = panelElement('div', 'admin-panel-list');
+    if (!state.room) list.append(panelElement('p', 'admin-panel-empty', '먼저 방을 선택해 주세요.'));
+    else if (!state.members.length) list.append(panelElement('p', 'admin-panel-empty', '현재 함께 있는 참여자가 없습니다.'));
+    for (const member of state.members) {
+      const row = panelElement('article', 'admin-panel-row');
+      const copy = panelElement('div', 'admin-panel-row-copy');
+      copy.append(panelElement('strong', member.isVerified ? 'admin-name' : '', displayNickname(member.nickname || '익명', member.isVerified)), panelElement('span', 'admin-panel-row-meta', member.isVerified ? '[인증됨] 관리자' : member.userId ? '계정' : '게스트'));
+      const actions = panelElement('div', 'admin-panel-row-actions');
+      if (!member.isVerified) {
+        actions.append(panelAction('이름 정리', '', () => moderateNickname(member)));
+        actions.append(panelAction('내보내기', 'danger-action', () => kickMember(member)));
+      }
+      row.append(copy, actions);
+      list.append(row);
+    }
+    ui.adminPanelContent.append(list);
+    return;
+  }
+  ui.adminPanelContent.append(panelElement('h3', 'admin-panel-section-title', `최근 메시지 · ${state.room?.name || '방 미선택'}`));
+  const list = panelElement('div', 'admin-panel-list');
+  const recentMessages = [...state.messages].slice(-50).reverse();
+  if (!state.room) list.append(panelElement('p', 'admin-panel-empty', '먼저 방을 선택해 주세요.'));
+  else if (!recentMessages.length) list.append(panelElement('p', 'admin-panel-empty', '현재 방에 불러온 메시지가 없습니다.'));
+  for (const message of recentMessages) {
+    const row = panelElement('article', 'admin-panel-row');
+    const copy = panelElement('div', 'admin-panel-row-copy');
+    const nickname = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
+    const meta = `${nickname}${message.is_verified ? ' · 관리자' : ''} · ${formatTime(message.created_at)}`;
+    copy.append(panelElement('strong', message.is_verified ? 'admin-name' : '', meta), panelElement('span', 'admin-panel-row-meta', (message.content || (message.image_path ? '[이미지 첨부]' : '[내용 없음]')).slice(0, 140)));
+    row.append(copy, panelAction('삭제', 'danger-action', () => deleteMessage(message)));
+    list.append(row);
+  }
+  ui.adminPanelContent.append(list);
+}
+function openAdminPanel() {
+  if (!state.isAdmin) return;
+  state.adminPanelTab = 'overview';
+  renderAdminPanel();
+  ui.adminPanelDialog.showModal();
+  if (state.room) refreshMembers().then(renderAdminPanel);
 }
 async function refreshIdentity() {
   if (!state.nickname) return;
@@ -770,6 +931,16 @@ function setupEvents() {
     createRoom(value);
   });
   ui.roomDelete.addEventListener('click', deleteRoom);
+  ui.adminPanelButton.addEventListener('click', openAdminPanel);
+  ui.adminPanelClose.addEventListener('click', () => ui.adminPanelDialog.close());
+  document.querySelectorAll('[data-admin-panel-tab]').forEach((tab) => tab.addEventListener('click', () => {
+    state.adminPanelTab = tab.dataset.adminPanelTab;
+    renderAdminPanel();
+    if (state.adminPanelTab === 'members' && state.room) refreshMembers().then(renderAdminPanel);
+  }));
+  ui.adminPanelDialog.addEventListener('click', (event) => {
+    if (event.target === ui.adminPanelDialog) ui.adminPanelDialog.close();
+  });
   ui.presenceButton.addEventListener('click', openMembers);
   ui.membersClose.addEventListener('click', () => ui.membersDialog.close());
   ui.notificationButton.addEventListener('click', enableNotifications);
@@ -799,19 +970,22 @@ function setupEvents() {
   ui.accountNickname.addEventListener('input', updateAdminCodeVisibility);
   ui.accountForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const name = ui.accountNickname.value.normalize('NFC').trim().replace(/\s+/gu, ' ');
+    const invite = state.pendingAdminInvite && !state.user ? state.pendingAdminInvite : null;
+    const name = invite?.nickname || ui.accountNickname.value.normalize('NFC').trim().replace(/\s+/gu, ' ');
     const password = ui.accountPassword.value;
-    const code = ui.adminCode.value.trim();
+    const code = invite?.code || ui.adminCode.value.trim();
+    const action = invite ? 'register' : state.accountMode;
     if (password.length < 8 || new TextEncoder().encode(password).length > 72) return showToast('비밀번호는 8~72바이트로 입력해 주세요.');
     ui.accountSubmit.disabled = true;
     try {
-      const result = await callAuth(state.accountMode, name, password, code);
+      const result = await callAuth(action, name, password, code);
+      if (invite) clearAdminInvite();
       ui.accountPassword.value = '';
       ui.adminCode.value = '';
       ui.accountDialog.close();
       ui.nicknameDialog.close();
       if (result.nickname !== name) showToast(`사용할 수 없거나 이미 사용 중인 이름이라 “${result.nickname}”로 저장했어요.`);
-      else showToast(state.accountMode === 'register' ? '계정을 만들고 로그인했어요. 닉네임은 저장됩니다.' : '로그인했어요.');
+      else showToast(action === 'register' ? '계정을 만들고 로그인했어요. 닉네임은 저장됩니다.' : '로그인했어요.');
       if (state.room) { const current = state.room; state.room = null; await switchRoom(current); }
     } catch (error) { showToast(errorText(error, '계정을 확인하지 못했어요.')); }
     finally { ui.accountSubmit.disabled = false; }
@@ -820,12 +994,14 @@ function setupEvents() {
 }
 
 async function boot() {
+  restoreAdminInvite();
   setupEvents();
   registerServiceWorker();
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session) await applySession(data.session);
   } catch (error) { console.warn('Could not restore account session'); }
+  if (state.user && state.pendingAdminInvite) clearAdminInvite();
   if (!state.user) {
     const { data: guestName, error: guestError } = await supabase.rpc('roomchat_refresh_guest', {
       p_guest_session_id: guestSessionId, p_guest_token: guestToken,
@@ -857,7 +1033,8 @@ async function boot() {
     setConnection(false, '연결 확인 필요');
     showToast('채팅 서버에 연결하지 못했어요. Supabase 설정을 확인해 주세요.');
   }
-  if (!state.user && !state.nickname) showNicknameDialog();
+  if (!state.user && state.pendingAdminInvite) showAccountDialog();
+  else if (!state.user && !state.nickname) showNicknameDialog();
   state.identityTimer = window.setInterval(refreshIdentity, 45000);
 }
 

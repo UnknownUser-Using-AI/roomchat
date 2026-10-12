@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS roomchat_private.admin_invites (
   claimed_at timestamptz
 );
 INSERT INTO roomchat_private.admin_invites (nickname, code_sha256) VALUES
-  ('[인증됨] 천사', '5a7d625d7dc02f0df5216d92390b61f7a52dc0c5d51bfc2863aee426fbd33535'),
-  ('[인증됨] 크리스탈', '8f87f474c890c42d0a392da7ef0a7fde030fe74998bf6e9883ed3bbe64fc1078')
+  ('[인증됨] 천사', '196011f4364300f6f886baf4928abec63daa31ed9ff7ed72376feedebca488a9'),
+  ('[인증됨] 크리스탈', '16704a082296217755d9d7babeb92b1f90f0e8da63479570ad1987caaad05635')
 ON CONFLICT (nickname) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS roomchat_private.guest_sessions (

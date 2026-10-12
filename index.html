@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261012-responsive1" />
+  <link rel="stylesheet" href="./styles.css?v=20261012-admin1" />
   <title>roomchat — 슬랩배틀 라이벌 입양 피기</title>
 </head>
 <body>
@@ -42,6 +42,7 @@
         </div>
         <div class="top-actions">
           <span id="connection-state" class="connection-state"><i></i> 연결 중</span>
+          <button id="admin-panel-button" class="admin-panel-button" type="button" aria-haspopup="dialog" title="관리자 운영 패널" hidden>운영</button>
           <button id="notification-button" class="notification-button" type="button" aria-pressed="false">
             <span class="bell-icon" aria-hidden="true">◌</span><span id="notification-label">알림 켜기</span>
           </button>
@@ -129,7 +130,7 @@
       <span class="eyebrow">ROOMCHAT ACCOUNT</span>
       <h2 id="account-title">계정 만들기</h2>
       <p id="account-description">닉네임과 비밀번호만으로 계정을 만들어요. 실제 이메일은 받거나 저장하지 않습니다.</p>
-      <div class="account-mode" role="group" aria-label="계정 작업 선택">
+      <div id="account-mode-group" class="account-mode" role="group" aria-label="계정 작업 선택">
         <button class="mode-button active" type="button" data-account-mode="register">계정 만들기</button>
         <button class="mode-button" type="button" data-account-mode="login">로그인</button>
       </div>
@@ -140,7 +141,7 @@
       <div id="admin-code-wrap" class="admin-code-wrap" hidden>
         <label class="field-label" for="admin-claim-code">1회용 관리자 초대코드</label>
         <input id="admin-claim-code" class="text-field" type="password" autocomplete="off" placeholder="관리자 본인에게 전달된 코드" />
-        <span class="safety-caption">관리자 최초 가입 이름은 천사 또는 크리스탈이에요. 이후 이름을 바꿔도 인증 배지는 유지되며, 코드는 1회만 사용돼요.</span>
+        <span id="admin-code-help" class="safety-caption">관리자 최초 가입 이름은 천사 또는 크리스탈이에요. 이후 이름을 바꿔도 인증 배지는 유지되며, 코드는 1회만 사용돼요.</span>
       </div>
       <button id="account-submit-button" class="primary-button" type="submit">계정 만들기 <span aria-hidden="true">↗</span></button>
       <button id="account-cancel-button" class="secondary-button account-open" type="button">돌아가기</button>
@@ -157,6 +158,23 @@
     </section>
   </dialog>
 
-  <script type="module" src="./app.js?v=20261011-fix1"></script>
+  <dialog id="admin-panel-dialog" class="modal admin-panel-modal">
+    <section class="modal-card admin-panel-card" aria-label="관리자 운영 패널">
+      <header class="admin-panel-header">
+        <div><span class="eyebrow">ROOMCHAT CONTROL</span><h2>운영 패널</h2><p>방과 대화를 안전하게 관리해요.</p></div>
+        <button id="admin-panel-close" class="secondary-button admin-panel-close" type="button">닫기</button>
+      </header>
+      <div id="admin-panel-summary" class="admin-panel-summary" aria-live="polite"></div>
+      <nav class="admin-panel-tabs" role="tablist" aria-label="운영 도구">
+        <button class="admin-panel-tab active" type="button" role="tab" aria-selected="true" data-admin-panel-tab="overview">요약</button>
+        <button class="admin-panel-tab" type="button" role="tab" aria-selected="false" data-admin-panel-tab="rooms">방 관리</button>
+        <button class="admin-panel-tab" type="button" role="tab" aria-selected="false" data-admin-panel-tab="members">참여자</button>
+        <button class="admin-panel-tab" type="button" role="tab" aria-selected="false" data-admin-panel-tab="messages">메시지</button>
+      </nav>
+      <section id="admin-panel-content" class="admin-panel-content" role="tabpanel" aria-live="polite"></section>
+    </section>
+  </dialog>
+
+  <script type="module" src="./app.js?v=20261012-admin1"></script>
 </body>
 </html>
