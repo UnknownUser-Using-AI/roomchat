@@ -777,18 +777,49 @@ async function enableNotifications() {
   const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
   if (permission !== 'granted') return showToast('알림 권한이 허용되지 않았어요.');
   state.notifications = !state.notifications;
+  if (state.notifications) { unlockAudio(); window.setTimeout(playMessageSound, 60); }
   ui.notificationButton.setAttribute('aria-pressed', String(state.notifications));
   ui.notificationButton.classList.toggle('enabled', state.notifications);
   ui.notificationLabel.textContent = state.notifications ? '알림 켜짐' : '알림 켜기';
   showToast(state.notifications ? '새 메시지 알림을 받을게요.' : '새 메시지 알림을 껐어요.');
 }
+let audioContext = null;
+function unlockAudio() {
+  // 브라우저는 사용자가 화면을 누른 뒤에만 소리를 허용하므로, 누를 때마다 오디오를 깨워 둡니다.
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    audioContext ||= new AudioContextClass();
+    if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+  } catch { /* Sound is optional. */ }
+}
+function playMessageSound() {
+  try {
+    if (!audioContext || audioContext.state !== 'running') return;
+    const now = audioContext.currentTime;
+    const gain = audioContext.createGain();
+    gain.connect(audioContext.destination);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.2, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+    [[880, 0], [1175, 0.13]].forEach(([frequency, delay]) => {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, now + delay);
+      oscillator.connect(gain);
+      oscillator.start(now + delay);
+      oscillator.stop(now + delay + 0.22);
+    });
+  } catch { /* Sound is optional. */ }
+}
 async function notifyIncoming(message) {
+  playMessageSound();
   const title = `${message.nickname} · ${state.room?.name || 'roomchat'}`;
   const body = GIF_URL_PATTERN.test(message.content || '') ? 'GIF를 보냈어요.' : (message.content || '사진을 공유했어요.');
   try {
     const registration = await navigator.serviceWorker?.ready;
     if (registration?.showNotification) {
-      await registration.showNotification(title, { body, icon: './icon.svg', badge: './icon.svg', tag: `roomchat-${message.id}`, data: { url: './' } });
+      await registration.showNotification(title, { body, icon: './icon.svg', badge: './icon.svg', tag: `roomchat-${message.id}`, data: { url: './' }, vibrate: [120, 60, 120] });
     } else new Notification(title, { body, icon: './icon.svg', tag: `roomchat-${message.id}` });
   } catch { /* Notifications are an optional browser capability. */ }
 }
@@ -1209,6 +1240,7 @@ function setupEvents() {
   ui.presenceButton.addEventListener('click', openMembers);
   ui.membersClose.addEventListener('click', () => ui.membersDialog.close());
   ui.notificationButton.addEventListener('click', enableNotifications);
+  document.addEventListener('pointerdown', unlockAudio, { passive: true });
   ui.gifButton.addEventListener('click', openGifDialog);
   ui.gifClose.addEventListener('click', () => ui.gifDialog.close());
   ui.gifDialog.addEventListener('click', (event) => { if (event.target === ui.gifDialog) ui.gifDialog.close(); });
