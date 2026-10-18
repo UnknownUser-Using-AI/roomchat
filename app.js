@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   realtime: { params: { eventsPerSecond: 8 } },
@@ -28,6 +28,10 @@ const ui = {
   adminPanelButton: $('#admin-panel-button'), adminPanelDialog: $('#admin-panel-dialog'),
   adminPanelClose: $('#admin-panel-close'), adminPanelSummary: $('#admin-panel-summary'),
   adminPanelContent: $('#admin-panel-content'),
+  gifButton: $('#gif-button'), gifDialog: $('#gif-dialog'), gifClose: $('#gif-close'), gifForm: $('#gif-form'),
+  gifQuery: $('#gif-query'), gifStatus: $('#gif-status'), gifGrid: $('#gif-grid'),
+  avatarSection: $('#avatar-section'), avatarDrop: $('#avatar-drop'), avatarPreview: $('#avatar-preview'),
+  avatarHelp: $('#avatar-help'), avatarFile: $('#avatar-file'), avatarRemove: $('#avatar-remove'),
 };
 const GUEST_ID_KEY = 'roomchat:guest-id';
 const GUEST_TOKEN_KEY = 'roomchat:guest-token';
@@ -35,6 +39,12 @@ const ROOM_OWNER_PREFIX = 'roomchat:owner:';
 const FIXED_ROOM_NAME = '슬랩배틀 라이벌 입양 피기';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const ADMIN_INITIAL_NAMES = new Set(['천사', '크리스탈']);
+const GUIDE_ROOM_NAME = '설명 방';
+const GIF_PREFIX = '[gif]';
+// 서버는 내용을 검사하지 않으므로, 화면에는 GIPHY 미디어 주소만 그림으로 그립니다.
+const GIF_URL_PATTERN = /^\[gif\](https:\/\/media\d*\.giphy\.com\/media\/[A-Za-z0-9_\-/.]+\.gif)$/u;
+const AVATAR_SIZE = 256;
+const AVATAR_INPUT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
 function sessionValue(key, makeValue) {
   try {
@@ -56,6 +66,7 @@ const state = {
   attachment: null, attachmentUrl: '', notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null,
+  avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
 };
 
 const ADMIN_INVITE_STORAGE_KEY = 'roomchat:admin-invite';
@@ -92,7 +103,7 @@ function errorText(error, fallback = '요청을 처리하지 못했어요. 잠�
   const text = String(error?.message || '');
   const safeMessages = [
     '크리스탈 시청자', '인증됨', '닉네임', '방 이름', '운영자', '게스트', '이미지',
-    '참여를 제한', '로그인이 필요', '관리자만', '방장은', '기본 방은', '비밀번호', '초대코드',
+    '참여를 제한', '로그인이 필요', '관리자만', '방장은', '기본 방은', '비밀번호', '초대코드', '프로필 사진을',
   ];
   return safeMessages.some((piece) => text.includes(piece)) ? text : fallback;
 }
@@ -100,13 +111,54 @@ function setConnection(connected, label = connected ? '실시간 연결됨' : '�
   ui.connection.classList.toggle('online', connected);
   ui.connection.querySelector('i').nextSibling.textContent = ` ${label}`;
 }
-function makeAvatar(name) {
+function avatarPublicUrl(path) {
+  return path ? supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl : '';
+}
+function paintAvatar(element, name, url) {
+  element.replaceChildren();
+  if (url) {
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = '';
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    image.addEventListener('error', () => { element.replaceChildren(document.createTextNode([...name][0] || '•')); }, { once: true });
+    element.append(image);
+  } else {
+    element.textContent = [...name][0] || '•';
+  }
+  element.classList.toggle('has-photo', Boolean(url));
+}
+function makeAvatar(name, userId = null) {
   const hue = [...name].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 360;
   const avatar = document.createElement('span');
   avatar.className = 'message-avatar';
   avatar.style.setProperty('--avatar-hue', String(hue));
-  avatar.textContent = [...name][0] || '•';
+  if (userId) avatar.dataset.userId = userId;
+  avatar.dataset.name = name;
+  paintAvatar(avatar, name, userId ? state.avatars.get(userId) || '' : '');
   return avatar;
+}
+function applyAvatars() {
+  document.querySelectorAll('.message-avatar[data-user-id]').forEach((element) => {
+    const url = state.avatars.get(element.dataset.userId) || '';
+    const shown = element.querySelector('img')?.getAttribute('src') || '';
+    if (url !== shown) paintAvatar(element, element.dataset.name || '', url);
+  });
+  const mine = state.user ? state.avatars.get(state.user.id) || '' : '';
+  paintAvatar(ui.nicknameButton.querySelector('.avatar-dot'), state.nickname || '?', mine);
+  paintAvatar(ui.avatarPreview, state.nickname || '?', mine);
+  ui.avatarRemove.hidden = !mine;
+}
+async function loadAvatars(userIds) {
+  const missing = [...new Set((userIds || []).filter((id) => id && !state.avatars.has(id)))];
+  if (!missing.length) return;
+  // 마이그레이션 전이거나 조회에 실패해도 채팅은 계속되도록 오류는 무시합니다.
+  const { data, error } = await supabase.from('roomchat_profiles').select('id,avatar_path').in('id', missing.slice(0, 100));
+  if (error) { missing.forEach((id) => state.avatars.set(id, '')); return; }
+  const found = new Map((data || []).map((row) => [row.id, avatarPublicUrl(row.avatar_path)]));
+  missing.forEach((id) => state.avatars.set(id, found.get(id) || ''));
+  applyAvatars();
 }
 function addVerifiedMark(parent) {
   const mark = document.createElement('span');
@@ -136,8 +188,11 @@ function roomOwnerToken(roomId) {
 function canManageRoom(room) {
   return Boolean(state.isAdmin || (state.user && room?.created_by === state.user.id) || roomOwnerToken(room?.id));
 }
+function isGuideRoom(room) { return Boolean(room?.is_featured && room.name === GUIDE_ROOM_NAME); }
 function sortedRooms() {
-  return [...state.rooms].sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)) || new Date(a.created_at) - new Date(b.created_at));
+  return [...state.rooms].sort((a, b) => Number(isGuideRoom(b)) - Number(isGuideRoom(a))
+    || Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))
+    || new Date(a.created_at) - new Date(b.created_at));
 }
 function renderRoomLists() {
   ui.roomList.replaceChildren();
@@ -198,7 +253,7 @@ function renderMessage(message) {
   const row = document.createElement('article');
   row.className = `message-row${isOwn ? ' own-message' : ''}${message.is_verified ? ' verified-message' : ''}`;
   row.dataset.messageId = key;
-  row.append(makeAvatar(nickname));
+  row.append(makeAvatar(nickname, message.user_id || null));
   const body = document.createElement('div');
   body.className = 'message-body';
   const meta = document.createElement('div');
@@ -213,7 +268,22 @@ function renderMessage(message) {
   time.textContent = formatTime(message.created_at);
   meta.append(time);
   body.append(meta);
-  if (message.content) {
+  const gifMatch = typeof message.content === 'string' ? message.content.match(GIF_URL_PATTERN) : null;
+  if (gifMatch) {
+    const gifLink = document.createElement('a');
+    gifLink.className = 'message-image-link message-gif-link';
+    gifLink.href = gifMatch[1];
+    gifLink.target = '_blank';
+    gifLink.rel = 'noopener noreferrer';
+    gifLink.setAttribute('aria-label', 'GIF 원본 보기');
+    const gif = document.createElement('img');
+    gif.className = 'message-image message-gif';
+    gif.src = gifMatch[1];
+    gif.alt = 'GIPHY에서 보낸 GIF';
+    gif.loading = 'lazy';
+    gifLink.append(gif);
+    body.append(gifLink);
+  } else if (message.content) {
     const text = document.createElement('p');
     text.className = 'message-content';
     text.textContent = message.content;
@@ -247,20 +317,54 @@ function renderMessage(message) {
   }
   ui.messages.append(row);
 }
+function buildGuideCard() {
+  const card = document.createElement('section');
+  card.className = 'guide-card';
+  card.setAttribute('aria-label', '사이트 소개');
+  const title = document.createElement('h2');
+  title.textContent = 'roomchat에 오신 걸 환영해요';
+  const lead = document.createElement('p');
+  lead.className = 'guide-lead';
+  lead.textContent = '이름만 정하면 바로 대화할 수 있는 실시간 공개 채팅방이에요. 이 방은 항상 맨 위에 고정되어 사이트 사용법을 알려줘요.';
+  const list = document.createElement('ul');
+  list.className = 'guide-list';
+  for (const [head, text] of [
+    ['게스트 또는 계정', '게스트는 닉네임을 바꿀 수 있지만 계속 유지되지는 않아요. 닉네임과 비밀번호로 계정을 만들면 닉네임이 저장되고 언제든 바꿀 수 있어요.'],
+    ['닉네임 규칙', '이상하거나 이미 쓰는 닉네임은 자동으로 “크리스탈 시청자”로 바뀌어요.'],
+    ['[인증됨] 관리자', '굵은 무지갯빛 닉네임과 [인증됨] 태그는 관리자 두 명(천사, 크리스탈)만 가질 수 있어요. 다른 이름으로는 만들 수 없어요.'],
+    ['방 만들기', '게스트도 방을 만들 수 있고, 방을 만든 사람은 그 방의 운영자로서 원하지 않는 사람을 내보낼 수 있어요.'],
+    ['관리자의 정리', '이상한 방, 닉네임, 채팅은 관리자가 삭제하거나 정리할 수 있어요.'],
+    ['GIF · 사진 · 알림', 'GIF 버튼으로 GIPHY에서 검색해 보내고, 계정은 프로필 사진을 지정할 수 있어요. 상단의 “알림 켜기”로 새 메시지 알림을 받을 수 있어요.'],
+  ]) {
+    const item = document.createElement('li');
+    const strong = document.createElement('strong');
+    strong.textContent = head;
+    item.append(strong, document.createTextNode(` ${text}`));
+    list.append(item);
+  }
+  card.append(title, lead, list);
+  return card;
+}
 function renderMessages() {
   ui.messages.replaceChildren();
+  const guide = isGuideRoom(state.room);
+  if (guide) ui.messages.append(buildGuideCard());
   if (!state.messages.length) {
-    const empty = document.createElement('div');
-    empty.className = 'empty-state';
-    empty.innerHTML = '<span class="empty-symbol">✳</span><strong>아직 첫 메시지가 없어요.</strong><span>먼저 가볍게 인사해보세요.</span>';
-    ui.messages.append(empty);
+    if (!guide) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = '<span class="empty-symbol">✳</span><strong>아직 첫 메시지가 없어요.</strong><span>먼저 가볍게 인사해보세요.</span>';
+      ui.messages.append(empty);
+    }
     return;
   }
   state.messages.forEach(renderMessage);
-  ui.messages.scrollTop = ui.messages.scrollHeight;
+  ui.messages.scrollTop = guide ? 0 : ui.messages.scrollHeight;
+  loadAvatars(state.messages.map((message) => message.user_id));
 }
 function addMessage(message) {
   if (state.messages.some((item) => String(item.id) === String(message.id))) return;
+  loadAvatars([message.user_id]);
   state.messages.push(message);
   state.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   renderMessage(message);
@@ -300,7 +404,7 @@ function renderMembers() {
     const nickname = displayNickname(rawNickname, verifiedAdmin);
     const row = document.createElement('div');
     row.className = 'member-row';
-    row.append(makeAvatar(nickname));
+    row.append(makeAvatar(nickname, member.userId || null));
     const label = document.createElement('span');
     label.className = `member-name${verifiedAdmin ? ' admin-name' : ''}`;
     label.textContent = nickname;
@@ -335,6 +439,7 @@ async function refreshMembers(roomId = state.room?.id) {
     nickname: member.nickname,
     isVerified: Boolean(member.is_verified),
   }));
+  loadAvatars(state.members.map((member) => member.userId));
   renderMembers();
   if (ui.adminPanelDialog.open) renderAdminPanel();
 }
@@ -491,6 +596,7 @@ async function setNickname(name) {
   ui.nicknameButton.querySelector('.avatar-dot').textContent = [...result][0] || '•';
   ui.nicknameButton.querySelector('.verified-box').hidden = !state.isVerified;
   ui.nicknameLabel.classList.toggle('admin-name', state.isVerified);
+  applyAvatars();
   ui.nicknameDialog.close();
   if (state.room) {
     const currentRoom = state.room;
@@ -508,6 +614,9 @@ function updateIdentityUI() {
   ui.accountOpen.hidden = Boolean(state.user);
   ui.signOut.hidden = !state.user;
   ui.adminPanelButton.hidden = !state.isAdmin;
+  ui.avatarSection.hidden = !state.user;
+  if (state.user) loadAvatars([state.user.id]);
+  applyAvatars();
   if (!state.isAdmin && ui.adminPanelDialog.open) ui.adminPanelDialog.close();
   renderRoomLists();
   if (state.room) updateRoomHeading(state.room);
@@ -591,7 +700,9 @@ function showNicknameDialog() {
   ui.nicknameTitle.innerHTML = state.user ? '닉네임을<br />바꿀까요?' : '어떤 이름으로<br />인사할까요?';
   ui.nicknameDescription.textContent = state.user
     ? '계정 닉네임은 저장되어 다음에도 사용할 수 있어요. 관리자도 이름을 바꿀 수 있고 [인증됨] 표시는 유지돼요.'
-    : '게스트 닉네임은 이 탭에서만 사용돼요. 계정을 만들면 닉네임이 저장되고 언제든 바꿀 수 있어요.';
+    : '게스트 닉네임은 이 탭에서만 사용돼요. 계정을 만들면 닉네임이 저장되고 언제든 바꿀 수 있어요. 프로필 사진도 계정에서 지정할 수 있어요.';
+  ui.avatarSection.hidden = !state.user;
+  applyAvatars();
   ui.nicknameSubmit.innerHTML = `${state.user ? '닉네임 저장' : '게스트로 입장'} <span aria-hidden="true">↗</span>`;
   ui.nicknameInput.value = state.nickname;
   ui.accountOpen.hidden = Boolean(state.user);
@@ -673,7 +784,7 @@ async function enableNotifications() {
 }
 async function notifyIncoming(message) {
   const title = `${message.nickname} · ${state.room?.name || 'roomchat'}`;
-  const body = message.content || '사진을 공유했어요.';
+  const body = GIF_URL_PATTERN.test(message.content || '') ? 'GIF를 보냈어요.' : (message.content || '사진을 공유했어요.');
   try {
     const registration = await navigator.serviceWorker?.ready;
     if (registration?.showNotification) {
@@ -769,6 +880,160 @@ async function moderateNickname(member) {
   if (error) return showToast(errorText(error, '닉네임을 정리하지 못했어요.'));
   showToast(`닉네임을 “${data}”로 바꿨어요.`);
   await refreshMembers();
+}
+function cleanGiphyUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || !/^media\d*\.giphy\.com$/u.test(url.hostname)) return null;
+    if (!/^\/media\/[A-Za-z0-9_\-/.]+\.gif$/u.test(url.pathname)) return null;
+    return `${url.origin}${url.pathname}`;
+  } catch { return null; }
+}
+async function loadGifs(query = '') {
+  const request = ++state.gifRequest;
+  ui.gifGrid.replaceChildren();
+  if (!GIPHY_API_KEY) {
+    ui.gifStatus.textContent = 'GIF 검색은 GIPHY API 키를 설정하면 사용할 수 있어요. (config.js의 GIPHY_API_KEY)';
+    return;
+  }
+  ui.gifStatus.textContent = query ? `“${query}” 검색 중…` : '인기 GIF를 불러오는 중…';
+  const params = new URLSearchParams({ api_key: GIPHY_API_KEY, limit: '24', rating: 'g', lang: 'ko' });
+  if (query) params.set('q', query);
+  try {
+    const response = await fetch(`https://api.giphy.com/v1/gifs/${query ? 'search' : 'trending'}?${params}`);
+    if (!response.ok) throw new Error('giphy');
+    const result = await response.json();
+    if (request !== state.gifRequest) return;
+    const items = (result.data || []).map((item) => ({
+      title: String(item.title || 'GIF').slice(0, 80),
+      preview: cleanGiphyUrl(item.images?.fixed_width_small?.url || item.images?.fixed_width?.url),
+      send: cleanGiphyUrl(item.images?.downsized_medium?.url || item.images?.fixed_height?.url || item.images?.original?.url),
+    })).filter((item) => item.preview && item.send);
+    ui.gifStatus.textContent = items.length ? (query ? `“${query}” 검색 결과` : '인기 GIF') : '검색 결과가 없어요. 다른 단어로 찾아보세요.';
+    for (const item of items) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'gif-item';
+      button.setAttribute('aria-label', `${item.title} 보내기`);
+      const image = document.createElement('img');
+      image.src = item.preview;
+      image.alt = item.title;
+      image.loading = 'lazy';
+      button.append(image);
+      button.addEventListener('click', () => sendGif(item.send));
+      ui.gifGrid.append(button);
+    }
+  } catch {
+    if (request === state.gifRequest) ui.gifStatus.textContent = 'GIF를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
+  }
+}
+function openGifDialog() {
+  if (!state.nickname) { showNicknameDialog(); return; }
+  if (!state.room) return showToast('먼저 채팅방을 선택해 주세요.');
+  ui.gifQuery.value = '';
+  ui.gifDialog.showModal();
+  loadGifs('');
+  if (!window.matchMedia('(pointer: coarse)').matches) window.setTimeout(() => ui.gifQuery.focus(), 80);
+}
+async function sendGif(url) {
+  const clean = cleanGiphyUrl(url);
+  if (!clean || !state.room || !state.nickname) return;
+  ui.gifDialog.close();
+  try {
+    const { data, error } = await supabase.rpc('roomchat_post_message', {
+      p_room_id: state.room.id,
+      p_content: `${GIF_PREFIX}${clean}`,
+      p_image_path: null,
+      p_guest_session_id: state.user ? null : guestSessionId,
+      p_guest_token: state.user ? null : guestToken,
+    });
+    if (error) throw error;
+    const inserted = normalizeRpcRow(data);
+    if (inserted) addMessage(inserted);
+  } catch (error) { showToast(errorText(error, 'GIF를 보내지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요.')); }
+}
+
+async function makeAvatarBlob(file) {
+  let bitmap = null;
+  let objectUrl = '';
+  let source;
+  try {
+    bitmap = await createImageBitmap(file);
+    source = bitmap;
+  } catch {
+    objectUrl = URL.createObjectURL(file);
+    source = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('이미지를 읽지 못했어요.'));
+      image.src = objectUrl;
+    });
+  }
+  try {
+    const width = source.width || source.naturalWidth;
+    const height = source.height || source.naturalHeight;
+    if (!width || !height) throw new Error('이미지를 읽지 못했어요.');
+    const side = Math.min(width, height);
+    const canvas = document.createElement('canvas');
+    canvas.width = AVATAR_SIZE;
+    canvas.height = AVATAR_SIZE;
+    canvas.getContext('2d').drawImage(source, (width - side) / 2, (height - side) / 2, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+    for (const [type, quality] of [['image/webp', 0.86], ['image/jpeg', 0.86]]) {
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+      if (blob && blob.type === type && blob.size <= 900 * 1024) return blob;
+    }
+    const png = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (png && png.size <= 900 * 1024) return png;
+    throw new Error('이미지를 줄이지 못했어요.');
+  } finally {
+    bitmap?.close?.();
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  }
+}
+async function setAvatarFromFile(file) {
+  if (!file) return;
+  if (!state.user) return showToast('프로필 사진은 계정을 만들면 지정할 수 있어요.');
+  if (state.avatarBusy) return;
+  if (!AVATAR_INPUT_TYPES.includes(file.type)) return showToast('JPEG, PNG, WebP, GIF, AVIF 이미지만 사용할 수 있어요.');
+  if (file.size > 12 * 1024 * 1024) return showToast('프로필 사진은 12MB 이하로 선택해 주세요.');
+  state.avatarBusy = true;
+  ui.avatarDrop.classList.add('busy');
+  let path = null;
+  try {
+    const blob = await makeAvatarBlob(file);
+    const extension = ({ 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' })[blob.type];
+    path = `${state.user.id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, blob, {
+      contentType: blob.type, cacheControl: '3600', upsert: false,
+    });
+    if (uploadError) throw uploadError;
+    const { data: previous, error } = await supabase.rpc('roomchat_set_my_avatar', { p_path: path });
+    if (error) throw error;
+    if (previous && previous !== path) supabase.storage.from('avatars').remove([previous]).catch(() => {});
+    state.avatars.set(state.user.id, avatarPublicUrl(path));
+    applyAvatars();
+    showToast('프로필 사진을 바꿨어요.');
+  } catch (error) {
+    if (path) await supabase.storage.from('avatars').remove([path]).catch(() => {});
+    showToast(errorText(error, '프로필 사진을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.'));
+  } finally {
+    state.avatarBusy = false;
+    ui.avatarDrop.classList.remove('busy');
+    ui.avatarFile.value = '';
+  }
+}
+async function removeAvatar() {
+  if (!state.user || state.avatarBusy) return;
+  state.avatarBusy = true;
+  try {
+    const { data: previous, error } = await supabase.rpc('roomchat_set_my_avatar', { p_path: null });
+    if (error) throw error;
+    if (previous) supabase.storage.from('avatars').remove([previous]).catch(() => {});
+    state.avatars.set(state.user.id, '');
+    applyAvatars();
+    showToast('프로필 사진을 지웠어요.');
+  } catch (error) { showToast(errorText(error, '프로필 사진을 지우지 못했어요.')); }
+  finally { state.avatarBusy = false; }
 }
 function openMembers() {
   renderMembers();
@@ -944,6 +1209,33 @@ function setupEvents() {
   ui.presenceButton.addEventListener('click', openMembers);
   ui.membersClose.addEventListener('click', () => ui.membersDialog.close());
   ui.notificationButton.addEventListener('click', enableNotifications);
+  ui.gifButton.addEventListener('click', openGifDialog);
+  ui.gifClose.addEventListener('click', () => ui.gifDialog.close());
+  ui.gifDialog.addEventListener('click', (event) => { if (event.target === ui.gifDialog) ui.gifDialog.close(); });
+  ui.gifForm.addEventListener('submit', (event) => { event.preventDefault(); loadGifs(ui.gifQuery.value.trim()); });
+  ui.avatarFile.addEventListener('change', (event) => setAvatarFromFile(event.target.files?.[0]));
+  ui.avatarRemove.addEventListener('click', removeAvatar);
+  ui.avatarDrop.addEventListener('click', () => ui.avatarFile.click());
+  ui.avatarDrop.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); ui.avatarFile.click(); }
+  });
+  ['dragenter', 'dragover'].forEach((name) => ui.avatarDrop.addEventListener(name, (event) => {
+    event.preventDefault();
+    ui.avatarDrop.classList.add('dragging');
+  }));
+  ['dragleave', 'drop'].forEach((name) => ui.avatarDrop.addEventListener(name, () => ui.avatarDrop.classList.remove('dragging')));
+  ui.avatarDrop.addEventListener('drop', (event) => {
+    event.preventDefault();
+    setAvatarFromFile([...(event.dataTransfer?.files || [])].find((file) => file.type.startsWith('image/')));
+  });
+  // 닉네임 창이 열려 있을 때 Ctrl+V(또는 길게 눌러 붙여넣기)로 복사한 이미지를 프로필 사진으로 사용합니다.
+  document.addEventListener('paste', (event) => {
+    if (!ui.nicknameDialog.open || !state.user) return;
+    const file = [...(event.clipboardData?.items || [])].find((item) => item.kind === 'file' && item.type.startsWith('image/'))?.getAsFile();
+    if (!file) return;
+    event.preventDefault();
+    setAvatarFromFile(file);
+  });
   ui.messageForm.addEventListener('submit', sendMessage);
   ui.messageInput.addEventListener('input', () => {
     ui.messageInput.style.height = 'auto';
