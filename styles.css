@@ -343,3 +343,12 @@ html, body { min-height: 0; }
 }
 .style-card>*{flex-shrink:0}
 .tag-grid{min-height:34px}
+
+/* Larger tags */
+.user-tag{gap:6px;max-width:170px;padding:2px 10px 2px 4px;font-size:13px}
+.user-tag img{width:22px;height:22px;border-radius:6px}
+.message-meta{flex-wrap:wrap;align-items:center}
+.tag-row .user-tag{font-size:14px}
+.tag-row .user-tag img{width:26px;height:26px}
+.tag-drop{width:84px;height:84px}
+@media(max-width:640px){.user-tag{max-width:130px;font-size:12px}.user-tag img{width:20px;height:20px}}
