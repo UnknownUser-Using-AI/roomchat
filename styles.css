@@ -647,3 +647,173 @@ body{background:radial-gradient(ellipse at 55% 0%,#1b2340 0%,#121725 48%,#0e1320
  .composer-wrap{padding:8px 12px 12px;background:#111725}
  .message-content{max-width:calc(100vw - 88px);font-size:12px}
 }
+
+
+/* Discord reference layout: channel browser, classic dark layers, and bottom user panel */
+:root{
+ color-scheme:dark;
+ --paper:#19191c;--white:#222327;--ink:#efeff1;--muted:#99999c;--line:#29292d;
+ --teal:#5865f2;--teal-dark:#4752c4;--teal-soft:#2d2f4c;--lilac:#2d2f4c;--coral:#d75358;
+ --shadow:0 18px 48px rgba(0,0,0,.35);
+}
+html,body{background:#19191c;color:#efeff1}
+body{background:#19191c}
+.app-shell{grid-template-columns:104px 440px minmax(0,1fr);max-width:none;background:#1a1a1e;box-shadow:none;gap:0}
+.server-rail{width:104px;background:#121214;border-right:0;gap:14px;padding:20px 0}
+.server-home,.server-shortcut{width:58px;height:58px;border-radius:17px;background:#29292d;color:#efeff1;font-size:22px}
+.server-home{background:#29292d;color:#efeff1}
+.server-home:hover,.server-shortcut:hover{border-radius:17px;background:#5865f2;color:#fff}
+.server-divider{width:34px;background:#39393e}
+.server-shortcut{background:#29292d;color:#d5d5da}
+.server-shortcut.server-add{font-size:29px;color:#b6b6bc}
+.sidebar{padding:0;gap:0;background:#121214;border-right:1px solid #252529}
+.brand{height:72px;min-height:72px;padding:0 24px;gap:12px;border-bottom:1px solid #252529;color:#f5f5f6;font-size:20px;letter-spacing:-.5px}
+.brand-mark{width:28px;height:25px;flex:none}
+.brand-mark i,.brand-mark b{border-color:#8a8a90}
+.brand-mark i{background:#29292d}
+.brand-mark b{background:#5865f2}
+.brand-name{flex:1}
+.server-chevron{font-size:20px;color:#b5b5bb}
+.side-intro{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;min-height:0;margin:0;padding:20px 24px 22px;border:0;border-bottom:1px solid #29292d;border-radius:0;background:#121214;text-align:center}
+.side-intro[hidden]{display:none}
+.welcome-close{position:absolute;top:12px;right:18px;border:0;background:transparent;color:#a3a3a9;font-size:26px;cursor:pointer}
+.welcome-close:hover{color:#fff}
+.sidebar-hero-art{position:relative;display:grid;place-items:center;width:150px;height:132px;margin:2px auto 0}
+.hero-hash{display:grid;place-items:center;width:104px;height:104px;border-radius:32px;background:linear-gradient(145deg,#28282d,#1c1c20);box-shadow:inset 0 0 0 1px #3c3c44;color:#5865f2;font-size:70px;font-weight:800}
+.sidebar-hero-art i,.sidebar-hero-art b{position:absolute;font-style:normal;color:#c1c4ff;text-shadow:0 0 14px #5865f244}
+.sidebar-hero-art i{top:12px;right:14px;font-size:28px}
+.sidebar-hero-art b{left:12px;bottom:8px;font-size:20px}
+.sidebar-hero-title{margin:0;color:#efeff1;font-size:18px;line-height:1.45;font-weight:750}
+.sidebar-hero-copy{max-width:315px;color:#99999c;font-size:13px;line-height:1.55}
+.sidebar-invite-button{width:100%;min-height:46px;margin-top:6px;border:0;border-radius:8px;background:#5865f2;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.sidebar-invite-button:hover{background:#4752c4}
+.room-heading{height:48px;min-height:48px;margin:0;padding:0 22px;color:#99999c;font-size:13px;font-weight:700}
+.room-heading>span:before{content:"▾";display:inline-block;margin-right:8px;color:#99999c}
+.room-heading .icon-button{width:32px;height:32px;background:transparent;border:0;color:#99999c;font-size:24px}
+.room-heading .icon-button:hover{background:#29292d;color:#fff;transform:none}
+.room-list{gap:2px;padding:0 12px 15px}
+.room-item{gap:12px;padding:10px 12px;border-radius:8px;color:#b5bac1;min-height:46px}
+.room-item:hover{background:#242428;color:#e9e9ec}
+.room-item.active{background:#2c2c30;color:#fff;box-shadow:none}
+.room-number{width:28px;height:28px;border-radius:7px;background:#242428;color:#99999c;font-size:21px;font-weight:500}
+.room-item.active .room-number{background:transparent;color:#fff}
+.room-title{font-size:15px;font-weight:650}
+.room-arrow{font-size:14px}
+.sidebar-bottom{margin-top:auto;padding:10px 10px 12px;background:#1a1a1e;border-top:1px solid #29292d}
+.sidebar-user-panel{display:flex;align-items:center;gap:4px;min-height:62px;padding:6px;border-radius:9px;background:#222327}
+.sidebar-user-panel .nickname-chip{flex:1;min-width:0;height:50px;display:grid;grid-template-columns:36px minmax(0,1fr) auto;grid-template-rows:1fr 1fr;column-gap:8px;align-items:center;justify-items:start;padding:3px 7px;border:0;border-radius:7px;background:transparent;text-align:left}
+.sidebar-user-panel .nickname-chip:hover{background:#2c2c30;color:#fff}
+.sidebar-user-panel .avatar-dot{grid-column:1;grid-row:1/3;width:34px;height:34px;border-radius:50%;font-size:15px}
+.sidebar-user-panel #nickname-label{grid-column:2;grid-row:1/3;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0f0f2;font-size:14px;font-weight:650}
+.sidebar-user-panel .verified-box{grid-column:3;grid-row:1/3;font-size:9px}
+.sidebar-user-panel .user-online-label{display:none}
+.sidebar-user-panel .nickname-chip>span:last-child{display:none}
+.sidebar-account-settings{width:38px;height:42px;flex:none;border:0;border-radius:7px;background:transparent;color:#b5bac1;font-size:22px;cursor:pointer}
+.sidebar-account-settings:hover{background:#2c2c30;color:#fff}
+.chat-panel{background:#1a1a1e;min-width:0}
+.topbar{height:72px;min-height:72px;padding:0 24px;background:#1a1a1e;border-bottom:1px solid #27272b;gap:18px}
+.channel-heading{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;color:#efeff1}
+.channel-hash{flex:none;color:#99999c;font-size:32px;font-weight:500;line-height:1}
+.current-room-name{font-size:17px;font-weight:750;white-space:nowrap}
+.channel-divider{height:24px;width:1px;flex:none;background:#343438;margin:0 3px}
+.channel-topic{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#99999c;font-size:13px}
+.room-icon{width:30px;height:30px;border-radius:8px;overflow:hidden;flex:none}
+.top-actions{gap:7px;flex:none}
+.connection-state{order:20;display:inline-flex;gap:6px;padding:8px 10px;color:#99999c;border-radius:6px;font-size:10px;white-space:nowrap}
+.connection-state.online{color:#70c99f}
+.connection-state i{width:8px;height:8px;background:#99999c}
+.connection-state.online i{background:#3ba55c;box-shadow:none}
+.header-tool{height:36px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 10px;border:0;border-radius:7px;background:transparent;color:#b5bac1;font-size:12px;font-weight:650;cursor:pointer}
+.header-tool:hover{background:#29292d;color:#fff}
+.header-tool[hidden]{display:none}
+.header-tool.danger:hover{color:#ed4245}
+.presence-tool{min-width:44px;font-size:15px}
+.friends-button .friends-label{font-size:12px}
+.notification-button{font-size:12px}
+#notification-label{display:none}
+.bell-icon{font-size:22px;line-height:1}
+#admin-panel-button{order:10}
+#friends-button{order:11}
+#notification-button{order:12}
+.room-banner[hidden]{display:none}
+.messages-heading{display:none}
+.message-list{padding:24px 24px 18px;background:#1a1a1e;scrollbar-color:#3c3c42 transparent}
+.message-row{gap:14px;max-width:none;margin:0 0 9px;padding:5px 8px;border-radius:7px}
+.message-row:hover{background:#202024}
+.message-avatar{width:40px;height:40px;border-radius:50%;background:#2c2c35;color:#efeff1}
+.message-meta{gap:8px;align-items:center}
+.message-meta strong{color:#e8e8ed;font-size:14px;font-weight:700}
+.message-meta time{color:#99999c;font-size:11px}
+.message-content{display:table;margin:5px 0 0;padding:0;border:0;border-radius:0;background:transparent;color:#dbdcdf;font-size:14px;line-height:1.6;max-width:min(850px,80vw)}
+.own-message .message-content{background:transparent;color:#dbdcdf}
+.message-image-link{background:#222327;border-radius:8px}
+.empty-state{align-items:flex-start;text-align:left;justify-content:flex-end;padding:0 20px 72px}
+.empty-state .empty-symbol{width:88px;height:88px;border-radius:50%;font-size:48px;background:#222327;color:#e8e8ed}
+.empty-state strong{font-size:30px;color:#efeff1;letter-spacing:-.6px}
+.empty-state>span:last-child{font-size:15px;color:#b5bac1}
+.guide-card{width:min(720px,100%);margin:22px auto 12px 6px;padding:0;border:0;border-radius:0;background:transparent;color:#dbdcdf;box-shadow:none}
+.guide-card h2{margin:0 0 10px;color:#f2f3f5;font-family:inherit;font-size:30px;font-weight:800;letter-spacing:-.7px}
+.guide-card .guide-lead{margin:0 0 18px;color:#b5bac1;font-size:15px;line-height:1.6}
+.guide-list{margin:0;padding:0;list-style:none;color:#c4c4c8}
+.guide-list li{margin:0;padding:7px 10px 7px 14px;border-left:3px solid #5865f2;border-radius:0 7px 7px 0;background:#202024;font-size:13px;line-height:1.6}
+.guide-list li+li{margin-top:5px}
+.guide-list strong{color:#8e98ff}
+.composer-wrap{padding:10px 12px 12px;border-top:1px solid #27272b;background:#1a1a1e}
+.composer{min-height:60px;align-items:center;gap:8px;padding:7px 9px;border:1px solid #29292d;border-radius:11px;background:#222327;box-shadow:none}
+.composer:focus-within{border-color:#424249;box-shadow:none}
+.attach-button{width:36px;height:38px;background:transparent;border-radius:7px;color:#b5bac1;font-size:23px}
+.attach-button:hover{background:#343438;color:#fff}
+.gif-button{font-size:12px;font-weight:800}
+.composer textarea{min-height:38px;font-size:14px;color:#dbdcdf;padding:10px 8px}
+.composer textarea::placeholder{color:#727278}
+.send-button{height:42px;padding:0 18px;border-radius:8px;background:#5865f2;font-size:13px}
+.composer-foot{display:none}
+.paste-hint{display:none}
+.member-sidebar{display:none!important}
+.modal{background:transparent;box-shadow:0 22px 70px rgba(0,0,0,.5)}
+.modal::backdrop{background:rgba(0,0,0,.72);backdrop-filter:blur(3px)}
+.modal-card{background:#222327;color:#efeff1;border-color:#38383e}
+.modal-card h2{color:#efeff1}
+.modal-card p{color:#b5bac1}
+.field-label{color:#dbdcdf}
+.text-field{background:#19191c;color:#efeff1;border-color:#3c3c42}
+.secondary-button{background:#2c2c30;color:#dbdcdf;border-color:#3c3c42}
+@media(max-width:1500px){
+ .app-shell{grid-template-columns:76px 340px minmax(0,1fr)}
+ .server-rail{width:76px}
+ .sidebar{min-width:0}
+ .side-intro{padding:16px 18px}
+ .sidebar-hero-art{height:110px;width:125px}
+ .hero-hash{width:86px;height:86px;font-size:56px}
+ .topbar{padding:0 14px}
+ .top-actions{gap:2px}
+ .channel-topic{max-width:280px}
+}
+@media(max-width:1050px){
+ .app-shell{grid-template-columns:64px 265px minmax(0,1fr)}
+ .server-rail{width:64px}
+ .side-intro{padding:14px}
+ .sidebar-hero-copy{font-size:12px}
+ .channel-topic{display:none}
+ .connection-state{display:none}
+ .header-tool{padding:0 7px}
+}
+@media(max-width:760px){
+ .app-shell{display:flex;flex-direction:column}
+ .server-rail{display:none}
+ .sidebar{display:none}
+ .chat-panel{height:100%;min-height:0}
+ .topbar{height:58px;min-height:58px;padding:0 12px}
+ .channel-hash{font-size:26px}
+ .current-room-name{font-size:14px}
+ .top-actions{gap:1px}
+ .header-tool{height:32px;padding:0 6px}
+ .room-icon{width:25px;height:25px}
+ .message-list{padding:12px}
+ .message-row{gap:9px;margin-bottom:8px}
+ .message-avatar{width:34px;height:34px}
+ .message-content{max-width:calc(100vw - 82px);font-size:13px}
+ .composer-wrap{padding:8px 8px max(9px,env(safe-area-inset-bottom))}
+ .composer{min-height:52px}
+ .send-button{height:38px;padding:0 12px}
+}
