@@ -1389,6 +1389,7 @@ async function refreshIdentity() {
 function setupEvents() {
   ui.nicknameForm.addEventListener('submit', (event) => { event.preventDefault(); setNickname(ui.nicknameInput.value); });
   ui.nicknameButton.addEventListener('click', showNicknameDialog);
+  $('#nickname-close')?.addEventListener('click', () => ui.nicknameDialog.close());
   ui.accountOpen.addEventListener('click', () => { ui.nicknameDialog.close(); showAccountDialog(); });
   ui.styleOpen.addEventListener('click', () => { ui.nicknameDialog.close(); social?.openStyleDialog(); });
   ui.signOut.addEventListener('click', async () => {
