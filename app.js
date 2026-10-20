@@ -36,7 +36,7 @@ const ui = {
   avatarHelp: $('#avatar-help'), avatarFile: $('#avatar-file'), avatarRemove: $('#avatar-remove'),
   kickDialog: $('#kick-dialog'), kickTarget: $('#kick-target'), styleOpen: $('#style-open-button'),
   roomIcon: $('#room-icon'), roomImageButton: $('#room-image-button'), roomImageRemove: $('#room-image-remove'),
-  roomImageFile: $('#room-image-file'), roomBanner: $('.room-banner'),
+  roomImageFile: $('#room-image-file'), roomBanner: $('.topbar'),
 };
 const GUEST_ID_KEY = 'roomchat:guest-id';
 const GUEST_TOKEN_KEY = 'roomchat:guest-token';
@@ -1389,6 +1389,9 @@ async function refreshIdentity() {
 function setupEvents() {
   ui.nicknameForm.addEventListener('submit', (event) => { event.preventDefault(); setNickname(ui.nicknameInput.value); });
   ui.nicknameButton.addEventListener('click', showNicknameDialog);
+  $('#sidebar-account-settings')?.addEventListener('click', () => ui.nicknameButton.click());
+  $('#sidebar-invite-button')?.addEventListener('click', openRoomDialog);
+  $('#sidebar-welcome-close')?.addEventListener('click', () => { const card = $('#sidebar-welcome-card'); if (card) card.hidden = true; });
   $('#nickname-close')?.addEventListener('click', () => ui.nicknameDialog.close());
   ui.accountOpen.addEventListener('click', () => { ui.nicknameDialog.close(); showAccountDialog(); });
   ui.styleOpen.addEventListener('click', () => { ui.nicknameDialog.close(); social?.openStyleDialog(); });
