@@ -14,6 +14,12 @@
 </head>
 <body>
   <main class="app-shell">
+    <nav class="server-rail" aria-label="빠른 이동">
+      <a class="server-home active" href="./" aria-label="RoomChat 홈">R</a>
+      <span class="server-divider"></span>
+      <button class="server-shortcut" type="button" title="전체 채팅방" aria-label="전체 채팅방">#</button>
+      <button class="server-shortcut server-add" id="rail-new-room" type="button" title="새 채팅방 만들기" aria-label="새 채팅방 만들기">＋</button>
+    </nav>
     <aside class="sidebar" aria-label="채팅방 목록">
       <a class="brand" href="./" aria-label="roomchat 홈">
         <span class="brand-mark" aria-hidden="true"><i></i><b></b></span>
@@ -103,6 +109,12 @@
         <div class="composer-foot"><span>Enter로 전송 · Shift + Enter로 줄바꿈</span><span id="char-count">0 / 2000</span></div>
       </footer>
     </section>
+    <aside class="member-sidebar" aria-label="이 방의 접속자">
+      <div class="member-sidebar-heading">이 방의 멤버 <span id="sidebar-member-count">0</span></div>
+      <div class="member-sidebar-status"><span class="live-dot"></span> 온라인 — 실시간</div>
+      <div id="sidebar-member-list" class="sidebar-member-list"><p class="sidebar-member-empty">접속자를 불러오는 중…</p></div>
+      <div class="member-sidebar-footer">같은 방에 있는 사람을 표시해요.</div>
+    </aside>
   </main>
 
   <dialog id="room-dialog" class="modal">
