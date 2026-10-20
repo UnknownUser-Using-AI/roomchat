@@ -1399,6 +1399,7 @@ function setupEvents() {
     showNicknameDialog();
   });
   $('#new-room-button').addEventListener('click', openRoomDialog);
+  $('#rail-new-room')?.addEventListener('click', openRoomDialog);
   $('#mobile-new-room-button').addEventListener('click', openRoomDialog);
   $('#cancel-room').addEventListener('click', () => ui.roomDialog.close());
   ui.roomImageButton.addEventListener('click', () => ui.roomImageFile.click());
