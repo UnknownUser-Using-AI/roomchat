@@ -429,3 +429,42 @@ dialog::backdrop{background:#0009}
  .messages-heading{padding:10px 14px}
  .message-list{padding:10px 12px}
 }
+
+
+/* Discord-like four-column chat layout */
+.app-shell{grid-template-columns:72px 240px minmax(0,1fr) 230px;max-width:none}
+.server-rail{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 0;background:#1e1f22;border-right:1px solid #17181a;min-width:0}
+.server-home,.server-shortcut{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border:0;border-radius:16px;background:#313338;color:#dbdee1;text-decoration:none;font-weight:800;font-size:19px;cursor:pointer;transition:border-radius .15s,background .15s}
+.server-home{background:#5865f2;color:white;border-radius:16px}
+.server-home:hover,.server-shortcut:hover{border-radius:12px;background:#5865f2;color:white}
+.server-divider{height:2px;width:32px;background:#3f4147;border-radius:2px;margin:2px 0}
+.server-shortcut{font-size:24px;color:#23a559;background:#2b2d31}
+.server-add{color:#23a559}
+.sidebar{padding:18px 10px 12px;gap:14px}
+.brand{font-size:18px;padding:8px 10px}
+.side-intro{padding:14px 10px}
+.side-intro p{font-family:inherit;font-size:15px;line-height:1.45;font-weight:600}
+.room-heading{padding:4px 10px}
+.room-list{overflow-y:auto}
+.member-sidebar{display:flex;flex-direction:column;min-width:0;background:#2b2d31;border-left:1px solid #232428;padding:22px 12px 14px;gap:12px;overflow:auto}
+.member-sidebar-heading{display:flex;justify-content:space-between;align-items:center;color:#f2f3f5;font-weight:700;font-size:13px;padding:0 6px}
+.member-sidebar-heading span{color:#949ba4;font-size:12px}
+.member-sidebar-status{display:flex;align-items:center;gap:7px;color:#949ba4;font-size:11px;padding:0 6px}
+.member-sidebar-status .live-dot{width:7px;height:7px;display:inline-block;border-radius:50%;background:#23a559}
+.sidebar-member-list{display:flex;flex-direction:column;gap:3px}
+.sidebar-member-row{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:6px;min-width:0;color:#dbdee1}
+.sidebar-member-row:hover{background:#35383f}
+.sidebar-member-row .message-avatar,.sidebar-member-row .avatar{width:30px;height:30px;min-width:30px;border-radius:50%;overflow:hidden}
+.sidebar-member-name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-member-empty{font-size:12px;line-height:1.5;color:#949ba4;padding:0 6px}
+.member-sidebar-footer{margin-top:auto;border-top:1px solid #3f4147;padding:12px 6px 0;color:#72767d;font-size:11px;line-height:1.5}
+.chat-panel{min-width:0}
+.room-banner{margin:12px 16px 8px;padding:16px 20px}
+.room-banner .banner-kicker{font-size:12px}
+.room-banner h1{font-size:22px}
+.room-banner p{font-size:13px}
+.messages-heading{padding:8px 20px 4px}
+.message-list{padding:10px 20px}
+.composer-wrap{padding:10px 20px 14px}
+@media(max-width:1100px){.app-shell{grid-template-columns:64px 210px minmax(0,1fr)}.member-sidebar{display:none}}
+@media(max-width:760px){.app-shell{grid-template-columns:1fr}.server-rail{display:none}.sidebar{display:none}.member-sidebar{display:none}.chat-panel{min-height:0}.topbar{padding:0 14px}.room-banner{margin:12px;padding:16px}.messages-heading{padding:10px 14px}.message-list{padding:10px 12px}.composer-wrap{padding:8px 12px 12px}}
