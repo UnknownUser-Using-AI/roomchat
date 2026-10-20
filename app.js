@@ -219,7 +219,28 @@ function sortedRooms() {
 function renderRoomLists() {
   ui.roomList.replaceChildren();
   ui.mobileRoomList.replaceChildren();
+  const railRooms = $('#rail-room-list');
+  railRooms?.replaceChildren();
   sortedRooms().forEach((room, index) => {
+    if (railRooms) {
+      const railButton = document.createElement('button');
+      railButton.type = 'button';
+      railButton.className = `rail-room-button${state.room?.id === room.id ? ' active' : ''}`;
+      railButton.title = room.name;
+      railButton.setAttribute('aria-label', `${room.name} 방으로 이동`);
+      if (room.image_path) {
+        const railImage = document.createElement('img');
+        railImage.src = roomImageUrl(room);
+        railImage.alt = '';
+        railImage.loading = 'lazy';
+        railImage.onerror = () => { railButton.textContent = room.is_featured ? '★' : '#'; };
+        railButton.append(railImage);
+      } else {
+        railButton.textContent = room.is_featured ? '★' : '#';
+      }
+      railButton.addEventListener('click', () => switchRoom(room));
+      railRooms.append(railButton);
+    }
     const row = document.createElement('div');
     row.className = 'room-row';
     const desktop = document.createElement('button');
@@ -229,7 +250,7 @@ function renderRoomLists() {
     const number = document.createElement('span');
     number.className = 'room-number';
     if (room.image_path) { number.classList.add('has-image'); paintAvatar(number, room.name, roomImageUrl(room)); }
-    else number.textContent = room.is_featured ? '★' : String(index + 1).padStart(2, '0');
+    else number.textContent = room.is_featured ? '★' : '#';
     const title = document.createElement('span');
     title.className = 'room-title';
     title.textContent = room.name;
