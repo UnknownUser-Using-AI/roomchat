@@ -930,3 +930,58 @@ html,body{width:100%;height:100%;min-height:0;overflow:hidden}
   .topbar{flex:0 0 auto}
   .composer-wrap{flex:0 0 auto}
 }
+
+
+/* Sidebar scrolling: keep the brand and account areas visible while the room list can scroll. */
+.sidebar{
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+}
+.sidebar> :first-child{flex:0 0 auto}
+.side-intro{
+  flex:0 1 auto;
+  min-height:0;
+  max-height:42dvh;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#45454d transparent;
+}
+.room-list{
+  flex:1 1 0;
+  min-height:64px;
+  max-height:none;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#45454d transparent;
+}
+.sidebar-bottom{
+  flex:0 0 auto;
+  margin-top:0;
+  position:relative;
+  z-index:2;
+}
+@media(max-height:720px){
+  .side-intro{max-height:34dvh;padding-top:12px;padding-bottom:12px;gap:8px}
+  .sidebar-hero-art{height:88px;width:105px;margin-top:0}
+  .sidebar-hero-title{font-size:16px}
+  .sidebar-hero-copy{font-size:12px}
+  .sidebar-invite-button{min-height:40px}
+  .sidebar{gap:8px}
+}
+@media(max-width:760px){
+  .sidebar{
+    height:100dvh;
+    max-height:100dvh;
+    overflow:hidden;
+  }
+  .side-intro{max-height:38dvh;flex:0 1 auto}
+  .room-list{flex:1 1 0;min-height:72px;overflow-y:auto}
+  .sidebar-bottom{padding-bottom:max(10px,env(safe-area-inset-bottom))}
+}
