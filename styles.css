@@ -520,3 +520,130 @@ dialog::backdrop{background:#0009}
  #nickname-dialog .nickname-modal-card{padding:28px 22px}
  .message-content{max-width:calc(100vw - 90px);font-size:13px}
 }
+
+
+/* RoomChat Nebula UI — implementation of the supplied dark navy/purple reference */
+:root{
+ color-scheme:dark;
+ --paper:#111522;--white:#171c2b;--ink:#eef2ff;--muted:#8996b5;--line:#293249;
+ --teal:#6655ff;--teal-dark:#5141e8;--teal-soft:#29294f;--lilac:#292c48;--coral:#ff6b8a;
+ --shadow:0 18px 48px rgba(3,7,18,.34);
+}
+html,body{background:#101421;color:#eef2ff}
+body{background:radial-gradient(ellipse at 55% 0%,#1b2340 0%,#121725 48%,#0e1320 100%);color:#eef2ff}
+.app-shell{grid-template-columns:76px 260px minmax(0,1fr) 270px;max-width:none;background:transparent;box-shadow:none;gap:0}
+.server-rail{background:#101522;border-right:1px solid #252d43}
+.server-home{background:linear-gradient(145deg,#7466ff,#4338ca);box-shadow:0 7px 22px #5546e844}
+.server-shortcut{background:#1d2538;color:#aab7d5}
+.server-shortcut:hover,.server-add:hover{background:#34315d;color:#fff}
+.server-divider{background:#30384d}
+.sidebar{background:rgba(23,29,45,.96);border-right:1px solid #2a3248;padding:22px 14px 16px}
+.brand{color:#f3f5ff;font-size:22px}
+.brand-mark i,.brand-mark b{border-color:#7668ff}
+.brand-mark i{background:#202742}
+.brand-mark b{background:#6555ff}
+.brand-period{color:#ff7298}
+.side-intro{margin:26px 0 22px;padding:17px 14px 18px;border:1px solid #2b3450;border-radius:15px;background:linear-gradient(140deg,#202941,#1b2133)}
+.eyebrow{color:#93a6d0}
+.side-intro p{font-family:inherit;font-size:17px;line-height:1.55;color:#e5eaff;font-weight:600}
+.room-heading{color:#a9b7d8}
+.icon-button{background:#20273a;border-color:#36405b;color:#dce4ff}
+.icon-button:hover{background:#34315d;border-color:#786aff;color:#fff}
+.room-list{gap:5px}
+.room-item{color:#c5cee5;border-radius:11px;padding:11px 10px}
+.room-item:hover{background:#252e45}
+.room-item.active{background:linear-gradient(100deg,#343b60,#2b304b);box-shadow:inset 3px 0 #7668ff}
+.room-number{background:#242c43;color:#9fadd0;border-radius:9px}
+.room-item.active .room-number{background:#6255f5;color:white}
+.room-title{color:#e5eaff}
+.room-arrow{color:#9ba9cd}
+.sidebar-bottom{border-top:1px solid #2b344b;padding-top:12px}
+.privacy-note{border:1px solid #303a53;border-radius:10px;color:#a8b6d6;background:#1a2132}
+.brand-caption{color:#8290b0}
+.chat-panel{background:rgba(17,22,35,.76);min-width:0}
+.topbar{height:74px;min-height:74px;padding:0 26px;background:rgba(19,25,40,.94);border-bottom:1px solid #2a334b}
+.current-room-name{color:#f5f6ff;font-size:18px}
+.room-context .eyebrow{font-size:10px;letter-spacing:1.7px}
+.top-actions{gap:9px}
+.connection-state{color:#7faeaa}
+.connection-state.online{color:#73d9ad}
+.admin-panel-button,.friends-button,.notification-button,.nickname-chip{height:40px;padding:0 13px;border:1px solid #35405a;border-radius:12px;background:#20273a;color:#e4eaff;font-size:11px}
+.admin-panel-button:hover,.friends-button:hover,.notification-button:hover,.nickname-chip:hover{background:#2b3350;border-color:#7167ff;color:#fff}
+.notification-button.enabled{background:#292950;border-color:#6459ee;color:#dcd8ff}
+.avatar-dot{background:#39335f;color:#d8d2ff}
+.mobile-room-strip{background:#151b2b;border-color:#2b344a}
+.room-banner{min-height:148px;margin:20px 24px 15px;padding:23px 25px;border:1px solid #2d3650;border-radius:17px;background:linear-gradient(115deg,rgba(31,40,63,.98),rgba(25,31,49,.98) 62%,rgba(35,34,66,.95));box-shadow:0 12px 35px rgba(4,8,20,.12)}
+.room-banner h1{font-family:inherit;font-size:25px;font-weight:750;letter-spacing:-.5px;color:#f5f6ff}
+.room-banner p{color:#a8b6d5;font-size:12px}
+.banner-kicker{color:#b8c7ef}
+.banner-star{color:#ff7298}
+.banner-orbit{border-color:rgba(125,112,255,.13)}
+.presence-card{border:1px solid #3a4563;border-radius:12px;background:rgba(19,25,42,.76);color:#eef2ff;backdrop-filter:blur(12px)}
+.presence-card strong{color:#f5f6ff}
+.presence-card span:not(.presence-icon){color:#9eafd1}
+.presence-icon{color:#8174ff}
+.messages-heading{padding:0 28px 11px;color:#b8c6e4}
+.muted-label{color:#8291b4}
+.message-list{padding:10px 28px 22px;background:transparent;scrollbar-color:#3d4968 transparent}
+.message-row{max-width:none;gap:13px;margin:0 auto 16px;padding:5px 7px;border-radius:10px}
+.message-row:hover{background:rgba(43,53,79,.48)}
+.message-avatar{width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#343b66,#292c48);color:#d8d5ff}
+.message-meta{gap:9px}
+.message-meta strong{color:#f3f5ff;font-size:13px}
+.message-meta time{color:#8998ba;font-size:10px}
+.message-content{display:table;max-width:min(760px,78vw);margin:7px 0 0;padding:12px 15px;border:1px solid #303956;border-left:3px solid #7865ff;border-radius:5px 13px 13px 13px;background:linear-gradient(115deg,#202943,#1c233a);color:#dce5ff;font-size:13px;line-height:1.75}
+.own-message .message-content{background:linear-gradient(115deg,#292a50,#232741);border-color:#3b3d70;border-left-color:#9c7bff;color:#eef0ff}
+.message-image-link{border-radius:12px;background:#20283d}
+.empty-state,.loading-state{color:#95a3c4}
+.empty-state strong{color:#dce5ff}
+.empty-symbol{background:#292c4c;color:#9b8cff}
+.spinner{border-color:#343c57;border-top-color:#8273ff}
+.composer-wrap{padding:11px 24px max(15px,env(safe-area-inset-bottom));border-top:1px solid #29324a;background:rgba(17,22,35,.97)}
+.paste-hint{color:#8291b3}
+.composer{gap:9px;min-height:56px;padding:8px 9px;border:1px solid #394461;border-radius:16px;background:linear-gradient(110deg,#1c2338,#20253b);box-shadow:0 8px 24px rgba(3,7,18,.16)}
+.composer:focus-within{border-color:#7568ff;box-shadow:0 0 0 3px rgba(111,96,255,.14)}
+.attach-button{background:#2a324b;color:#b9c6e6;border-radius:11px}
+.attach-button:hover{background:#39345f;color:#fff}
+.composer textarea{color:#eef2ff;font-size:13px}
+.composer textarea::placeholder{color:#8392b4}
+.send-button{height:38px;padding:0 15px;border-radius:11px;background:linear-gradient(145deg,#7164ff,#4e40e4);font-size:11px;box-shadow:0 5px 16px #5445ed33}
+.send-button:hover{background:linear-gradient(145deg,#8277ff,#5b4bf2)}
+.composer-foot{color:#8291b2}
+.attachment-preview{background:#1c2337;border-color:#36405b}
+.attachment-preview img{background:#252d45}
+.attachment-meta span{color:#96a5c6}
+.toast{background:#252849;border:1px solid #464c7d;color:#f5f5ff}
+.modal{box-shadow:0 26px 90px rgba(0,0,0,.48)}
+.modal::backdrop{background:rgba(4,7,17,.7)}
+.modal-card{background:#1b2235;border-color:#394461;color:#eef2ff}
+.modal-card h2{color:#f5f6ff}
+.modal-card p{color:#aab7d5}
+.field-label{color:#dce5ff}
+.text-field{background:#111827;border-color:#394461;color:#f5f6ff}
+.text-field::placeholder{color:#8391b0}
+.text-field:focus{border-color:#7568ff;box-shadow:0 0 0 3px #7568ff24}
+.primary-button{background:linear-gradient(145deg,#7164ff,#4e40e4)}
+.primary-button:hover{background:#5d50ef}
+.secondary-button{background:#252d44;border-color:#3b4663;color:#e4eaff}
+.member-sidebar{background:rgba(20,26,41,.97);border-left:1px solid #29324a;padding:24px 14px 16px}
+.member-sidebar-heading{color:#eaf0ff}
+.member-sidebar-heading span{color:#8c9bbb}
+.member-sidebar-status{color:#8d9cbd}
+.sidebar-member-row{color:#dce5ff;border-radius:9px;padding:9px 7px}
+.sidebar-member-row:hover{background:#252e45}
+.sidebar-member-name{color:#e9edff}
+.sidebar-member-empty{color:#8b9abb}
+.member-sidebar-footer{border-color:#2d3650;color:#7787aa}
+@media(max-width:1200px){.app-shell{grid-template-columns:64px 220px minmax(0,1fr)}.member-sidebar{display:none}}
+@media(max-width:760px){
+ .app-shell{grid-template-columns:1fr}
+ .server-rail{display:none}
+ .sidebar{background:#171d2d}
+ .member-sidebar{display:none}
+ .topbar{background:#131928;padding:0 14px}
+ .room-banner{margin:12px;padding:16px;background:linear-gradient(115deg,#202943,#1c2339)}
+ .messages-heading{padding:10px 14px}
+ .message-list{padding:10px 12px}
+ .composer-wrap{padding:8px 12px 12px;background:#111725}
+ .message-content{max-width:calc(100vw - 88px);font-size:12px}
+}
