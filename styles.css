@@ -1014,3 +1014,32 @@ html,body{width:100%;height:100%;min-height:0;overflow:hidden}
 @media(max-width:760px){
   .sidebar .side-intro{max-height:38dvh}
 }
+
+
+/* Official-style blue verification check beside the admin-only verified label. */
+.verified-box{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+.verified-box::after{
+  content:'✓';
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 15px;
+  width:15px;
+  height:15px;
+  box-sizing:border-box;
+  background:#0866ff;
+  color:#fff;
+  border-radius:2px;
+  font-family:Arial,sans-serif;
+  font-size:13px;
+  line-height:1;
+  font-weight:900;
+  text-shadow:0 0 0 #fff;
+  transform:rotate(8deg);
+  margin-left:2px;
+}
+.sidebar-user-panel .verified-box::after{width:14px;height:14px;flex-basis:14px;font-size:12px}
