@@ -573,7 +573,7 @@ function renderMembers() {
       if (verifiedAdmin) {
         const mark = document.createElement('span');
         mark.className = 'verified-box';
-        mark.textContent = '✓';
+        mark.textContent = '[인증됨]';
         sideRow.append(mark);
       }
       sidebarMembers.append(sideRow);
