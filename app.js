@@ -483,6 +483,10 @@ function renderMembers() {
   const members = state.members;
   ui.presence.textContent = String(members.length);
   ui.memberList.replaceChildren();
+  const sidebarMembers = $('#sidebar-member-list');
+  const sidebarMemberCount = $('#sidebar-member-count');
+  if (sidebarMemberCount) sidebarMemberCount.textContent = String(members.length);
+  if (sidebarMembers) sidebarMembers.replaceChildren();
   ui.membersNote.textContent = canManageRoom(state.room)
     ? '이 방의 관리자예요. 원하지 않는 참여자는 방에서 내보낼 수 있어요.'
     : '각 방을 만든 사람은 자기 방의 운영자로 참여자를 내보낼 수 있어요.';
@@ -491,6 +495,10 @@ function renderMembers() {
     empty.className = 'member-empty';
     empty.textContent = '아직 함께 있는 사람이 없어요.';
     ui.memberList.append(empty);
+    const sidebarEmpty = document.createElement('p');
+    sidebarEmpty.className = 'sidebar-member-empty';
+    sidebarEmpty.textContent = '아직 접속자가 없어요.';
+    sidebarMembers?.append(sidebarEmpty);
     return;
   }
   members.sort((a, b) => String(a.nickname || '').localeCompare(String(b.nickname || ''), 'ko'));
@@ -533,6 +541,22 @@ function renderMembers() {
       row.append(kick);
     }
     ui.memberList.append(row);
+    if (sidebarMembers) {
+      const sideRow = document.createElement('div');
+      sideRow.className = 'sidebar-member-row';
+      sideRow.append(makeAvatar(nickname, member.userId || null));
+      const sideName = document.createElement('span');
+      sideName.className = 'sidebar-member-name';
+      sideName.textContent = nickname;
+      sideRow.append(sideName);
+      if (verifiedAdmin) {
+        const mark = document.createElement('span');
+        mark.className = 'verified-box';
+        mark.textContent = '✓';
+        sideRow.append(mark);
+      }
+      sidebarMembers.append(sideRow);
+    }
   }
 }
 async function refreshMembers(roomId = state.room?.id) {
