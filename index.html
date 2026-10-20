@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#111827" />
+  <meta name="theme-color" content="#121214" />
   <meta name="description" content="게스트와 계정 이용자가 함께하는 실시간 채팅방. 방을 만들고, 대화를 나누고, 안전하게 관리해요." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-nebula-ui" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-discord-rebuild" />
   <title>roomchat — 슬랩배틀 라이벌 입양 피기</title>
 </head>
 <body>
@@ -23,40 +23,55 @@
     <aside class="sidebar" aria-label="채팅방 목록">
       <a class="brand" href="./" aria-label="roomchat 홈">
         <span class="brand-mark" aria-hidden="true"><i></i><b></b></span>
-        <span>roomchat<span class="brand-period">.</span></span>
+        <span class="brand-name">roomchat<span class="brand-period">.</span></span>
+        <span class="server-chevron" aria-hidden="true">⌄</span>
       </a>
-      <div class="side-intro">
-        <span class="eyebrow">OPEN ROOMS</span>
-        <p>이름만 정하고,<br />대화에 합류해요.</p>
+      <div class="side-intro" id="sidebar-welcome-card">
+        <button id="sidebar-welcome-close" class="welcome-close" type="button" aria-label="안내 카드 닫기" title="닫기">×</button>
+        <div class="sidebar-hero-art" aria-hidden="true"><span class="hero-hash">#</span><i>✦</i><b>✧</b></div>
+        <p class="sidebar-hero-title">대화가 시작됐어요.<br />새로운 방에 합류해 보세요!</p>
+        <span class="sidebar-hero-copy">관심 있는 주제를 골라 대화를 나누거나 직접 방을 만들 수 있어요.</span>
+        <button id="sidebar-invite-button" class="sidebar-invite-button" type="button">새 방 만들기</button>
       </div>
       <div class="room-heading">
-        <span>둘러볼 방</span>
+        <span>채팅 채널</span>
         <button id="new-room-button" class="icon-button small" type="button" aria-label="새 방 만들기" title="새 방 만들기">＋</button>
       </div>
       <div id="room-list" class="room-list" aria-live="polite"></div>
       <div class="sidebar-bottom">
-        <div class="privacy-note"><span class="live-dot"></span><span>모든 방은 공개 대화예요.</span></div>
-        <div class="brand-caption">가볍게 머물다 가는 곳</div>
+        <div class="sidebar-user-panel">
+          <button id="nickname-button" class="nickname-chip" type="button" title="닉네임 및 계정 관리">
+            <span class="avatar-dot">?</span><span id="nickname-label">닉네임</span><span class="verified-box" hidden aria-label="인증된 관리자">[인증됨]</span><span class="user-online-label">온라인</span>
+          </button>
+          <button id="sidebar-account-settings" class="sidebar-account-settings" type="button" aria-label="닉네임 및 계정 설정" title="계정 설정">⚙</button>
+        </div>
       </div>
     </aside>
 
     <section class="chat-panel" aria-label="채팅">
       <header class="topbar">
-        <div class="room-context">
-          <span class="eyebrow">NOW IN</span>
+        <div class="channel-heading">
+          <span id="room-icon" class="message-avatar room-icon" hidden></span>
+          <span class="channel-hash" aria-hidden="true">#</span>
           <span id="current-room-name" class="current-room-name">연결 중…</span>
+          <span class="channel-divider" aria-hidden="true"></span>
+          <span id="room-topic" class="channel-topic">가볍게 인사하고 시작해요</span>
         </div>
         <div class="top-actions">
-          <span id="connection-state" class="connection-state"><i></i> 연결 중</span>
-          <button id="admin-panel-button" class="admin-panel-button" type="button" aria-haspopup="dialog" title="관리자 운영 패널" hidden>운영</button>
-          <button id="friends-button" class="friends-button" type="button" aria-haspopup="dialog" title="친구와 DM" hidden>
-            <span aria-hidden="true">☺</span><span class="friends-label">친구</span><span id="friends-badge" class="friends-badge" hidden>0</span>
+          <span id="connection-state" class="connection-state"><i></i><span class="connection-label">연결 중</span></span>
+          <button id="room-image-button" class="header-tool" type="button" hidden title="방 이미지 추가 또는 변경">이미지</button>
+          <button id="room-image-remove" class="header-tool" type="button" hidden title="방 이미지 지우기">지우기</button>
+          <input id="room-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" hidden />
+          <button id="room-delete-button" class="header-tool danger" type="button" hidden>방 삭제</button>
+          <button id="presence-button" class="header-tool presence-tool" type="button" aria-haspopup="dialog" aria-label="함께 있는 사람 보기" title="접속자 보기">
+            <span aria-hidden="true">♟</span><span id="presence-count">—</span>
           </button>
-          <button id="notification-button" class="notification-button" type="button" aria-pressed="false">
-            <span class="bell-icon" aria-hidden="true">◌</span><span id="notification-label">알림 켜기</span>
+          <button id="admin-panel-button" class="header-tool admin-panel-button" type="button" aria-haspopup="dialog" title="관리자 운영 패널" hidden>운영</button>
+          <button id="friends-button" class="header-tool friends-button" type="button" aria-haspopup="dialog" title="친구와 DM" hidden>
+            <span aria-hidden="true">♧</span><span class="friends-label">친구</span><span id="friends-badge" class="friends-badge" hidden>0</span>
           </button>
-          <button id="nickname-button" class="nickname-chip" type="button" title="닉네임 및 계정 관리">
-            <span class="avatar-dot">?</span><span id="nickname-label">닉네임</span><span class="verified-box" hidden aria-label="인증된 관리자">[인증됨]</span><span aria-hidden="true">⌄</span>
+          <button id="notification-button" class="header-tool notification-button" type="button" aria-pressed="false" title="알림 켜기">
+            <span class="bell-icon" aria-hidden="true">♧</span><span id="notification-label">알림</span>
           </button>
         </div>
       </header>
@@ -67,23 +82,8 @@
         <button id="mobile-new-room-button" class="mobile-add-room" type="button" aria-label="새 방 만들기">＋</button>
       </div>
 
-      <section class="room-banner" aria-label="현재 방 정보">
-        <span id="room-icon" class="message-avatar room-icon" hidden></span>
-        <div class="banner-copy">
-          <div class="banner-kicker"><span class="banner-star">✳</span><span id="room-topic">가볍게 인사하고 시작해요</span></div>
-          <h1 id="banner-room-name">오늘의 대화</h1>
-          <p>떠오르는 이야기를 나눠보세요. 사진도 함께 보낼 수 있어요.</p>
-        </div>
-        <div class="banner-actions">
-          <button id="room-image-button" class="admin-room-delete" type="button" hidden>방 이미지 추가</button>
-          <button id="room-image-remove" class="admin-room-delete" type="button" hidden>이미지 지우기</button>
-          <input id="room-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" hidden />
-          <button id="room-delete-button" class="admin-room-delete" type="button" hidden>방 삭제</button>
-          <button id="presence-button" class="presence-card" type="button" aria-haspopup="dialog" aria-label="함께 있는 사람 보기">
-            <span class="presence-icon" aria-hidden="true">◉</span><span class="presence-stat"><strong id="presence-count">—</strong><span>함께 있는 사람</span></span><span class="presence-arrow" aria-hidden="true">↗</span>
-          </button>
-        </div>
-        <span class="banner-orbit orbit-one"></span><span class="banner-orbit orbit-two"></span>
+      <section class="room-banner" aria-hidden="true" hidden>
+        <h1 id="banner-room-name">오늘의 대화</h1>
       </section>
 
       <div class="messages-heading"><span>대화</span><span id="message-count-label" class="muted-label">최근 메시지</span></div>
