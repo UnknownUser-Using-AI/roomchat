@@ -1,5 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261018-giphy';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261020-social';
+import { ensureFont, fontStack } from './fonts.js?v=20261020-social';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   realtime: { params: { eventsPerSecond: 8 } },
@@ -32,6 +34,7 @@ const ui = {
   gifQuery: $('#gif-query'), gifStatus: $('#gif-status'), gifGrid: $('#gif-grid'),
   avatarSection: $('#avatar-section'), avatarDrop: $('#avatar-drop'), avatarPreview: $('#avatar-preview'),
   avatarHelp: $('#avatar-help'), avatarFile: $('#avatar-file'), avatarRemove: $('#avatar-remove'),
+  kickDialog: $('#kick-dialog'), kickTarget: $('#kick-target'), styleOpen: $('#style-open-button'),
 };
 const GUEST_ID_KEY = 'roomchat:guest-id';
 const GUEST_TOKEN_KEY = 'roomchat:guest-token';
@@ -67,7 +70,9 @@ const state = {
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
+  profiles: new Map(),
 };
+let social = null;
 
 const ADMIN_INVITE_STORAGE_KEY = 'roomchat:admin-invite';
 function restoreAdminInvite() {
@@ -101,11 +106,8 @@ function showToast(message) {
 }
 function errorText(error, fallback = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.') {
   const text = String(error?.message || '');
-  const safeMessages = [
-    '크리스탈 시청자', '인증됨', '닉네임', '방 이름', '운영자', '게스트', '이미지',
-    '참여를 제한', '로그인이 필요', '관리자만', '방장은', '기본 방은', '비밀번호', '초대코드', '프로필 사진을',
-  ];
-  return safeMessages.some((piece) => text.includes(piece)) ? text : fallback;
+  // 서버가 직접 만든 안내 문구는 한국어라서 그대로 보여주고, 영어 시스템 오류는 숨깁니다.
+  return /[가-힣]/u.test(text) ? text : fallback;
 }
 function setConnection(connected, label = connected ? '실시간 연결됨' : '연결 중') {
   ui.connection.classList.toggle('online', connected);
@@ -134,7 +136,11 @@ function makeAvatar(name, userId = null) {
   const avatar = document.createElement('span');
   avatar.className = 'message-avatar';
   avatar.style.setProperty('--avatar-hue', String(hue));
-  if (userId) avatar.dataset.userId = userId;
+  if (userId) {
+    avatar.dataset.userId = userId;
+    avatar.classList.add('clickable');
+    avatar.addEventListener('click', (event) => { event.stopPropagation(); social?.openProfile(userId); });
+  }
   avatar.dataset.name = name;
   paintAvatar(avatar, name, userId ? state.avatars.get(userId) || '' : '');
   return avatar;
@@ -150,15 +156,17 @@ function applyAvatars() {
   paintAvatar(ui.avatarPreview, state.nickname || '?', mine);
   ui.avatarRemove.hidden = !mine;
 }
+// 프로필(사진·글꼴·색·태그)은 social.js가 한 번에 불러와 캐시합니다.
 async function loadAvatars(userIds) {
-  const missing = [...new Set((userIds || []).filter((id) => id && !state.avatars.has(id)))];
-  if (!missing.length) return;
-  // 마이그레이션 전이거나 조회에 실패해도 채팅은 계속되도록 오류는 무시합니다.
-  const { data, error } = await supabase.from('roomchat_profiles').select('id,avatar_path').in('id', missing.slice(0, 100));
-  if (error) { missing.forEach((id) => state.avatars.set(id, '')); return; }
-  const found = new Map((data || []).map((row) => [row.id, avatarPublicUrl(row.avatar_path)]));
-  missing.forEach((id) => state.avatars.set(id, found.get(id) || ''));
-  applyAvatars();
+  await social?.loadProfiles(userIds);
+}
+function isOwnMessage(message) {
+  return Boolean((state.user && message.user_id === state.user.id) || (!state.user && message.guest_session_id === guestSessionId));
+}
+function getMentionNames() {
+  const names = new Set(state.members.map((member) => member.nickname).filter(Boolean));
+  state.messages.forEach((message) => { if (message.nickname) names.add(displayNickname(message.nickname, Boolean(message.is_verified))); });
+  return [...names];
 }
 function addVerifiedMark(parent) {
   const mark = document.createElement('span');
@@ -248,10 +256,11 @@ function renderMessage(message) {
   const key = String(message.id);
   if (ui.messages.querySelector(`[data-message-id="${CSS.escape(key)}"]`)) return;
   ui.messages.querySelector('.empty-state, .loading-state')?.remove();
-  const isOwn = (state.user && message.user_id === state.user.id) || (!state.user && message.guest_session_id === guestSessionId);
+  const isOwn = isOwnMessage(message);
   const nickname = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
+  const mentioned = !isOwn && mentionsName(message.content, state.nickname);
   const row = document.createElement('article');
-  row.className = `message-row${isOwn ? ' own-message' : ''}${message.is_verified ? ' verified-message' : ''}`;
+  row.className = `message-row${isOwn ? ' own-message' : ''}${message.is_verified ? ' verified-message' : ''}${mentioned ? ' mentioned' : ''}`;
   row.dataset.messageId = key;
   row.append(makeAvatar(nickname, message.user_id || null));
   const body = document.createElement('div');
@@ -259,10 +268,20 @@ function renderMessage(message) {
   const meta = document.createElement('div');
   meta.className = 'message-meta';
   const name = document.createElement('strong');
-  name.className = message.is_verified ? 'admin-name' : '';
+  name.className = `styled-name${message.is_verified ? ' admin-name' : ''}${message.user_id ? ' clickable' : ''}`;
   name.textContent = nickname;
+  if (message.user_id) {
+    name.dataset.styleUser = message.user_id;
+    name.addEventListener('click', () => social?.openProfile(message.user_id));
+  }
   meta.append(name);
   if (message.is_verified) addVerifiedMark(meta);
+  if (message.user_id) {
+    const slot = document.createElement('span');
+    slot.className = 'tag-slot';
+    slot.dataset.userId = message.user_id;
+    meta.append(slot);
+  }
   const time = document.createElement('time');
   time.dateTime = message.created_at;
   time.textContent = formatTime(message.created_at);
@@ -286,7 +305,8 @@ function renderMessage(message) {
   } else if (message.content) {
     const text = document.createElement('p');
     text.className = 'message-content';
-    text.textContent = message.content;
+    if (message.user_id) { text.dataset.styleUser = message.user_id; text.dataset.styleKind = 'text'; }
+    text.append(renderMentions(message.content, getMentionNames(), state.nickname));
     body.append(text);
   }
   if (message.image_path) {
@@ -306,7 +326,7 @@ function renderMessage(message) {
     body.append(imageLink);
   }
   row.append(body);
-  if (state.isAdmin) {
+  if (state.isAdmin || isOwn) {
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'admin-action message-delete';
@@ -316,6 +336,7 @@ function renderMessage(message) {
     row.append(remove);
   }
   ui.messages.append(row);
+  if (message.user_id) social?.applyProfileStyles();
 }
 function buildGuideCard() {
   const card = document.createElement('section');
@@ -406,10 +427,20 @@ function renderMembers() {
     row.className = 'member-row';
     row.append(makeAvatar(nickname, member.userId || null));
     const label = document.createElement('span');
-    label.className = `member-name${verifiedAdmin ? ' admin-name' : ''}`;
+    label.className = `member-name styled-name${verifiedAdmin ? ' admin-name' : ''}${member.userId ? ' clickable' : ''}`;
     label.textContent = nickname;
+    if (member.userId) {
+      label.dataset.styleUser = member.userId;
+      label.addEventListener('click', () => social?.openProfile(member.userId));
+    }
     row.append(label);
     if (verifiedAdmin) addVerifiedMark(row);
+    if (member.userId) {
+      const slot = document.createElement('span');
+      slot.className = 'tag-slot';
+      slot.dataset.userId = member.userId;
+      row.append(slot);
+    }
     if (canManageRoom(state.room)) {
       if (state.isAdmin && !verifiedAdmin && (member.userId || member.guestSessionId)) {
         const clean = document.createElement('button');
@@ -484,7 +515,7 @@ async function subscribeCurrentRoom(request) {
       if (payload.eventType === 'DELETE') removeMessage(payload.old?.id);
       else if (payload.new) {
         addMessage(payload.new);
-        if (payload.new.nickname !== state.nickname && state.notifications) notifyIncoming(payload.new);
+        if (payload.eventType === 'INSERT' && !isOwnMessage(payload.new) && state.notifications) notifyIncoming(payload.new);
       }
     })
     .subscribe(async (status) => {
@@ -615,6 +646,7 @@ function updateIdentityUI() {
   ui.signOut.hidden = !state.user;
   ui.adminPanelButton.hidden = !state.isAdmin;
   ui.avatarSection.hidden = !state.user;
+  ui.styleOpen.hidden = !state.user;
   if (state.user) loadAvatars([state.user.id]);
   applyAvatars();
   if (!state.isAdmin && ui.adminPanelDialog.open) ui.adminPanelDialog.close();
@@ -631,6 +663,7 @@ async function applySession(session, nicknameHint = '') {
     state.nickname = '';
     state.isVerified = false;
     state.isAdmin = false;
+    social?.stop();
     updateIdentityUI();
     return;
   }
@@ -646,6 +679,7 @@ async function applySession(session, nicknameHint = '') {
   const { data: admin } = await supabase.rpc('roomchat_is_admin');
   state.isAdmin = admin === true;
   updateIdentityUI();
+  social?.start();
 }
 async function callAuth(action, nickname, password, adminClaimCode = '') {
   const response = await fetch(`${SUPABASE_URL.replace(/\/$/u, '')}/functions/v1/roomchat-auth`, {
@@ -702,6 +736,7 @@ function showNicknameDialog() {
     ? '계정 닉네임은 저장되어 다음에도 사용할 수 있어요. 관리자도 이름을 바꿀 수 있고 [인증됨] 표시는 유지돼요.'
     : '게스트 닉네임은 이 탭에서만 사용돼요. 계정을 만들면 닉네임이 저장되고 언제든 바꿀 수 있어요. 프로필 사진도 계정에서 지정할 수 있어요.';
   ui.avatarSection.hidden = !state.user;
+  ui.styleOpen.hidden = !state.user;
   applyAvatars();
   ui.nicknameSubmit.innerHTML = `${state.user ? '닉네임 저장' : '게스트로 입장'} <span aria-hidden="true">↗</span>`;
   ui.nicknameInput.value = state.nickname;
@@ -812,16 +847,27 @@ function playMessageSound() {
     });
   } catch { /* Sound is optional. */ }
 }
-async function notifyIncoming(message) {
-  playMessageSound();
-  const title = `${message.nickname} · ${state.room?.name || 'roomchat'}`;
-  const body = GIF_URL_PATTERN.test(message.content || '') ? 'GIF를 보냈어요.' : (message.content || '사진을 공유했어요.');
+async function showSystemNotification(title, body, tag) {
   try {
     const registration = await navigator.serviceWorker?.ready;
     if (registration?.showNotification) {
-      await registration.showNotification(title, { body, icon: './icon.svg', badge: './icon.svg', tag: `roomchat-${message.id}`, data: { url: './' }, vibrate: [120, 60, 120] });
-    } else new Notification(title, { body, icon: './icon.svg', tag: `roomchat-${message.id}` });
+      await registration.showNotification(title, { body, icon: './icon.svg', badge: './icon.svg', tag, data: { url: './' }, vibrate: [120, 60, 120] });
+    } else new Notification(title, { body, icon: './icon.svg', tag });
   } catch { /* Notifications are an optional browser capability. */ }
+}
+// 알림 켜기를 누른 사람에게만 소리와 알림을 냅니다.
+function notifyUser(title, body, tag) {
+  if (!state.notifications) return;
+  playMessageSound();
+  showSystemNotification(title, body, tag);
+}
+async function notifyIncoming(message) {
+  const mentioned = mentionsName(message.content, state.nickname);
+  const author = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
+  const title = mentioned ? `${author}님이 회원님을 언급했어요 · ${state.room?.name || 'roomchat'}` : `${author} · ${state.room?.name || 'roomchat'}`;
+  const body = GIF_URL_PATTERN.test(message.content || '') ? 'GIF를 보냈어요.' : (message.content || '사진을 공유했어요.');
+  playMessageSound();
+  await showSystemNotification(title, body, `roomchat-${message.id}`);
 }
 function registerServiceWorker() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
@@ -857,13 +903,25 @@ async function removeImages(paths) {
   }
 }
 async function deleteMessage(message) {
-  if (!state.isAdmin || !window.confirm('이 메시지를 삭제할까요?')) return;
+  const own = isOwnMessage(message);
+  if ((!state.isAdmin && !own) || !window.confirm(own && !state.isAdmin ? '내가 보낸 메시지를 삭제할까요?' : '이 메시지를 삭제할까요?')) return;
   try {
-    if (message.image_path) await removeImages([message.image_path]);
-    const { error } = await supabase.rpc('roomchat_admin_delete_message', { p_message_id: message.id });
-    if (error) throw error;
+    if (state.isAdmin) {
+      if (message.image_path) await removeImages([message.image_path]);
+      const { error } = await supabase.rpc('roomchat_admin_delete_message', { p_message_id: message.id });
+      if (error) throw error;
+    } else {
+      // 내 메시지의 사진은 계정 사용자만 지울 수 있어서, 실패해도 메시지 삭제는 계속합니다.
+      if (message.image_path) await removeImages([message.image_path]).catch(() => {});
+      const { error } = await supabase.rpc('roomchat_delete_my_message', {
+        p_message_id: message.id,
+        p_guest_session_id: state.user ? null : guestSessionId,
+        p_guest_token: state.user ? null : guestToken,
+      });
+      if (error) throw error;
+    }
     removeMessage(message.id);
-    renderAdminPanel();
+    if (state.isAdmin) renderAdminPanel();
     showToast('메시지를 삭제했어요.');
   } catch (error) { showToast(errorText(error, '메시지를 삭제하지 못했어요.')); }
 }
@@ -888,17 +946,38 @@ async function deleteRoomRecord(room) {
   } catch (error) { showToast(errorText(error, '방을 삭제하지 못했어요.')); }
 }
 async function deleteRoom() { return deleteRoomRecord(state.room); }
+function chooseKickMinutes(name) {
+  return new Promise((resolve) => {
+    ui.kickTarget.textContent = name || '이 참여자';
+    let chosen = null;
+    const onClick = (event) => {
+      const button = event.target.closest('[data-kick-minutes]');
+      if (button) { chosen = Number(button.dataset.kickMinutes); ui.kickDialog.close(); return; }
+      if (event.target.closest('[data-kick-cancel]') || event.target === ui.kickDialog) ui.kickDialog.close();
+    };
+    ui.kickDialog.addEventListener('click', onClick);
+    ui.kickDialog.addEventListener('close', () => { ui.kickDialog.removeEventListener('click', onClick); resolve(chosen); }, { once: true });
+    ui.kickDialog.showModal();
+  });
+}
+const KICK_LABELS = { 1: '1분', 5: '5분', 1440: '하루' };
 async function kickMember(member) {
   if (!canManageRoom(state.room)) return showToast('이 방의 운영자만 참여자를 내보낼 수 있어요.');
-  if (!window.confirm(`${member.nickname || '이 참여자'}를 이 방에서 내보낼까요?`)) return;
-  const { error } = await supabase.rpc('roomchat_kick_member', {
+  const minutes = await chooseKickMinutes(member.nickname);
+  if (!minutes) return;
+  const args = {
     p_room_id: state.room.id,
     p_user_id: member.userId || null,
     p_guest_session_id: member.userId ? null : member.guestSessionId,
     p_owner_token: roomOwnerToken(state.room.id),
-  });
+  };
+  let { error } = await supabase.rpc('roomchat_kick_member', { ...args, p_minutes: minutes });
+  // 시간 선택 마이그레이션 전에는 예전 방식(영구 추방)으로 호출되므로, 그 경우는 시도하지 않고 안내만 합니다.
+  if (error && (error.code === 'PGRST202' || /p_minutes|schema cache/u.test(String(error.message)))) {
+    return showToast('내보내기 시간 설정을 쓰려면 DB 업데이트(social_migration.sql)가 먼저 필요해요.');
+  }
   if (error) return showToast(errorText(error, '참여자를 내보내지 못했어요.'));
-  showToast(`${member.nickname || '참여자'}가 이 방에서 내보내졌어요.`);
+  showToast(`${member.nickname || '참여자'}님을 ${KICK_LABELS[minutes]} 동안 내보냈어요.`);
   await refreshMembers();
 }
 async function moderateNickname(member) {
@@ -984,7 +1063,7 @@ async function sendGif(url) {
   } catch (error) { showToast(errorText(error, 'GIF를 보내지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요.')); }
 }
 
-async function makeAvatarBlob(file) {
+async function makeAvatarBlob(file, size = AVATAR_SIZE, maxBytes = 900 * 1024) {
   let bitmap = null;
   let objectUrl = '';
   let source;
@@ -1006,15 +1085,15 @@ async function makeAvatarBlob(file) {
     if (!width || !height) throw new Error('이미지를 읽지 못했어요.');
     const side = Math.min(width, height);
     const canvas = document.createElement('canvas');
-    canvas.width = AVATAR_SIZE;
-    canvas.height = AVATAR_SIZE;
-    canvas.getContext('2d').drawImage(source, (width - side) / 2, (height - side) / 2, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+    canvas.width = size;
+    canvas.height = size;
+    canvas.getContext('2d').drawImage(source, (width - side) / 2, (height - side) / 2, side, side, 0, 0, size, size);
     for (const [type, quality] of [['image/webp', 0.86], ['image/jpeg', 0.86]]) {
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, type, quality));
-      if (blob && blob.type === type && blob.size <= 900 * 1024) return blob;
+      if (blob && blob.type === type && blob.size <= maxBytes) return blob;
     }
     const png = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    if (png && png.size <= 900 * 1024) return png;
+    if (png && png.size <= maxBytes) return png;
     throw new Error('이미지를 줄이지 못했어요.');
   } finally {
     bitmap?.close?.();
@@ -1210,6 +1289,7 @@ function setupEvents() {
   ui.nicknameForm.addEventListener('submit', (event) => { event.preventDefault(); setNickname(ui.nicknameInput.value); });
   ui.nicknameButton.addEventListener('click', showNicknameDialog);
   ui.accountOpen.addEventListener('click', () => { ui.nicknameDialog.close(); showAccountDialog(); });
+  ui.styleOpen.addEventListener('click', () => { ui.nicknameDialog.close(); social?.openStyleDialog(); });
   ui.signOut.addEventListener('click', async () => {
     await supabase.auth.signOut();
     await applySession(null);
@@ -1362,4 +1442,8 @@ async function boot() {
   state.identityTimer = window.setInterval(refreshIdentity, 45000);
 }
 
+social = initSocial({
+  supabase, state, showToast, errorText, avatarPublicUrl, paintAvatar, makeAvatar, applyAvatars,
+  makeAvatarBlob, notifyUser, getMentionNames,
+});
 boot();
