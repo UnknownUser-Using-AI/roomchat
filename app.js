@@ -35,6 +35,8 @@ const ui = {
   avatarSection: $('#avatar-section'), avatarDrop: $('#avatar-drop'), avatarPreview: $('#avatar-preview'),
   avatarHelp: $('#avatar-help'), avatarFile: $('#avatar-file'), avatarRemove: $('#avatar-remove'),
   kickDialog: $('#kick-dialog'), kickTarget: $('#kick-target'), styleOpen: $('#style-open-button'),
+  roomIcon: $('#room-icon'), roomImageButton: $('#room-image-button'), roomImageRemove: $('#room-image-remove'),
+  roomImageFile: $('#room-image-file'), roomBanner: $('.room-banner'),
 };
 const GUEST_ID_KEY = 'roomchat:guest-id';
 const GUEST_TOKEN_KEY = 'roomchat:guest-token';
@@ -214,7 +216,8 @@ function renderRoomLists() {
     desktop.setAttribute('aria-current', state.room?.id === room.id ? 'page' : 'false');
     const number = document.createElement('span');
     number.className = 'room-number';
-    number.textContent = room.is_featured ? '★' : String(index + 1).padStart(2, '0');
+    if (room.image_path) { number.classList.add('has-image'); paintAvatar(number, room.name, roomImageUrl(room)); }
+    else number.textContent = room.is_featured ? '★' : String(index + 1).padStart(2, '0');
     const title = document.createElement('span');
     title.className = 'room-title';
     title.textContent = room.name;
@@ -229,12 +232,68 @@ function renderRoomLists() {
     const mobile = document.createElement('button');
     mobile.type = 'button';
     mobile.className = `mobile-room-chip${state.room?.id === room.id ? ' active' : ''}${room.is_featured ? ' featured' : ''}`;
-    mobile.textContent = `${room.is_featured ? '★ ' : ''}${room.name}`;
+    if (room.image_path) {
+      const icon = document.createElement('span');
+      icon.className = 'chip-icon';
+      paintAvatar(icon, room.name, roomImageUrl(room));
+      mobile.append(icon, document.createTextNode(`${room.is_featured ? '★ ' : ''}${room.name}`));
+    } else mobile.textContent = `${room.is_featured ? '★ ' : ''}${room.name}`;
     mobile.addEventListener('click', () => switchRoom(room));
     ui.mobileRoomList.append(mobile);
   });
 }
+function roomImageUrl(room) {
+  return room?.image_path ? supabase.storage.from('room-icons').getPublicUrl(room.image_path).data.publicUrl : '';
+}
+function renderRoomImageControls(room) {
+  const url = roomImageUrl(room);
+  ui.roomIcon.hidden = !url;
+  if (url) paintAvatar(ui.roomIcon, room.name, url);
+  const canEdit = canManageRoom(room);
+  ui.roomImageButton.hidden = !canEdit;
+  ui.roomImageRemove.hidden = !(canEdit && room.image_path);
+  ui.roomImageButton.textContent = room.image_path ? '방 이미지 바꾸기' : '방 이미지 추가';
+}
+async function setRoomImage(file) {
+  const room = state.room;
+  if (!file || !room || !canManageRoom(room)) return;
+  const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+  if (!supportedTypes.includes(file.type)) return showToast('JPEG, PNG, WebP, GIF, AVIF 이미지만 쓸 수 있어요.');
+  if (file.size > 12 * 1024 * 1024) return showToast('방 이미지는 12MB 이하로 선택해 주세요.');
+  ui.roomImageButton.disabled = true;
+  let path = null;
+  try {
+    const blob = await makeAvatarBlob(file, 256, 700 * 1024);
+    const extension = ({ 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' })[blob.type];
+    path = `${room.id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from('room-icons').upload(path, blob, { contentType: blob.type, cacheControl: '3600', upsert: false });
+    if (uploadError) throw uploadError;
+    const { error } = await supabase.rpc('roomchat_set_room_image', { p_room_id: room.id, p_image_path: path, p_owner_token: roomOwnerToken(room.id) });
+    if (error) throw error;
+    room.image_path = path;
+    renderRoomImageControls(room);
+    renderRoomLists();
+    showToast('방 이미지를 바꿨어요.');
+  } catch (error) {
+    if (path) await supabase.storage.from('room-icons').remove([path]).catch(() => {});
+    showToast(errorText(error, '방 이미지를 저장하지 못했어요. DB 업데이트(room_image_migration.sql)가 적용됐는지 확인해 주세요.'));
+  } finally {
+    ui.roomImageButton.disabled = false;
+    ui.roomImageFile.value = '';
+  }
+}
+async function removeRoomImage() {
+  const room = state.room;
+  if (!room || !canManageRoom(room) || !room.image_path) return;
+  const { error } = await supabase.rpc('roomchat_set_room_image', { p_room_id: room.id, p_image_path: null, p_owner_token: roomOwnerToken(room.id) });
+  if (error) return showToast(errorText(error, '방 이미지를 지우지 못했어요.'));
+  room.image_path = null;
+  renderRoomImageControls(room);
+  renderRoomLists();
+  showToast('방 이미지를 지웠어요.');
+}
 function updateRoomHeading(room) {
+  renderRoomImageControls(room);
   ui.roomName.textContent = room.name;
   ui.bannerName.textContent = room.name;
   ui.roomTopic.textContent = room.is_featured
@@ -394,8 +453,11 @@ function addMessage(message) {
 }
 function normalizeRpcRow(data) { return Array.isArray(data) ? data[0] : data; }
 async function loadRooms() {
-  const { data, error } = await supabase.from('rooms')
-    .select('id,name,created_at,created_by,is_featured').order('is_featured', { ascending: false }).order('created_at', { ascending: true }).limit(100);
+  const fetchRooms = (columns) => supabase.from('rooms').select(columns)
+    .order('is_featured', { ascending: false }).order('created_at', { ascending: true }).limit(100);
+  let { data, error } = await fetchRooms('id,name,created_at,created_by,is_featured,image_path');
+  // 방 이미지 마이그레이션 전에도 방 목록은 보이도록 예전 열만으로 다시 시도합니다.
+  if (error) ({ data, error } = await fetchRooms('id,name,created_at,created_by,is_featured'));
   if (error) throw error;
   state.rooms = data || [];
   renderRoomLists();
@@ -1300,6 +1362,15 @@ function setupEvents() {
   $('#new-room-button').addEventListener('click', openRoomDialog);
   $('#mobile-new-room-button').addEventListener('click', openRoomDialog);
   $('#cancel-room').addEventListener('click', () => ui.roomDialog.close());
+  ui.roomImageButton.addEventListener('click', () => ui.roomImageFile.click());
+  ui.roomImageRemove.addEventListener('click', removeRoomImage);
+  ui.roomImageFile.addEventListener('change', (event) => setRoomImage(event.target.files?.[0]));
+  ui.roomBanner.addEventListener('dragover', (event) => { if (canManageRoom(state.room)) event.preventDefault(); });
+  ui.roomBanner.addEventListener('drop', (event) => {
+    if (!canManageRoom(state.room)) return;
+    event.preventDefault();
+    setRoomImage([...(event.dataTransfer?.files || [])].find((file) => file.type.startsWith('image/')));
+  });
   ui.roomForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const value = ui.roomInput.value.trim();
@@ -1420,6 +1491,13 @@ async function boot() {
     state.roomsChannel = supabase.channel('public:rooms', { config: { broadcast: { self: false } } })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rooms' }, ({ new: room }) => {
         if (!state.rooms.some((item) => item.id === room.id)) { state.rooms.push(room); renderRoomLists(); }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, ({ new: room }) => {
+        const existing = state.rooms.find((item) => item.id === room.id);
+        if (!existing) return;
+        Object.assign(existing, room);
+        renderRoomLists();
+        if (state.room?.id === room.id) renderRoomImageControls(state.room);
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'rooms' }, ({ old: room }) => {
         const deletedId = room?.id;

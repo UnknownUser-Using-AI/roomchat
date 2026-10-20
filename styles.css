@@ -352,3 +352,14 @@ html, body { min-height: 0; }
 .tag-row .user-tag img{width:26px;height:26px}
 .tag-drop{width:84px;height:84px}
 @media(max-width:640px){.user-tag{max-width:130px;font-size:12px}.user-tag img{width:20px;height:20px}}
+
+/* Room images */
+.room-banner .room-icon{position:relative;z-index:1;width:84px;height:84px;margin-right:18px;border-radius:20px;font-size:26px;box-shadow:0 6px 18px rgba(36,55,50,.12);flex:none}
+.room-banner .room-icon[hidden]{display:none}
+.room-banner .banner-copy{flex:1;min-width:0}
+.room-number.has-image{background-size:cover;background-position:center;overflow:hidden}
+.mobile-room-chip{display:inline-flex;align-items:center;gap:6px}
+.mobile-room-chip .chip-icon{width:18px;height:18px;border-radius:6px;flex:none;background-size:cover;background-position:center;overflow:hidden}
+@media(max-width:850px){.room-banner .room-icon{width:68px;height:68px;margin-right:14px;border-radius:16px}}
+@media(max-width:640px){.room-banner .room-icon{width:52px;height:52px;margin-right:11px;border-radius:13px}}
+.room-number.has-image img,.chip-icon img,.room-icon img{width:100%;height:100%;object-fit:cover;display:block}

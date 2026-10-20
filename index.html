@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-tags" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-roomimg" />
   <title>roomchat — 슬랩배틀 라이벌 입양 피기</title>
 </head>
 <body>
@@ -62,12 +62,16 @@
       </div>
 
       <section class="room-banner" aria-label="현재 방 정보">
+        <span id="room-icon" class="message-avatar room-icon" hidden></span>
         <div class="banner-copy">
           <div class="banner-kicker"><span class="banner-star">✳</span><span id="room-topic">가볍게 인사하고 시작해요</span></div>
           <h1 id="banner-room-name">오늘의 대화</h1>
           <p>떠오르는 이야기를 나눠보세요. 사진도 함께 보낼 수 있어요.</p>
         </div>
         <div class="banner-actions">
+          <button id="room-image-button" class="admin-room-delete" type="button" hidden>방 이미지 추가</button>
+          <button id="room-image-remove" class="admin-room-delete" type="button" hidden>이미지 지우기</button>
+          <input id="room-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" hidden />
           <button id="room-delete-button" class="admin-room-delete" type="button" hidden>방 삭제</button>
           <button id="presence-button" class="presence-card" type="button" aria-haspopup="dialog" aria-label="함께 있는 사람 보기">
             <span class="presence-icon" aria-hidden="true">◉</span><span class="presence-stat"><strong id="presence-count">—</strong><span>함께 있는 사람</span></span><span class="presence-arrow" aria-hidden="true">↗</span>
@@ -319,6 +323,6 @@
     </section>
   </dialog>
 
-  <script type="module" src="./app.js?v=20261020-social"></script>
+  <script type="module" src="./app.js?v=20261020-roomimg"></script>
 </body>
 </html>
