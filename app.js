@@ -199,6 +199,18 @@ function canManageRoom(room) {
   return Boolean(state.isAdmin || (state.user && room?.created_by === state.user.id) || roomOwnerToken(room?.id));
 }
 function isGuideRoom(room) { return Boolean(room?.is_featured && room.name === GUIDE_ROOM_NAME); }
+function updateComposerAvailability() {
+  const guide = isGuideRoom(state.room);
+  ui.messageInput.disabled = guide;
+  ui.messageInput.placeholder = guide ? '설명 방에서는 채팅할 수 없어요.' : '이 방에 한마디 남겨보세요…';
+  ui.send.disabled = guide || ui.send.classList.contains('sending');
+  ui.imageFile.disabled = guide;
+  ui.gifButton.disabled = guide;
+  const imageButton = ui.messageForm.querySelector('label[for="image-file"]');
+  if (imageButton) imageButton.hidden = guide;
+  const footnote = ui.messageForm.parentElement.querySelector('.composer-foot span');
+  if (footnote) footnote.textContent = guide ? '이 방은 안내 전용이에요.' : 'Enter로 전송 · Shift + Enter로 줄바꿈';
+}
 function sortedRooms() {
   return [...state.rooms].sort((a, b) => Number(isGuideRoom(b)) - Number(isGuideRoom(a))
     || Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))
@@ -294,6 +306,7 @@ async function removeRoomImage() {
 }
 function updateRoomHeading(room) {
   renderRoomImageControls(room);
+  updateComposerAvailability();
   ui.roomName.textContent = room.name;
   ui.bannerName.textContent = room.name;
   ui.roomTopic.textContent = room.is_featured
@@ -826,6 +839,7 @@ async function openRoomDialog() {
 }
 async function sendMessage(event) {
   event?.preventDefault();
+  if (isGuideRoom(state.room)) return showToast('설명 방에서는 채팅할 수 없어요.');
   if (!state.nickname) { showNicknameDialog(); return; }
   if (!state.room) return showToast('먼저 채팅방을 선택해 주세요.');
   const content = ui.messageInput.value.trim();
@@ -863,8 +877,8 @@ async function sendMessage(event) {
     if (imagePath) await supabase.storage.from('chat-images').remove([imagePath]).catch(() => {});
     showToast(errorText(error, '전송하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요.'));
   } finally {
-    ui.send.disabled = false;
     ui.send.classList.remove('sending');
+    updateComposerAvailability();
     ui.messageInput.focus();
   }
 }
@@ -1108,6 +1122,7 @@ function openGifDialog() {
   if (!window.matchMedia('(pointer: coarse)').matches) window.setTimeout(() => ui.gifQuery.focus(), 80);
 }
 async function sendGif(url) {
+  if (isGuideRoom(state.room)) return showToast('설명 방에서는 GIF를 보낼 수 없어요.');
   const clean = cleanGiphyUrl(url);
   if (!clean || !state.room || !state.nickname) return;
   ui.gifDialog.close();
