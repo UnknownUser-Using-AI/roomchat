@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261020-discord-layout" />
+  <link rel="stylesheet" href="./styles.css?v=20261020-modal-fix" />
   <title>roomchat — 슬랩배틀 라이벌 입양 피기</title>
 </head>
 <body>
@@ -131,7 +131,8 @@
   </dialog>
 
   <dialog id="nickname-dialog" class="modal">
-    <form id="nickname-form" class="modal-card">
+    <form id="nickname-form" class="modal-card nickname-modal-card">
+      <button id="nickname-close" class="icon-button nickname-close" type="button" aria-label="닉네임 창 닫기" title="닫기">×</button>
       <span class="modal-icon">✳</span>
       <span class="eyebrow" id="nickname-eyebrow">GUEST MODE</span>
       <h2 id="nickname-title">어떤 이름으로<br />인사할까요?</h2>
@@ -335,6 +336,6 @@
     </section>
   </dialog>
 
-  <script type="module" src="./app.js?v=20261020-discord-layout"></script>
+  <script type="module" src="./app.js?v=20261020-modal-fix"></script>
 </body>
 </html>
