@@ -468,3 +468,55 @@ dialog::backdrop{background:#0009}
 .composer-wrap{padding:10px 20px 14px}
 @media(max-width:1100px){.app-shell{grid-template-columns:64px 210px minmax(0,1fr)}.member-sidebar{display:none}}
 @media(max-width:760px){.app-shell{grid-template-columns:1fr}.server-rail{display:none}.sidebar{display:none}.member-sidebar{display:none}.chat-panel{min-height:0}.topbar{padding:0 14px}.room-banner{margin:12px;padding:16px}.messages-heading{padding:10px 14px}.message-list{padding:10px 12px}.composer-wrap{padding:8px 12px 12px}}
+
+
+/* Readable nickname modal and Discord-like message rows */
+#nickname-dialog .nickname-modal-card{
+  position:relative;
+  color:#f2f3f5;
+  background:#232428;
+  border:1px solid #41434a;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+  padding:32px;
+}
+#nickname-dialog .nickname-close{
+  position:absolute;top:12px;right:12px;
+  display:grid;place-items:center;
+  width:36px;height:36px;
+  color:#dbdee1;background:#35383f;border:1px solid #4a4d55;
+  border-radius:10px;font-size:25px;line-height:1;
+}
+#nickname-dialog .nickname-close:hover{
+  color:#fff;background:#ed4245;border-color:#ed4245;transform:none;
+}
+#nickname-dialog .modal-icon{background:#353a70;color:#aeb8ff}
+#nickname-dialog .eyebrow{color:#aeb8ff}
+#nickname-dialog .modal-card h2{color:#f2f3f5}
+#nickname-dialog .modal-card p{color:#c4c9d0}
+#nickname-dialog .field-label{color:#dbdee1}
+#nickname-dialog .text-field{
+  color:#f2f3f5;background:#1e1f22;border-color:#4a4d55;
+}
+#nickname-dialog .text-field::placeholder{color:#949ba4}
+#nickname-dialog .text-field:focus{border-color:#5865f2;box-shadow:0 0 0 3px rgba(88,101,242,.2)}
+#nickname-dialog .secondary-button{color:#dbdee1;background:#35383f;border-color:#4a4d55}
+#nickname-dialog .secondary-button:hover{background:#404249;border-color:#5865f2}
+#nickname-dialog .text-button{color:#b5bac1}
+#nickname-dialog .text-button:hover{color:#fff}
+#nickname-dialog .safety-caption{color:#aeb4bd}
+#nickname-dialog .avatar-drop{background:#2b2d31;border-color:#4a4d55;color:#f2f3f5}
+#nickname-dialog .avatar-copy span{color:#b5bac1}
+#nickname-dialog .primary-button{background:#5865f2;color:#fff}
+#nickname-dialog .primary-button:hover{background:#4752c4}
+.message-content{display:block;max-width:min(760px,85vw);margin:2px 0 0;padding:3px 0;border:0;border-radius:0;background:transparent;color:#dbdee1;font-size:14px;line-height:1.65}
+.own-message .message-content{background:transparent;border:0;color:#dbdee1}
+.message-row{max-width:none;margin:0 auto 14px;padding:5px 8px;border-radius:7px}
+.message-row:hover{background:#2e3035}
+.message-avatar{width:40px;height:40px;border-radius:50%}
+.message-meta strong{font-size:14px;color:#f2f3f5}
+.message-meta time{font-size:11px;color:#949ba4}
+.message-body{padding-top:2px}
+@media(max-width:640px){
+ #nickname-dialog .nickname-modal-card{padding:28px 22px}
+ .message-content{max-width:calc(100vw - 90px);font-size:13px}
+}
