@@ -16,10 +16,10 @@ DROP POLICY IF EXISTS "roomchat room icon upload" ON storage.objects;
 CREATE POLICY "roomchat room icon upload" ON storage.objects FOR INSERT TO anon, authenticated
   WITH CHECK (
     bucket_id = 'room-icons'
-    AND (storage.foldername(name))[1] ~ '^[0-9a-f-]{36}$'
+    AND (storage.foldername(storage.objects.name))[1] ~ '^[0-9a-f-]{36}$'
     AND EXISTS (
       SELECT 1 FROM public.rooms r
-      WHERE r.id::text = (storage.foldername(name))[1]
+      WHERE r.id::text = (storage.foldername(storage.objects.name))[1]
     )
   );
 DROP POLICY IF EXISTS "roomchat room icon read" ON storage.objects;
