@@ -19,7 +19,7 @@ function linkifyDmText(parent, content) {
       if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('invalid protocol');
       const link = document.createElement('a');
       link.href = parsed.href;
-      link.target = '_blank';
+      link.target = window.matchMedia('(pointer: coarse)').matches ? '_self' : '_blank';
       link.rel = 'noopener noreferrer nofollow';
       link.className = 'chat-hyperlink';
       link.textContent = url;
