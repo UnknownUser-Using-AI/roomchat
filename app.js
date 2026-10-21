@@ -1051,6 +1051,8 @@ function updateMentionSuggestions() {
   const names = [...new Set(['everyone', ...getMentionNames().filter(Boolean)])]
     .filter((name) => name.toLocaleLowerCase().includes(query))
     .sort((a, b) => {
+      if (a === 'everyone') return -1;
+      if (b === 'everyone') return 1;
       const aStarts = a.toLocaleLowerCase().startsWith(query);
       const bStarts = b.toLocaleLowerCase().startsWith(query);
       return Number(bStarts) - Number(aStarts) || a.localeCompare(b, 'ko');
