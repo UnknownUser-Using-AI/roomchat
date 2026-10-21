@@ -56,7 +56,7 @@ const ADMIN_INITIAL_NAMES = new Set(['천사', '크리스탈']);
 const GUIDE_ROOM_NAME = '설명 방';
 const GIF_PREFIX = '[gif]';
 // 서버는 내용을 검사하지 않으므로, 화면에는 GIPHY 미디어 주소만 그림으로 그립니다.
-const GIF_URL_PATTERN = /^\[gif\](https:\/\/media\d*\.giphy\.com\/media\/[A-Za-z0-9_\-/.]+\.gif)$/u;
+const GIF_URL_PATTERN = /^\[gif\](https:\/\/media\d*\.giphy\.com\/media\/[A-Za-z0-9_\-/.]+\.(gif|webp))$/iu;
 const AVATAR_SIZE = 256;
 const AVATAR_INPUT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
