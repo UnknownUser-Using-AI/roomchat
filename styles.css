@@ -1889,3 +1889,5 @@ img, video, iframe { max-width: 100%; }
 
 /* DM notification preference */
 .dm-notification-setting{display:flex;align-items:center;gap:10px;padding:12px 14px;margin:0 0 12px;border:1px solid var(--line);border-radius:12px;background:var(--white);cursor:pointer}.dm-notification-setting input{width:17px;height:17px;accent-color:var(--teal);flex:none}.dm-notification-setting span{display:flex;flex-direction:column;gap:3px;min-width:0}.dm-notification-setting strong{font-size:12px}.dm-notification-setting small{font-size:10px;color:var(--muted);line-height:1.45}
+
+.dm-pin-button{min-width:30px;padding:5px 8px;font-size:14px;line-height:1;color:var(--teal)}.dm-pin-button:hover{background:var(--teal-soft)}
