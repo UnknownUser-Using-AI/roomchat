@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261018-giphy';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-links-v1';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-links-mobile-v2';
 import { ensureFont, fontStack } from './fonts.js?v=20261020-social';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -477,7 +477,7 @@ function linkifyTextNodes(root) {
         if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('invalid protocol');
         const link = document.createElement('a');
         link.href = parsed.href;
-        link.target = '_blank';
+        link.target = window.matchMedia('(pointer: coarse)').matches ? '_self' : '_blank';
         link.rel = 'noopener noreferrer nofollow';
         link.className = 'chat-hyperlink';
         link.textContent = url;
