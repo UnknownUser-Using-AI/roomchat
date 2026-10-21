@@ -453,6 +453,46 @@ function createYouTubeEmbed(videoId) {
   frame.allowFullscreen = true;
   return frame;
 }
+function linkifyTextNodes(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (node.parentElement?.closest('a,button,script,style')) continue;
+    if (/https?:\/\//iu.test(node.nodeValue || '')) nodes.push(node);
+  }
+  const urlPattern = /https?:\/\/[^\s<>"']+/giu;
+  for (const node of nodes) {
+    const value = node.nodeValue || '';
+    const fragment = document.createDocumentFragment();
+    let last = 0;
+    for (const match of value.matchAll(urlPattern)) {
+      let raw = match[0];
+      let url = raw;
+      while (/[.,!?;:)\]}]$/u.test(url)) url = url.slice(0, -1);
+      if (!url) continue;
+      if (match.index > last) fragment.append(document.createTextNode(value.slice(last, match.index)));
+      try {
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('invalid protocol');
+        const link = document.createElement('a');
+        link.href = parsed.href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer nofollow';
+        link.className = 'chat-hyperlink';
+        link.textContent = url;
+        fragment.append(link);
+        if (raw.length > url.length) fragment.append(document.createTextNode(raw.slice(url.length)));
+        last = match.index + raw.length;
+      } catch {
+        fragment.append(document.createTextNode(raw));
+        last = match.index + raw.length;
+      }
+    }
+    if (last < value.length) fragment.append(document.createTextNode(value.slice(last)));
+    node.replaceWith(fragment);
+  }
+}
 function renderMessage(message) {
   const key = String(message.id);
   if (ui.messages.querySelector(`[data-message-id="${CSS.escape(key)}"]`)) return;
@@ -515,6 +555,7 @@ function renderMessage(message) {
     text.className = 'message-content';
     if (message.user_id) { text.dataset.styleUser = message.user_id; text.dataset.styleKind = 'text'; }
     text.append(renderMentions(message.content, getMentionNames(), state.nickname));
+    linkifyTextNodes(text);
     body.append(text);
   }
   if (message.image_path) {
