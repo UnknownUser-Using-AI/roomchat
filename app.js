@@ -32,6 +32,7 @@ const ui = {
   settingDark: $('#setting-dark'), settingFontSize: $('#setting-font-size'),
   settingWide: $('#setting-wide'), settingHideSidebar: $('#setting-hide-sidebar'),
   settingSound: $('#setting-sound'), clearNotificationHistory: $('#clear-notification-history'),
+  notificationHistoryList: $('#notification-history-list'),
   accountModeGroup: $('#account-mode-group'), adminCodeHelp: $('#admin-code-help'),
   adminPanelButton: $('#admin-panel-button'), adminPanelDialog: $('#admin-panel-dialog'),
   adminPanelClose: $('#admin-panel-close'), adminPanelSummary: $('#admin-panel-summary'),
