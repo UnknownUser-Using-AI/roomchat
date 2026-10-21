@@ -688,9 +688,20 @@ function renderMessages() {
     return;
   }
   const query = (state.messageSearchQuery || '').trim().toLocaleLowerCase();
-  state.messages.filter((message) => !query || [message.content, message.nickname].some((value) => String(value || '').toLocaleLowerCase().includes(query))).forEach(renderMessage);
-  ui.messages.scrollTop = guide ? 0 : ui.messages.scrollHeight;
-  loadAvatars(state.messages.map((message) => message.user_id));
+  const filteredMessages = state.messages.filter((message) => !query || [message.content, message.nickname].some((value) => String(value || '').toLocaleLowerCase().includes(query)));
+  filteredMessages.forEach(renderMessage);
+  if (query && filteredMessages.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state search-empty-state';
+    const title = document.createElement('strong');
+    title.textContent = '검색 결과가 없어요.';
+    const hint = document.createElement('span');
+    hint.textContent = '다른 검색어를 입력하거나 검색을 지워 보세요.';
+    empty.append(title, hint);
+    ui.messages.append(empty);
+  }
+  if (!query) ui.messages.scrollTop = guide ? 0 : ui.messages.scrollHeight;
+  loadAvatars(filteredMessages.map((message) => message.user_id));
 }
 function addMessage(message) {
   if (state.messages.some((item) => String(item.id) === String(message.id))) return;
