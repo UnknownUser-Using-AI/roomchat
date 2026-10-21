@@ -533,13 +533,13 @@ function removeMessage(messageId) {
 function extractYouTubeVideoId(content) {
   if (typeof content !== 'string') return null;
   // Mobile share sheets and some apps omit the protocol or use the mobile host.
-  const pattern = /(?:(?:https?:\\/\\/)?(?:www\\.)?(?:(?:m|music)\\.)?youtube(?:-nocookie)?\\.com\\/[^\\s<>]+|(?:https?:\\/\\/)?(?:www\\.)?youtu\\.be\\/[^\\s<>]+)/giu;
+  const pattern = /(?:(?:https?:\/\/)?(?:www\.)?(?:(?:m|music)\.)?youtube(?:-nocookie)?\.com\/[^\s<>]+|(?:https?:\/\/)?(?:www\.)?youtu\.be\/[^\s<>]+)/giu;
   const candidates = content.match(pattern) || [];
   for (const candidate of candidates) {
     const cleaned = candidate.replace(/[),.!?;]+$/u, '');
     let url;
-    try { url = new URL(/^https?:\\/\\//iu.test(cleaned) ? cleaned : `https://${cleaned}`); } catch { continue; }
-    const host = url.hostname.toLowerCase().replace(/^www\\./u, '');
+    try { url = new URL(/^https?:\/\//iu.test(cleaned) ? cleaned : \`https://\${cleaned}\`); } catch { continue; }
+    const host = url.hostname.toLowerCase().replace(/^www\./u, '');
     let id = null;
     if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || null;
     else if (['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(host)) {
@@ -553,17 +553,17 @@ function extractYouTubeVideoId(content) {
 }
 function stripYouTubeUrls(content) {
   return String(content || '')
-    .replace(/(?:(?:https?:\\/\\/)?(?:www\\.)?(?:(?:m|music)\\.)?youtube(?:-nocookie)?\\.com\\/[^\\s<>]+|(?:https?:\\/\\/)?(?:www\\.)?youtu\\.be\\/[^\\s<>]+)/giu, ' ')
-    .replace(/[ \\t]{2,}/gu, ' ')
-    .replace(/[ \\t]+\\n/gu, '\\n')
-    .replace(/\\n[ \\t]+/gu, '\\n')
+    .replace(/(?:(?:https?:\/\/)?(?:www\.)?(?:(?:m|music)\.)?youtube(?:-nocookie)?\.com\/[^\s<>]+|(?:https?:\/\/)?(?:www\.)?youtu\.be\/[^\s<>]+)/giu, ' ')
+    .replace(/[ \t]{2,}/gu, ' ')
+    .replace(/[ \t]+\n/gu, '\n')
+    .replace(/\n[ \t]+/gu, '\n')
     .trim();
 }
 function createYouTubeEmbed(videoId) {
   const frame = document.createElement('iframe');
   frame.className = 'message-youtube-player';
   // Explicit inline playback improves the mobile experience, especially on iOS.
-  frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0`;
+  frame.src = \`https://www.youtube-nocookie.com/embed/\${videoId}?playsinline=1&rel=0\`;
   frame.title = 'YouTube 동영상 플레이어';
   frame.loading = 'lazy';
   frame.referrerPolicy = 'strict-origin-when-cross-origin';
