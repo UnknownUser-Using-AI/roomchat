@@ -745,9 +745,26 @@ async function switchRoom(room) {
   state.messages = [];
   showLoading();
   renderMembers();
-  const { data, error } = await supabase.from('messages')
-    .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified')
-    .eq('room_id', room.id).order('created_at', { ascending: true }).limit(room.unlimited_messages ? 1000 : 30);
+  let data = [];
+  let error = null;
+  if (room.unlimited_messages) {
+    // Supabase returns a limited number of rows per request, so fetch history in pages.
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const page = await supabase.from('messages')
+        .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified')
+        .eq('room_id', room.id).order('created_at', { ascending: true }).range(offset, offset + pageSize - 1);
+      if (page.error) { error = page.error; break; }
+      data.push(...(page.data || []));
+      if (!page.data || page.data.length < pageSize) break;
+    }
+  } else {
+    const result = await supabase.from('messages')
+      .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified')
+      .eq('room_id', room.id).order('created_at', { ascending: true }).limit(30);
+    data = result.data || [];
+    error = result.error;
+  }
   if (request !== state.roomRequest) return;
   if (error) {
     ui.messages.replaceChildren();
