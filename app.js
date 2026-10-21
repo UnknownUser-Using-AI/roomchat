@@ -1038,6 +1038,7 @@ async function checkForKick(roomId, request) {
 }
 async function switchRoom(room) {
   if (!room || (state.room?.id === room.id && state.roomChannel)) return;
+  clearReplyTarget();
   state.room = room;
   const request = ++state.roomRequest;
   if (state.roomChannel) {
@@ -1700,16 +1701,21 @@ async function sendGif(url) {
   if (!clean || !state.room || !state.nickname) return;
   ui.gifDialog.close();
   try {
-    const { data, error } = await supabase.rpc('roomchat_post_message', {
+    const postArgs = {
       p_room_id: state.room.id,
       p_content: `${GIF_PREFIX}${clean}`,
       p_image_path: null,
       p_guest_session_id: state.user ? null : guestSessionId,
       p_guest_token: state.user ? null : guestToken,
-    });
+    };
+    const { data, error } = await supabase.rpc(
+      state.replyTarget ? 'roomchat_post_reply' : 'roomchat_post_message',
+      state.replyTarget ? { ...postArgs, p_reply_to: state.replyTarget.id } : postArgs,
+    );
     if (error) throw error;
     const inserted = normalizeRpcRow(data);
     if (inserted) addMessage(inserted);
+    clearReplyTarget();
   } catch (error) { showToast(errorText(error, 'GIF를 보내지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요.')); }
 }
 
