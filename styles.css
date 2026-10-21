@@ -2376,3 +2376,91 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   #chat-settings > .settings-header { align-items: flex-start; }
   #chat-settings > .settings-footer { flex-direction: column; align-items: stretch; }
 }
+
+
+/* Mobile stability pass: baseline layout only, no feature expansion. */
+@media (max-width: 760px) {
+  html, body, #app, .app-shell, .chat-panel { max-width: 100%; min-width: 0; }
+  html, body { overflow-x: hidden; }
+  .app-shell { width: 100%; grid-template-columns: minmax(0, 1fr) !important; }
+  .chat-panel { display: flex; flex-direction: column; overflow: hidden; }
+  .topbar, .channel-heading, .top-actions, .message-tools,
+  .messages-heading, .message-list, .composer-wrap { min-width: 0; max-width: 100%; }
+  .channel-heading { overflow: hidden; }
+  .top-actions { max-width: 100%; }
+  .message-tools {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .message-tools > .keyboard-hint { display: none !important; }
+  .message-tools .message-search-label { grid-column: 1 / -1; }
+  .message-tools .message-search { grid-column: 1 / -1; width: 100%; min-width: 0; max-width: none; }
+  .message-tools .message-search-date-label { grid-column: 1; }
+  .message-tools .message-search-date { grid-column: 2; width: 100%; min-width: 0; }
+  .message-tools #message-search-clear,
+  .message-tools #chat-settings-button { width: 100%; min-width: 0; }
+  .message-tools .media-gallery-toggle { grid-column: 1 / -1; width: 100%; margin: 0; }
+  #chat-settings {
+    display: block !important;
+    flex: 0 1 auto;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    max-height: min(54dvh, 500px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+  #chat-settings[hidden] { display: none !important; }
+  #chat-settings > .settings-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+  #chat-settings > .settings-groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px;
+    width: 100%;
+  }
+  #chat-settings .settings-group { width: 100%; min-width: 0; box-sizing: border-box; }
+  #chat-settings .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  #chat-settings .setting-copy { display: flex; flex: 1 1 auto; flex-direction: column; align-items: flex-start; min-width: 0; }
+  #chat-settings .setting-copy strong,
+  #chat-settings .setting-copy small { display: block; overflow-wrap: anywhere; }
+  #chat-settings .setting-row input[type="checkbox"] { flex: 0 0 22px; width: 22px; height: 22px; }
+  #chat-settings > .settings-footer { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  #chat-settings .settings-reset { width: 100%; min-height: 42px; }
+  .message-list { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overscroll-behavior: contain; }
+  .message-row, .message-body, .message-content { min-width: 0; max-width: 100%; }
+  .message-content, .message-meta strong, .reply-preview, .message-reply-quote { overflow-wrap: anywhere; }
+  .message-youtube { width: 100%; max-width: min(100%, 480px); aspect-ratio: 16 / 9; height: auto; }
+  .message-youtube-player { width: 100%; height: 100%; }
+  .composer-wrap { width: 100%; box-sizing: border-box; }
+  .composer { display: flex; align-items: center; width: 100%; min-width: 0; box-sizing: border-box; }
+  .composer textarea { flex: 1 1 0; width: 1%; min-width: 0; }
+  .send-button { flex: 0 0 auto; white-space: nowrap; }
+  .attachment-preview, .attachment-meta { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+}
+@media (max-width: 420px) {
+  .message-tools { gap: 6px; padding-inline: 8px; }
+  .message-tools .header-tool { min-width: 0; padding-inline: 7px; font-size: 11px; }
+  .message-tools .message-search-date { min-width: 0; font-size: 13px; padding-inline: 5px; }
+  #chat-settings { padding: 10px 9px max(10px, env(safe-area-inset-bottom)); }
+  #chat-settings .settings-header h2 { font-size: 16px; }
+  #chat-settings .settings-header p { max-width: 60vw; }
+  .composer { gap: 5px; }
+  .attach-button { flex: 0 0 34px; width: 34px; }
+  .send-button { padding-inline: 8px; }
+}
+@media (max-width: 340px) {
+  .message-tools .message-search-date-label { font-size: 11px; }
+  .message-tools .message-search-date { font-size: 12px; }
+  .composer .send-button span:first-child { display: none; }
+}
