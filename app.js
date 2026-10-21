@@ -220,10 +220,31 @@ function updateComposerAvailability() {
   const footnote = ui.messageForm.parentElement.querySelector('.composer-foot span');
   if (footnote) footnote.textContent = guide ? '이 방은 안내 전용이에요.' : 'Enter로 전송 · Shift + Enter로 줄바꿈';
 }
+const ROOM_ORDER_KEY = 'roomchat:room-order:v1';
+function savedRoomOrder() {
+  try {
+    const value = JSON.parse(localStorage.getItem(ROOM_ORDER_KEY) || '[]');
+    return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : [];
+  } catch { return []; }
+}
 function sortedRooms() {
-  return [...state.rooms].sort((a, b) => Number(isGuideRoom(b)) - Number(isGuideRoom(a))
-    || Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))
-    || new Date(a.created_at) - new Date(b.created_at));
+  const order = savedRoomOrder();
+  const rank = new Map(order.map((id, index) => [id, index]));
+  return [...state.rooms].sort((a, b) => {
+    const guideDiff = Number(isGuideRoom(b)) - Number(isGuideRoom(a));
+    if (guideDiff) return guideDiff;
+    // Preserve parent/child grouping; users can reorder top-level rooms only.
+    if (Boolean(a.parent_id) !== Boolean(b.parent_id)) return Number(Boolean(a.parent_id)) - Number(Boolean(b.parent_id));
+    const aRank = rank.get(a.id);
+    const bRank = rank.get(b.id);
+    if (aRank !== undefined || bRank !== undefined) {
+      if (aRank === undefined) return 1;
+      if (bRank === undefined) return -1;
+      if (aRank !== bRank) return aRank - bRank;
+    }
+    return Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))
+      || new Date(a.created_at) - new Date(b.created_at);
+  });
 }
 function renderRoomLists() {
   ui.roomList.replaceChildren();
@@ -254,6 +275,45 @@ function renderRoomLists() {
     }
     const row = document.createElement('div');
     row.className = 'room-row';
+    if (!room.parent_id && !isGuideRoom(room)) {
+      row.draggable = true;
+      row.dataset.roomId = room.id;
+      row.setAttribute('aria-label', `${room.name} 방 순서 변경 가능`);
+      row.addEventListener('dragstart', (event) => {
+        row.classList.add('dragging');
+        event.dataTransfer?.setData('text/plain', room.id);
+        if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+        ui.roomList.querySelectorAll('.room-row.drag-over').forEach((item) => item.classList.remove('drag-over'));
+      });
+      row.addEventListener('dragover', (event) => {
+        if (!event.dataTransfer) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        ui.roomList.querySelectorAll('.room-row.drag-over').forEach((item) => item.classList.remove('drag-over'));
+        if (row.dataset.roomId !== event.dataTransfer.getData('text/plain')) row.classList.add('drag-over');
+      });
+      row.addEventListener('dragleave', (event) => {
+        if (!row.contains(event.relatedTarget)) row.classList.remove('drag-over');
+      });
+      row.addEventListener('drop', (event) => {
+        event.preventDefault();
+        row.classList.remove('drag-over');
+        const draggedId = event.dataTransfer?.getData('text/plain');
+        const targetId = row.dataset.roomId;
+        if (!draggedId || draggedId === targetId) return;
+        const topLevel = sortedRooms().filter((item) => !item.parent_id && !isGuideRoom(item));
+        const ids = topLevel.map((item) => item.id);
+        const from = ids.indexOf(draggedId);
+        const to = ids.indexOf(targetId);
+        if (from < 0 || to < 0) return;
+        ids.splice(to, 0, ids.splice(from, 1)[0]);
+        try { localStorage.setItem(ROOM_ORDER_KEY, JSON.stringify(ids)); } catch {}
+        renderRoomLists();
+      });
+    }
     const desktop = document.createElement('button');
     desktop.type = 'button';
     desktop.className = `room-item${state.room?.id === room.id ? ' active' : ''}${room.is_featured ? ' featured' : ''}${room.parent_id ? ' child-room' : ''}`;
