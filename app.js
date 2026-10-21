@@ -406,10 +406,14 @@ function updateRoomHeading(room) {
   ui.roomName.textContent = room.name;
   ui.bannerName.textContent = room.name;
   const parentRoom = room.parent_id ? state.rooms.find((item) => item.id === room.parent_id) : null;
-  ui.roomTopic.textContent = isGuideRoom(room)
-    ? '안내 채널 · 일반 채널은 최근 메시지 30개만 보관하며, 이전 메시지는 자동 정리됩니다.'
+  const guideRoom = isGuideRoom(room);
+  ui.roomTopic.textContent = guideRoom
+    ? ''
     : parentRoom ? `하위 채널 · ${parentRoom.name}` : '공개 채널';
-  ui.childRoomButton.hidden = Boolean(room.parent_id || isGuideRoom(room));
+  ui.roomTopic.hidden = guideRoom;
+  const guideButton = $('#guide-open-button');
+  if (guideButton) guideButton.hidden = !guideRoom;
+  ui.childRoomButton.hidden = Boolean(room.parent_id || guideRoom);
   ui.roomDelete.hidden = !(state.isAdmin && !room.is_featured);
   renderRoomLists();
 }
@@ -1623,8 +1627,8 @@ function setupEvents() {
   ui.nicknameForm.addEventListener('submit', (event) => { event.preventDefault(); setNickname(ui.nicknameInput.value); });
   ui.nicknameButton.addEventListener('click', showNicknameDialog);
   $('#sidebar-account-settings')?.addEventListener('click', () => ui.nicknameButton.click());
-  $('#sidebar-invite-button')?.addEventListener('click', openRoomDialog);
-  $('#sidebar-welcome-close')?.addEventListener('click', () => { const card = $('#sidebar-welcome-card'); if (card) card.hidden = true; });
+  $('#guide-open-button')?.addEventListener('click', () => $('#guide-dialog')?.showModal());
+  $('#guide-close-button')?.addEventListener('click', () => $('#guide-dialog')?.close());
   $('#nickname-close')?.addEventListener('click', () => ui.nicknameDialog.close());
   ui.accountOpen.addEventListener('click', () => { ui.nicknameDialog.close(); showAccountDialog(); });
   ui.styleOpen.addEventListener('click', () => { ui.nicknameDialog.close(); social?.openStyleDialog(); });
