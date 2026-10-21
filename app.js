@@ -86,6 +86,38 @@ const state = {
 };
 let social = null;
 let roomSearchQuery = '';
+let mediaOnlyMode = false;
+const imageZoomDialog = document.createElement('dialog');
+imageZoomDialog.className = 'image-zoom-dialog';
+imageZoomDialog.setAttribute('aria-label', '이미지 크게 보기');
+const imageZoomClose = document.createElement('button');
+imageZoomClose.type = 'button'; imageZoomClose.className = 'image-zoom-close'; imageZoomClose.textContent = '닫기'; imageZoomClose.setAttribute('aria-label', '이미지 보기 닫기');
+const imageZoomImage = document.createElement('img');
+imageZoomImage.className = 'image-zoom-content'; imageZoomImage.alt = '확대된 채팅 이미지';
+imageZoomDialog.append(imageZoomClose, imageZoomImage);
+document.body.append(imageZoomDialog);
+function openImageZoom(url, alt) {
+  if (!url) return;
+  imageZoomImage.src = url;
+  imageZoomImage.alt = alt || '확대된 채팅 이미지';
+  if (!imageZoomDialog.open) imageZoomDialog.showModal();
+}
+function closeImageZoom() { if (imageZoomDialog.open) imageZoomDialog.close(); imageZoomImage.removeAttribute('src'); }
+imageZoomClose.addEventListener('click', closeImageZoom);
+imageZoomDialog.addEventListener('click', (event) => { if (event.target === imageZoomDialog) closeImageZoom(); });
+imageZoomDialog.addEventListener('close', () => imageZoomImage.removeAttribute('src'));
+const mediaGalleryButton = document.createElement('button');
+mediaGalleryButton.type = 'button';
+mediaGalleryButton.className = 'secondary-button media-gallery-toggle';
+mediaGalleryButton.textContent = '미디어 모아보기';
+mediaGalleryButton.setAttribute('aria-pressed', 'false');
+mediaGalleryButton.addEventListener('click', () => {
+  mediaOnlyMode = !mediaOnlyMode;
+  mediaGalleryButton.textContent = mediaOnlyMode ? '전체 메시지 보기' : '미디어 모아보기';
+  mediaGalleryButton.setAttribute('aria-pressed', String(mediaOnlyMode));
+  renderMessages();
+});
+ui.messageSearch?.parentElement?.append(mediaGalleryButton);
 let roomFavorites = new Set((() => { try { const value = JSON.parse(localStorage.getItem(ROOM_FAVORITES_KEY) || '[]'); return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : []; } catch { return []; } })());
 const roomSearchInput = document.createElement('input');
 roomSearchInput.type = 'search';
@@ -728,7 +760,8 @@ function renderMessage(message) {
     gifLink.href = gifMatch[1];
     gifLink.target = '_blank';
     gifLink.rel = 'noopener noreferrer';
-    gifLink.setAttribute('aria-label', 'GIF 원본 보기');
+    gifLink.setAttribute('aria-label', 'GIF 크게 보기');
+    gifLink.addEventListener('click', (event) => { event.preventDefault(); openImageZoom(gifMatch[1], '채팅방에서 공유한 GIF'); });
     const gif = document.createElement('img');
     gif.className = 'message-image message-gif';
     gif.src = gifMatch[1];
@@ -751,7 +784,8 @@ function renderMessage(message) {
     imageLink.href = data.publicUrl;
     imageLink.target = '_blank';
     imageLink.rel = 'noopener noreferrer';
-    imageLink.setAttribute('aria-label', '공유 이미지 원본 보기');
+    imageLink.setAttribute('aria-label', '공유 이미지 크게 보기');
+    imageLink.addEventListener('click', (event) => { event.preventDefault(); openImageZoom(data.publicUrl, '채팅방에서 공유한 이미지'); });
     const image = document.createElement('img');
     image.className = 'message-image';
     image.src = data.publicUrl;
@@ -884,6 +918,7 @@ function renderMessages() {
   const query = (state.messageSearchQuery || '').trim().toLocaleLowerCase();
   const dateFilter = state.messageSearchDate || '';
   const filteredMessages = state.messages.filter((message) => {
+    if (mediaOnlyMode && !message.image_path && !GIF_URL_PATTERN.test(String(message.content || ''))) return false;
     const matchesText = !query || [message.content, message.nickname].some((value) => String(value || '').toLocaleLowerCase().includes(query));
     const created = new Date(message.created_at);
     const localDate = Number.isNaN(created.getTime()) ? '' : `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}-${String(created.getDate()).padStart(2, '0')}`;
@@ -2196,7 +2231,7 @@ function setupEvents() {
   ui.messageInput.addEventListener('click', updateMentionSuggestions);
   ui.messageInput.addEventListener('blur', () => window.setTimeout(closeMentionPopup, 120));
   ui.mentionPopup.addEventListener('mousedown', (event) => event.preventDefault());
-  ui.imageFile.addEventListener('change', (event) => chooseAttachment(event.target.files?.[0]));
+  ui.imageFile.addEventListener('change', (event) => { chooseAttachment(event.target.files?.[0]); event.target.value = ''; });
   ui.removeAttachment.addEventListener('click', clearAttachment);
   ui.messageInput.addEventListener('paste', (event) => {
     const items = [...(event.clipboardData?.items || [])];
