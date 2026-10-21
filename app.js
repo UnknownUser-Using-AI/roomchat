@@ -956,6 +956,9 @@ async function openRoomDialog(parentRoomId = null) {
   const parentRoom = parentRoomId ? state.rooms.find((room) => room.id === parentRoomId && !room.parent_id) : null;
   if (parentRoomId && !parentRoom) return showToast('하위 방은 상위 채널에서만 만들 수 있어요.');
   state.pendingParentRoomId = parentRoom?.id || null;
+  const unlimitedWrap = $('#room-unlimited-choice-wrap');
+  if (unlimitedWrap) unlimitedWrap.hidden = !state.isAdmin || Boolean(parentRoom);
+  if (ui.roomUnlimitedChoice) ui.roomUnlimitedChoice.checked = false;
   ui.roomInput.value = '';
   ui.roomDialog.querySelector('h2').textContent = parentRoom ? '하위 방 만들기' : '새 대화방 만들기';
   ui.roomDialog.querySelector('p').textContent = parentRoom
