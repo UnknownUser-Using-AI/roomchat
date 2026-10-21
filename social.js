@@ -77,7 +77,7 @@ export function initSocial(ctx) {
     styleBio: byId('style-bio'), styleSave: byId('style-save'), tagGrid: byId('tag-grid'), tagName: byId('tag-name'),
     tagDrop: byId('tag-drop'), tagDropPreview: byId('tag-drop-preview'), tagFile: byId('tag-file'), tagCreate: byId('tag-create'),
     friendsDialog: byId('friends-dialog'), friendsClose: byId('friends-close'), friendsTitle: byId('friends-title'),
-    friendsListView: byId('friends-list-view'), friendsList: byId('friends-list'), dmBack: byId('dm-back'),
+    friendsListView: byId('friends-list-view'), friendsList: byId('friends-list'), dmNotifications: byId('dm-notifications-enabled'), dmBack: byId('dm-back'),
     dmView: byId('dm-view'), dmThread: byId('dm-thread'), dmForm: byId('dm-form'), dmInput: byId('dm-input'),
     mentionPopup: byId('mention-popup'), messageInput: byId('message-input'),
   };
@@ -238,6 +238,13 @@ export function initSocial(ctx) {
   const incomingRows = () => friendRows.filter((row) => row.status === 'pending' && row.addressee === me());
   const nameOf = (id) => profiles.get(id)?.nickname || '알 수 없는 사용자';
   const readKey = () => `roomchat:dm-read:${me()}`;
+  const dmNotifyKey = () => `roomchat:dm-notifications:${me()}`;
+  function dmNotificationsEnabled() {
+    try { return localStorage.getItem(dmNotifyKey()) !== 'false'; } catch { return true; }
+  }
+  function syncDmNotificationSetting() {
+    if (el.dmNotifications) el.dmNotifications.checked = dmNotificationsEnabled();
+  }
   function readMap() {
     try { return JSON.parse(localStorage.getItem(readKey()) || '{}') || {}; } catch { return {}; }
   }
@@ -485,9 +492,9 @@ export function initSocial(ctx) {
       unread.set(dm.sender, (unread.get(dm.sender) || 0) + 1);
       updateBadge();
       renderFriendsList();
-      ctx.showToast(`${nameOf(dm.sender)}님의 DM: ${dm.content.slice(0, 40)}`);
+      if (dmNotificationsEnabled()) ctx.showToast(`${nameOf(dm.sender)}님의 DM: ${dm.content.slice(0, 40)}`);
     }
-    ctx.notifyUser(`${nameOf(dm.sender)} · DM`, dm.content, `dm-${dm.id}`);
+    if (dmNotificationsEnabled()) ctx.notifyUser(`${nameOf(dm.sender)} · DM`, dm.content, `dm-${dm.id}`);
   }
   async function onFriendshipChange(payload) {
     const row = payload.new;
@@ -515,6 +522,7 @@ export function initSocial(ctx) {
     stop();
     if (!me()) return;
     el.friendsButton.hidden = false;
+    syncDmNotificationSetting();
     loadProfiles([me()], true);
     loadFriends().then(loadUnread);
     subscribeOnline();
@@ -848,6 +856,10 @@ export function initSocial(ctx) {
     dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
   }
   el.friendsButton.addEventListener('click', openFriends);
+  el.dmNotifications?.addEventListener('change', () => {
+    try { localStorage.setItem(dmNotifyKey(), String(el.dmNotifications.checked)); } catch { /* Storage is optional. */ }
+    ctx.showToast(el.dmNotifications.checked ? 'DM 알림을 켰어요.' : 'DM 알림을 껐어요.');
+  });
   el.friendsClose.addEventListener('click', () => el.friendsDialog.close());
   el.dmBack.addEventListener('click', closeThread);
   el.dmForm.addEventListener('submit', sendDm);
