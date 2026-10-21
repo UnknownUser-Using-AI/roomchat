@@ -126,6 +126,10 @@
       <p>게스트도 방을 만들 수 있어요. 만든 사람은 그 방의 운영자가 됩니다.</p>
       <label class="field-label" for="room-input">방 이름</label>
       <input id="room-input" class="text-field" type="text" maxlength="32" minlength="2" placeholder="예: 게임 이야기" required />
+      <label id="room-unlimited-choice-wrap" class="room-unlimited-choice" for="room-unlimited-choice" hidden>
+        <input id="room-unlimited-choice" type="checkbox" />
+        <span><strong>관리자 방</strong><small>메시지 기록을 30개 제한 없이 보관해요.</small></span>
+      </label>
       <button class="primary-button" type="submit">방 만들기 <span aria-hidden="true">↗</span></button>
       <button id="cancel-room" class="secondary-button account-open" type="button">취소</button>
     </form>
@@ -337,6 +341,6 @@
     </section>
   </dialog>
 
-  <script type="module" src="./app.js?v=20261021-unlimited-admin-messages-v2"></script>
+  <script type="module" src="./app.js?v=20261021-admin-room-type"></script>
 </body>
 </html>
