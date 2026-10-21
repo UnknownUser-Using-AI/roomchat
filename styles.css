@@ -1836,3 +1836,13 @@ img, video, iframe { max-width: 100%; }
 .message-copy{opacity:.78}
 .message-row:hover .message-copy,.message-row:focus-within .message-copy{opacity:1}
 @media(max-width:640px){.message-copy,.message-reply,.message-edit,.message-delete{min-height:32px;padding:5px 8px;font-size:12px}}
+
+
+.notification-history-panel{margin-top:8px;min-width:0}
+.notification-history-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.notification-history-heading strong{font-size:12px}
+.notification-history-list{display:grid;gap:6px;list-style:none;margin:0;padding:0;max-height:180px;overflow:auto}
+.notification-history-item,.notification-history-empty{display:grid;gap:3px;padding:9px 10px;border:1px solid var(--border-color,#dedee5);border-radius:9px;min-width:0}
+.notification-history-item strong{font-size:12px;overflow-wrap:anywhere}
+.notification-history-item span,.notification-history-empty{font-size:12px;color:var(--muted-color,#777);overflow-wrap:anywhere}
+.notification-history-item time{font-size:10px;color:var(--muted-color,#777)}
