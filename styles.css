@@ -1261,3 +1261,8 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 @media(prefers-reduced-motion:reduce){
   .room-item .room-title,.room-item .room-arrow{transition:none;transform:none}
 }
+
+
+/* Friends navigation icon */
+.friends-button .friends-icon { width: 18px; height: 18px; flex: 0 0 18px; display: block; }
+.friends-button { gap: 7px; }
