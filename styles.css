@@ -22,6 +22,9 @@
 .message-meta .verified-box { margin-left:1px; }
 .message-delete { align-self:flex-start; opacity:.65; }
 .message-delete:hover { opacity:1; }
+.message-edit { align-self:flex-start; opacity:.75; }
+.message-edit:hover { opacity:1; }
+.message-edited { color:var(--muted,#777); font-size:10px; white-space:nowrap; }
 .modal-card .secondary-button { width:100%; }
 .modal-card .account-open { margin-top:8px; }
 .modal-card .text-button { margin-top:12px; }
