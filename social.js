@@ -380,7 +380,7 @@ export function initSocial(ctx) {
     renderFriendsList();
   }
   const DM_GIF_PREFIX = '[gif]';
-  const DM_EMOJIS = ['😀','😂','🥹','😍','😎','😭','🤔','🙄','😴','🥳','👍','👎','❤️','💖','🔥','🎉','🙏','👏','💀','✨','🐱','🐸','💯','🤝'];
+  const DM_EMOJIS = ['😀','😂','😊','😍','😎','😭','🤔','🙄','😴','🥳','👍','👎','❤️','💖','🔥','🎉','🙏','👏','💀','✨','🐱','🐸','💯','🤝'];
   const dmTools = document.createElement('div'); dmTools.className = 'dm-tools';
   const emojiButton = document.createElement('button'); emojiButton.type = 'button'; emojiButton.className = 'secondary-button dm-tool-button'; emojiButton.textContent = '😊'; emojiButton.setAttribute('aria-label','이모지 선택');
   const gifButton = document.createElement('button'); gifButton.type = 'button'; gifButton.className = 'secondary-button dm-tool-button'; gifButton.textContent = 'GIF'; gifButton.setAttribute('aria-label','GIF 검색'); dmTools.append(emojiButton,gifButton); el.dmForm.insertBefore(dmTools,el.dmInput);
