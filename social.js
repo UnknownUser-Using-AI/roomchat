@@ -89,6 +89,7 @@ export function initSocial(ctx) {
   let friendRows = [];
   let online = new Set();
   let unread = new Map();
+  let pinnedDms = new Set();
   let friendsTab = 'friends';
   let activeFriend = null;
   let thread = [];
@@ -239,6 +240,17 @@ export function initSocial(ctx) {
   const nameOf = (id) => profiles.get(id)?.nickname || '알 수 없는 사용자';
   const readKey = () => `roomchat:dm-read:${me()}`;
   const dmNotifyKey = () => `roomchat:dm-notifications:${me()}`;
+  const dmPinsKey = () => `roomchat:dm-pins:${me()}`;
+  function loadPinnedDms() {
+    try { pinnedDms = new Set(JSON.parse(localStorage.getItem(dmPinsKey()) || '[]').filter((id) => typeof id === 'string')); }
+    catch { pinnedDms = new Set(); }
+  }
+  function toggleDmPin(friendId) {
+    if (pinnedDms.has(friendId)) pinnedDms.delete(friendId); else pinnedDms.add(friendId);
+    try { localStorage.setItem(dmPinsKey(), JSON.stringify([...pinnedDms])); } catch { /* Storage is optional. */ }
+    renderFriendsList();
+    ctx.showToast(pinnedDms.has(friendId) ? 'DM 대화를 고정했어요.' : 'DM 대화 고정을 해제했어요.');
+  }
   function dmNotificationsEnabled() {
     try { return localStorage.getItem(dmNotifyKey()) !== 'false'; } catch { return true; }
   }
@@ -348,7 +360,7 @@ export function initSocial(ctx) {
     });
     el.friendsList.replaceChildren();
     if (friendsTab === 'friends') {
-      const ids = friendIds().sort((a, b) => Number(online.has(b)) - Number(online.has(a)) || nameOf(a).localeCompare(nameOf(b), 'ko'));
+      const ids = friendIds().sort((a, b) => Number(pinnedDms.has(b)) - Number(pinnedDms.has(a)) || Number(online.has(b)) - Number(online.has(a)) || nameOf(a).localeCompare(nameOf(b), 'ko'));
       if (!ids.length) el.friendsList.append(emptyNote('아직 친구가 없어요. 이름이나 사진을 눌러 프로필을 열고 “친구 추가”를 눌러 보세요.'));
       for (const id of ids) {
         const count = unread.get(id) || 0;
@@ -356,6 +368,7 @@ export function initSocial(ctx) {
         const row = personRow(id, isOnline ? '온라인' : '오프라인', [
           ...(count ? [Object.assign(document.createElement('span'), { className: 'unread-pill', textContent: String(count) })] : []),
           smallButton('DM', '', () => openThread(id)),
+          (() => { const pin = smallButton(pinnedDms.has(id) ? '★' : '☆', 'dm-pin-button', () => toggleDmPin(id)); pin.title = pinnedDms.has(id) ? 'DM 고정 해제' : 'DM 대화 고정'; pin.setAttribute('aria-label', pin.title); return pin; })(),
         ], isOnline);
         row.addEventListener('click', () => openThread(id));
         el.friendsList.append(row);
@@ -522,6 +535,7 @@ export function initSocial(ctx) {
     stop();
     if (!me()) return;
     el.friendsButton.hidden = false;
+    loadPinnedDms();
     syncDmNotificationSetting();
     loadProfiles([me()], true);
     loadFriends().then(loadUnread);
