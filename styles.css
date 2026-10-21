@@ -1266,3 +1266,29 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 /* Friends navigation icon */
 .friends-button .friends-icon { width: 18px; height: 18px; flex: 0 0 18px; display: block; }
 .friends-button { gap: 7px; }
+
+
+/* Keep the Friends icon and Korean label on one line */
+#friends-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  min-width: max-content;
+  gap: 8px;
+}
+#friends-button .friends-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+#friends-button .friends-label {
+  display: inline-block;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
