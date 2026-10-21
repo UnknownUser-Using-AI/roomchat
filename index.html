@@ -94,7 +94,7 @@
         <label><input id="setting-wide" type="checkbox" /> 넓은 채팅</label>
         <label><input id="setting-hide-sidebar" type="checkbox" /> 접속자 목록 숨기기</label>
         <label><input id="setting-sound" type="checkbox" checked /> 메시지 소리</label>
-        <button id="clear-notification-history" class="header-tool" type="button">알림 기록 초기화</button>
+        <div class="notification-history-panel"><div class="notification-history-heading"><strong>이 기기의 알림 기록</strong><button id="clear-notification-history" class="header-tool" type="button">기록 지우기</button></div><ol id="notification-history-list" class="notification-history-list"><li class="notification-history-empty">아직 알림 기록이 없어요.</li></ol></div>
       </section>
       <div class="messages-heading"><span>메시지</span><span id="message-count-label" class="muted-label">최근 대화</span></div>
       <section id="message-list" class="message-list" aria-label="메시지" aria-live="polite" aria-relevant="additions text">
