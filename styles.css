@@ -1736,3 +1736,21 @@ img, video, iframe { max-width: 100%; }
   .dm-gif-search input.dm-gif-search-input,.dm-gif-search input.text-field{height:42px !important}
   .dm-gif-search button{min-width:64px !important;padding:0 10px !important}
 }
+
+/* Larger, more comfortable DM GIF picker on phones and desktop. */
+.dm-gif-panel{padding:14px;margin:12px 0;border-radius:14px}
+.dm-gif-search{gap:10px;margin-bottom:12px}
+.dm-gif-search input.dm-gif-search-input,.dm-gif-search input.text-field{height:48px!important;font-size:16px!important}
+.dm-gif-search button{height:48px!important;min-height:48px!important;font-size:15px!important}
+.dm-gif-status{font-size:13px;margin-bottom:10px}
+.dm-gif-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:min(420px,48dvh)}
+.dm-gif-item{aspect-ratio:4/3;border-radius:12px}
+.dm-gif-item img{object-fit:cover}
+@media(max-width:640px){
+ .dm-gif-panel{padding:12px;margin:12px 0}
+ .dm-gif-search input.dm-gif-search-input,.dm-gif-search input.text-field{height:50px!important;font-size:16px!important}
+ .dm-gif-search button{height:50px!important;min-height:50px!important;min-width:76px!important;font-size:15px!important}
+ .dm-gif-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:42dvh}
+ .dm-gif-item{aspect-ratio:4/3;border-radius:12px}
+ .dm-gif-status{font-size:13px}
+}
