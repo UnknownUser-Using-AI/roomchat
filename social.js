@@ -94,6 +94,8 @@ export function initSocial(ctx) {
   let activeFriend = null;
   let thread = [];
   let dmSearchQuery = '';
+  let dmSearchResults = null;
+  let dmSearchRequest = 0;
   let dmReplyTarget = null;
   let socialChannel = null;
   let onlineChannel = null;
@@ -294,17 +296,28 @@ export function initSocial(ctx) {
     if (openProfileId) renderProfileActions(openProfileId);
   }
   async function loadUnread() {
-    const { data, error } = await supabase.from('roomchat_dms').select('sender,created_at,read_at').eq('recipient', me())
-      .order('created_at', { ascending: false }).limit(200);
-    if (error) return;
+    if (!me()) return;
+    const recipientId = me();
+    const rows = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const page = await supabase.from('roomchat_dms').select('id,sender,created_at,read_at')
+        .eq('recipient', recipientId).order('created_at', { ascending: false }).order('id', { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (page.error) { console.warn('DM unread count could not be fully loaded.', page.error.message); return; }
+      rows.push(...(page.data || []));
+      if (!page.data || page.data.length < pageSize) break;
+    }
+    if (me() !== recipientId) return;
     const map = readMap();
     unread = new Map();
-    for (const row of data || []) {
+    for (const row of rows) {
       if (row.read_at) continue;
       if (map[row.sender] && new Date(row.created_at) <= new Date(map[row.sender])) continue;
       unread.set(row.sender, (unread.get(row.sender) || 0) + 1);
     }
     updateBadge();
+    renderFriendsList();
   }
 
   async function friendCall(name, args, success) {
@@ -407,6 +420,8 @@ export function initSocial(ctx) {
     thread = [];
     dmSearch.value = '';
     dmSearchQuery = '';
+    dmSearchResults = null;
+    dmSearchRequest++;
     renderThread();
     const mine = me();
     const { data, error } = await supabase.from('roomchat_dms').select('id,sender,recipient,content,created_at,read_at,reply_to')
@@ -443,7 +458,14 @@ export function initSocial(ctx) {
   dmSearch.placeholder = '이 대화에서 메시지 검색';
   dmSearch.setAttribute('aria-label', 'DM 대화 검색');
   dmSearch.autocomplete = 'off';
-  dmSearch.addEventListener('input', () => { dmSearchQuery = dmSearch.value.trim().toLocaleLowerCase(); renderThread(); });
+  dmSearch.addEventListener('input', () => {
+    dmSearchQuery = dmSearch.value.trim();
+    const request = ++dmSearchRequest;
+    dmSearchResults = null;
+    if (!dmSearchQuery || !activeFriend || !me()) { renderThread(); return; }
+    renderThread();
+    searchEntireDmHistory(dmSearchQuery, request, activeFriend);
+  });
   el.dmView.insertBefore(dmSearch, el.dmThread);
   const dmReplyPreview = document.createElement('div'); dmReplyPreview.className = 'dm-reply-preview'; dmReplyPreview.hidden = true;
   const dmReplyText = document.createElement('span'); dmReplyText.className = 'dm-reply-preview-text';
@@ -540,13 +562,39 @@ export function initSocial(ctx) {
       dmImageInput.disabled = false;
     }
   }
+  async function searchEntireDmHistory(query, request, friendId) {
+    const mine = me();
+    if (!mine || !friendId || !query.trim()) return;
+    const escaped = query.trim().slice(0, 100).replace(/[\\%_]/gu, (char) => `\\${char}`);
+    const pattern = `%${escaped}%`;
+    const results = [];
+    const pageSize = 500;
+    for (let offset = 0; ; offset += pageSize) {
+      const page = await supabase.from('roomchat_dms')
+        .select('id,sender,recipient,content,created_at,read_at,reply_to')
+        .or(`and(sender.eq.${mine},recipient.eq.${friendId}),and(sender.eq.${friendId},recipient.eq.${mine})`)
+        .ilike('content', pattern)
+        .order('created_at', { ascending: false }).order('id', { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (page.error) {
+        if (request === dmSearchRequest) { dmSearchResults = []; renderThread(); ctx.showToast('DM 검색을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.'); }
+        return;
+      }
+      results.push(...(page.data || []));
+      if (!page.data || page.data.length < pageSize) break;
+    }
+    if (request !== dmSearchRequest || activeFriend !== friendId || me() !== mine) return;
+    dmSearchResults = results.reverse();
+    renderThread();
+  }
   function renderThread() {
     el.dmThread.replaceChildren();
     const visibleThread = dmSearchQuery
-      ? thread.filter((dm) => String(dm.content || '').toLocaleLowerCase().includes(dmSearchQuery))
+      ? (dmSearchResults === null ? [] : dmSearchResults)
       : thread;
-    if (!thread.length) el.dmThread.append(emptyNote('첫 메시지를 보내 보세요.'));
-    else if (!visibleThread.length) el.dmThread.append(emptyNote('검색 결과가 없어요.'));
+    if (dmSearchQuery && dmSearchResults === null) el.dmThread.append(emptyNote('이 대화의 전체 기록을 검색하고 있어요…'));
+    else if (!thread.length && !dmSearchQuery) el.dmThread.append(emptyNote('첫 메시지를 보내 보세요.'));
+    else if (!visibleThread.length) el.dmThread.append(emptyNote(dmSearchQuery ? '전체 기록에서 검색 결과가 없어요.' : '검색 결과가 없어요.'));
     for (const dm of visibleThread) {
       const row = document.createElement('div');
       row.className = `dm-row${dm.sender === me() ? ' own' : ''}`;
