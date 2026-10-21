@@ -1459,3 +1459,33 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 .mention{padding:1px 4px;border-radius:5px;background:#302d59;color:#d2ccff;font-weight:700}
 .mention-me{background:#4a3c22;color:#ffdc8b}
 .message-row.mentioned{border-left:3px solid #ffca66;background:rgba(255,202,102,.07)}
+
+
+/* 2026-10-21 UI refinement: quieter surfaces and restrained mention colors */
+:root { --mention-accent: #a7a5ff; --mention-surface: rgba(126, 122, 255, .10); }
+.mention-popup {
+  border: 1px solid rgba(160, 164, 205, .18);
+  background: #1b2030;
+  box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  border-radius: 14px;
+  padding: 7px;
+  max-height: min(280px, 40vh);
+  overflow-y: auto;
+}
+.mention-popup-hint { padding: 6px 10px 8px; color: #8e96ad; font-size: 11px; letter-spacing: .04em; }
+.mention-option { display:flex; width:100%; text-align:left; align-items:center; border:0; border-radius:9px; padding:9px 11px; background:transparent; color:#d8dbea; font:inherit; font-size:13px; cursor:pointer; transition:background .14s ease, color .14s ease; }
+.mention-option:hover, .mention-option.active { background:rgba(139,136,255,.13); color:#e5e4ff; }
+.mention-everyone-option { color:#c6c5ff; }
+.mention { color:#c4c2ff; background:rgba(139,136,255,.075); border-radius:4px; padding:0 2px; font-weight:500; }
+.mention.mention-me { color:#d4d2ff; background:rgba(139,136,255,.13); font-weight:600; }
+.mention.mention-everyone { color:#c6c5ff; background:rgba(139,136,255,.12); font-weight:600; }
+.message-row.mentioned { background:rgba(139,136,255,.035); border-left:2px solid rgba(139,136,255,.48); }
+.message-row.mentioned .message-content { color:inherit; }
+/* Small visual polish without changing the existing layout */
+.topbar { gap:12px; }
+.header-tool { transition:background .16s ease, border-color .16s ease, transform .16s ease; }
+.header-tool:hover:not(:disabled) { border-color:rgba(151,154,204,.26); transform:translateY(-1px); }
+.room-item { transition:background .16s ease, color .16s ease, border-color .16s ease; }
+.room-item.active { box-shadow:inset 3px 0 0 #9995ff; }
+.composer { border-color:rgba(129,139,181,.25); box-shadow:0 8px 24px rgba(0,0,0,.08); }
+.message-content { line-height:1.65; }
