@@ -587,6 +587,19 @@ function renderMessage(message) {
     body.append(imageLink);
   }
   row.append(body);
+  const reply = document.createElement('button');
+  reply.type = 'button';
+  reply.className = 'admin-action message-reply';
+  reply.textContent = '답글';
+  reply.setAttribute('aria-label', '이 메시지에 답글 쓰기');
+  reply.addEventListener('click', () => {
+    const quoteName = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
+    const quote = (message.content || (message.image_path ? '사진' : '')).replace(/\s+/gu, ' ').slice(0, 180);
+    ui.messageInput.value = `↪ ${quoteName}: ${quote}\n` + ui.messageInput.value;
+    ui.messageInput.focus();
+    ui.messageInput.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  row.append(reply);
   if (isOwn && message.content && !message.image_path) {
     const edit = document.createElement('button');
     edit.type = 'button';
