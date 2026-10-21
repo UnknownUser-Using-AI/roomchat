@@ -395,6 +395,7 @@ export function initSocial(ctx) {
 
   /* ---------- DM ---------- */
   async function openThread(friendId) {
+    clearDmReply();
     if (relation(friendId) !== 'friends') return ctx.showToast('친구끼리만 DM을 보낼 수 있어요.');
     clearDmImagePreview();
     activeFriend = friendId;
