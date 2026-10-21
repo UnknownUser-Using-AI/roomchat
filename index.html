@@ -110,6 +110,10 @@
           <button id="remove-attachment" class="icon-button" type="button" aria-label="첨부 이미지 제거">×</button>
         </div>
         <div id="paste-hint" class="paste-hint">이미지를 복사한 뒤 이곳에 붙여넣을 수도 있어요.</div>
+        <div id="reply-preview" class="reply-preview" hidden aria-live="polite">
+          <div class="reply-preview-copy"><strong id="reply-preview-name"></strong><span id="reply-preview-content"></span></div>
+          <button id="cancel-reply" type="button" aria-label="답글 취소">×</button>
+        </div>
         <form id="message-form" class="composer">
           <label class="attach-button" for="image-file" title="이미지 파일 선택" aria-label="이미지 파일 선택"><span aria-hidden="true">＋</span><input id="image-file" type="file" accept="image/*" hidden /></label>
           <button id="gif-button" class="attach-button gif-button" type="button" title="GIF 검색" aria-label="GIF 검색">GIF</button>
