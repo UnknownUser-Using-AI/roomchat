@@ -1489,3 +1489,37 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 .room-item.active { box-shadow:inset 3px 0 0 #9995ff; }
 .composer { border-color:rgba(129,139,181,.25); box-shadow:0 8px 24px rgba(0,0,0,.08); }
 .message-content { line-height:1.65; }
+
+/* Channel topic chip: make the small text beside the room name look intentional. */
+.channel-heading{min-width:0}
+.channel-topic{
+  display:inline-flex;
+  align-items:center;
+  flex:0 1 auto;
+  min-width:0;
+  max-width:clamp(72px,18vw,220px);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  padding:6px 10px;
+  border:1px solid rgba(151,154,204,.14);
+  border-radius:8px;
+  background:rgba(255,255,255,.035);
+  color:#aab4d0;
+  font-size:12px;
+  line-height:1.35;
+  letter-spacing:.005em;
+  transition:background .16s ease,border-color .16s ease,color .16s ease;
+}
+.channel-topic:hover{
+  background:rgba(139,136,255,.08);
+  border-color:rgba(151,154,204,.24);
+  color:#d4d8ed;
+}
+@media(max-width:900px){
+  .channel-topic{max-width:clamp(56px,14vw,130px);padding:5px 8px;font-size:11px}
+}
+@media(max-width:600px){
+  .channel-topic{max-width:100px}
+}
+
