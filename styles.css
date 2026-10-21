@@ -1828,3 +1828,11 @@ img, video, iframe { max-width: 100%; }
   .dm-gif-search button{height:46px!important;min-height:46px!important;min-width:70px!important;padding:0 12px!important}
   .dm-gif-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:34dvh;gap:8px}
 }
+
+
+/* Message action accessibility and mobile sizing */
+.message-copy,.message-reply,.message-edit,.message-delete{white-space:nowrap}
+.message-copy:focus-visible,.message-reply:focus-visible,.message-edit:focus-visible,.message-delete:focus-visible{outline:2px solid var(--accent,#8b7cff);outline-offset:2px}
+.message-copy{opacity:.78}
+.message-row:hover .message-copy,.message-row:focus-within .message-copy{opacity:1}
+@media(max-width:640px){.message-copy,.message-reply,.message-edit,.message-delete{min-height:32px;padding:5px 8px;font-size:12px}}
