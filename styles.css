@@ -1318,3 +1318,117 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 .room-unlimited-choice input{margin-top:3px;accent-color:var(--accent,#8b7cf6)}
 .room-unlimited-choice span{display:grid;gap:3px}
 .room-unlimited-choice small{font-size:12px;line-height:1.4;color:var(--muted,#9ca3af)}
+
+
+/* Discord polish: keep all remaining controls in the same dark navy/purple system. */
+:root{
+  --paper:#111522;--white:#171c2b;--ink:#eef2ff;--muted:#8996b5;--line:#293249;
+  --teal:#7667ff;--teal-dark:#5b4ce0;--teal-soft:#29294f;--lilac:#292c48;--coral:#ff6b8a;
+  --shadow:0 18px 48px rgba(3,7,18,.34);
+}
+body{background:radial-gradient(ellipse at 55% 0%,#1b2340 0%,#121725 48%,#0e1320 100%);color:#eef2ff}
+.app-shell{grid-template-columns:76px 260px minmax(0,1fr) 270px;background:transparent}
+.sidebar{background:rgba(23,29,45,.98);border-right-color:#2a3248}
+.brand,.room-heading,.room-title,.current-room-name,.messages-heading{color:#eef2ff}
+.brand-mark i{background:#171c2b}
+.brand-mark b{background:#29294f}
+.side-intro{position:relative;border:1px solid #2b3450;border-radius:14px;background:linear-gradient(145deg,rgba(102,85,255,.13),rgba(25,34,54,.3));}
+.side-intro p{color:#eef2ff}
+.sidebar-hero-copy,.side-intro .sidebar-hero-copy{color:#a4afcc}
+.room-heading{color:#9ba7c5}
+.room-item{border-radius:8px;color:#c5cce0}
+.room-item:hover{background:#222b40;color:#fff;box-shadow:none}
+.room-item.active{background:#303052;box-shadow:inset 0 0 0 1px rgba(135,124,255,.13)}
+.room-item::before{background:#a99fff;box-shadow:0 0 12px rgba(169,159,255,.3)}
+.room-number{background:#252d43;color:#9aa7c8}
+.room-item.active .room-number{background:#7667ff;color:#fff}
+.room-item.child-room{background:rgba(255,255,255,.018)}
+.room-item.child-room:hover,.room-item.child-room.active{background:#262846}
+.room-item:hover .room-title{color:#fff}
+.room-arrow{color:#a7a0ff}
+.icon-button,.notification-button,.nickname-chip,.header-tool,.secondary-button{background:#20283b;border-color:#34405c;color:#dce3f8}
+.icon-button:hover,.notification-button:hover,.nickname-chip:hover,.header-tool:hover,.secondary-button:hover{border-color:#7568f7;color:#fff;background:#2b3150}
+.notification-button.enabled{background:#29294f;border-color:#5b50b8;color:#c7c0ff}
+.topbar{background:#151b2a;border-bottom-color:#293249;background-image:linear-gradient(90deg,transparent,rgba(118,103,255,.045),transparent)}
+.channel-hash{color:#9b91ff}
+.channel-topic,.muted-label{color:#8794b4}
+.connection-state.online{color:#8fd8b0}
+.message-list{scrollbar-color:#38435e transparent}
+.message-row:hover{background:#1c2334}
+.message-meta strong{color:#eef2ff}
+.message-meta time{color:#8996b5}
+.message-content,.own-message .message-content{color:#dce3f8}
+.message-image-link{background:#0b0f18}
+.composer-wrap{background:rgba(17,22,37,.96);border-top-color:#293249}
+.composer{background:#1b2335;border-color:#35405a;box-shadow:0 8px 25px rgba(0,0,0,.14)}
+.composer:focus-within{border-color:#7568f7;box-shadow:0 0 0 3px rgba(118,103,255,.14)}
+.composer textarea{color:#eef2ff}
+.composer textarea::placeholder{color:#7f8cab}
+.attach-button{background:#252d43;color:#b8c3df}
+.attach-button:hover{background:#34315d;color:#fff}
+.send-button,.primary-button{background:linear-gradient(135deg,#7667ff,#5547df);color:#fff}
+.send-button:hover,.primary-button:hover{background:linear-gradient(135deg,#887bff,#6556ed)}
+.composer-foot,.paste-hint{color:#7f8cab}
+.attachment-preview{background:#1b2335;border-color:#34405c;color:#e8edff}
+.attachment-meta span{color:#8996b5}
+.room-banner{background:linear-gradient(112deg,#1e2940 0%,#242544 57%,#2a213b 100%);border-color:#343c5a}
+.room-banner h1{color:#f2f3ff}
+.room-banner p,.room-banner .banner-kicker{color:#a9b4d4}
+.presence-card{background:rgba(24,31,49,.78);border-color:#3a4261}
+.presence-card strong{color:#eef2ff}
+.presence-card span:not(.presence-icon){color:#a4afcc}
+.member-sidebar{background:#171d2d;border-left-color:#293249}
+.member-sidebar-heading{color:#eef2ff}
+.member-sidebar-status,.sidebar-member-empty{color:#8996b5}
+.sidebar-member-row{color:#dce3f8}
+.sidebar-member-row:hover{background:#252d43}
+.member-sidebar-footer{border-top-color:#293249;color:#7785a6}
+.sidebar-bottom .sidebar-user-panel{border-color:#2a3248;background:#171d2d}
+.sidebar-account-settings{color:#9ba7c5}
+.modal-card{background:#171c2b;border-color:#303a55;color:#eef2ff}
+.modal-card h2{color:#eef2ff}
+.modal-card p,.safety-caption{color:#a4afcc}
+.field-label{color:#dce3f8}
+.text-field{background:#111522;border-color:#35405a;color:#eef2ff}
+.text-field::placeholder{color:#7f8cab}
+.text-field:focus{border-color:#7667ff;box-shadow:0 0 0 3px rgba(118,103,255,.18)}
+.modal::backdrop{background:rgba(5,8,18,.76);backdrop-filter:blur(6px)}
+.room-unlimited-choice{border-color:#34405c;background:#1b2335;color:#eef2ff}
+.room-unlimited-choice small{color:#9ba7c5}
+.mobile-room-strip{background:#171d2d;border-bottom-color:#293249}
+.mobile-room-chip{background:#1d2538;border-color:#34405c;color:#aebbd8}
+.mobile-room-chip.active{background:#302d59;border-color:#6559d8;color:#e5e1ff}
+.mobile-add-room{border-color:#4a4c7c;color:#b8afff}
+.room-row{position:relative;min-width:0;border-radius:8px;transition:opacity .16s ease,transform .16s ease}
+.room-row[draggable="true"]{cursor:grab}
+.room-row[draggable="true"]:active{cursor:grabbing}
+.room-row.dragging{opacity:.38;transform:scale(.985)}
+.room-row.drag-over{outline:1px solid #8f83ff;background:rgba(118,103,255,.11)}
+.room-row.drag-over::after{content:"";position:absolute;left:8px;right:8px;bottom:-2px;height:2px;border-radius:2px;background:#9d92ff;pointer-events:none}
+.room-row.dragging .room-item{pointer-events:none}
+#nickname-dialog .nickname-modal-card{background:#171c2b;border-color:#303a55}
+#nickname-dialog .modal-icon{background:#29294f;color:#b8afff}
+#nickname-dialog .eyebrow{color:#b8afff}
+#nickname-dialog .modal-card h2{color:#eef2ff}
+#nickname-dialog .modal-card p{color:#a4afcc}
+#nickname-dialog .field-label{color:#dce3f8}
+#nickname-dialog .text-field{color:#eef2ff;background:#111522;border-color:#35405a}
+#nickname-dialog .secondary-button{color:#dce3f8;background:#20283b;border-color:#34405c}
+#nickname-dialog .primary-button{background:linear-gradient(135deg,#7667ff,#5547df)}
+#nickname-dialog .avatar-drop{background:#1d2538;border-color:#34405c;color:#eef2ff}
+#nickname-dialog .safety-caption{color:#8996b5}
+button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline-color:#a99fff}
+@media(max-width:1100px){
+  .app-shell{grid-template-columns:64px 210px minmax(0,1fr)}
+  .member-sidebar{display:none}
+}
+@media(max-width:760px){
+  .app-shell{grid-template-columns:1fr}
+  .server-rail,.sidebar,.member-sidebar{display:none}
+  .chat-panel{min-height:0}
+  .topbar{background:#151b2a;padding:0 14px}
+  .room-banner{background:linear-gradient(112deg,#1e2940,#242544 57%,#2a213b);border-color:#343c5a}
+  .composer-wrap{background:rgba(17,22,37,.97)}
+  .room-item:hover{transform:none}
+}
+@media(prefers-reduced-motion:reduce){.room-row{transition:none}}
