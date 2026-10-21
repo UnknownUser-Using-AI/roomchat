@@ -1538,3 +1538,5 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 .guide-list article strong{color:#aaa4ff;font-size:13px}
 .guide-list article span{color:#c4c9da;font-size:12px;line-height:1.65}
 @media(max-width:760px){.guide-open-button{min-width:44px;padding:0 9px;font-size:12px}.guide-card{padding:20px}.guide-dialog-header h2{font-size:22px}}
+
+.guide-open-button[hidden],.channel-topic[hidden]{display:none!important}
