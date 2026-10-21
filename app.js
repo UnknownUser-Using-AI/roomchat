@@ -109,7 +109,6 @@ function showRemoteTyping(name) {
   window.clearTimeout(state.typingClearTimer);
   state.typingClearTimer = window.setTimeout(() => { typingIndicator.hidden = true; remoteTypingName = ''; }, 3000);
 }
-let roomSearchQuery = '';
 let mediaOnlyMode = false;
 const imageZoomDialog = document.createElement('dialog');
 imageZoomDialog.className = 'image-zoom-dialog';
