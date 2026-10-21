@@ -1449,3 +1449,13 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 .verified-box{position:relative;cursor:help}
 .verified-box::after{content:"✓ 인증된 관리자";position:absolute;left:50%;bottom:calc(100% + 7px);z-index:40;display:none;width:max-content;max-width:220px;padding:6px 9px;border:1px solid var(--line,#3a4658);border-radius:8px;background:var(--panel,#202938);color:var(--text,#eef2f8);box-shadow:0 8px 22px #0004;font-size:11px;font-weight:700;line-height:1.3;white-space:nowrap;transform:translateX(-50%);pointer-events:none}
 .verified-box:hover::after,.verified-box:focus-visible::after{display:block}
+
+
+/* Live @mention suggestions */
+.mention-popup[hidden]{display:none!important}
+.mention-popup{background:#171c2b;border-color:#303a55;color:#eef2ff;box-shadow:0 14px 34px rgba(0,0,0,.38)}
+.mention-option{display:block;width:100%;color:#dce3f8;text-align:left}
+.mention-option.active,.mention-option:hover{background:#302d59;color:#f3f1ff}
+.mention{padding:1px 4px;border-radius:5px;background:#302d59;color:#d2ccff;font-weight:700}
+.mention-me{background:#4a3c22;color:#ffdc8b}
+.message-row.mentioned{border-left:3px solid #ffca66;background:rgba(255,202,102,.07)}
