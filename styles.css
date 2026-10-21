@@ -1540,3 +1540,6 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 @media(max-width:760px){.guide-open-button{min-width:44px;padding:0 9px;font-size:12px}.guide-card{padding:20px}.guide-dialog-header h2{font-size:22px}}
 
 .guide-open-button[hidden],.channel-topic[hidden]{display:none!important}
+
+/* Guide button and modal removed from the channel header. */
+.guide-open-button{display:none!important}
