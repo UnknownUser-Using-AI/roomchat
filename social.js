@@ -274,12 +274,13 @@ export function initSocial(ctx) {
     if (openProfileId) renderProfileActions(openProfileId);
   }
   async function loadUnread() {
-    const { data, error } = await supabase.from('roomchat_dms').select('sender,created_at').eq('recipient', me())
+    const { data, error } = await supabase.from('roomchat_dms').select('sender,created_at,read_at').eq('recipient', me())
       .order('created_at', { ascending: false }).limit(200);
     if (error) return;
     const map = readMap();
     unread = new Map();
     for (const row of data || []) {
+      if (row.read_at) continue;
       if (map[row.sender] && new Date(row.created_at) <= new Date(map[row.sender])) continue;
       unread.set(row.sender, (unread.get(row.sender) || 0) + 1);
     }
@@ -478,6 +479,7 @@ export function initSocial(ctx) {
     if (viewing) {
       if (!thread.some((item) => String(item.id) === String(dm.id))) thread.push(dm);
       renderThread();
+      await markDmReadOnServer(dm.sender);
       markRead(dm.sender);
     } else {
       unread.set(dm.sender, (unread.get(dm.sender) || 0) + 1);
