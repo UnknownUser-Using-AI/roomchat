@@ -1861,3 +1861,18 @@ img, video, iframe { max-width: 100%; }
 .message-link-target{outline:2px solid var(--accent,#8173ef);outline-offset:3px;border-radius:12px;animation:message-link-pulse 1.8s ease-out}
 @keyframes message-link-pulse{0%,35%{background:var(--accent-soft,#f0edff)}100%{background:transparent}}
 @media(prefers-reduced-motion:reduce){.message-link-target{animation:none}}
+
+
+/* Structured message replies */
+.reply-preview{display:flex;align-items:center;gap:10px;max-width:100%;margin:0 0 8px;padding:10px 12px;border:1px solid var(--line,#dedee5);border-left:3px solid var(--accent,#8173ef);border-radius:10px;background:var(--white,#fff)}
+.reply-preview[hidden]{display:none}
+.reply-preview-copy{display:grid;gap:3px;min-width:0;flex:1}
+.reply-preview-copy strong{font-size:12px;color:var(--accent,#6254c7)}
+.reply-preview-copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--muted,#777)}
+#cancel-reply{flex:none;width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:var(--muted,#777);font-size:22px;cursor:pointer}
+#cancel-reply:hover{background:var(--accent-soft,#f0edff);color:var(--text,#292a30)}
+.message-reply-quote{display:grid;gap:3px;max-width:min(520px,100%);margin:7px 0 2px;padding:8px 11px;text-align:left;border:0;border-left:3px solid var(--accent,#8173ef);border-radius:0 9px 9px 0;background:var(--accent-soft,#f0edff);color:var(--text,#292a30);cursor:pointer}
+.message-reply-quote strong{font-size:11px;color:var(--accent,#6254c7)}
+.message-reply-quote span{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.message-reply-quote:disabled{cursor:default;opacity:.7}
+@media(max-width:640px){.reply-preview{padding:8px 10px}.message-reply-quote{max-width:100%}.message-reply-quote span{font-size:11px}}
