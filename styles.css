@@ -1302,4 +1302,4 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 .child-room-create{flex:0 0 auto;white-space:nowrap;border:1px solid #3b3b43;border-radius:7px;padding:0 10px;font-size:12px}
 .child-room-create:hover{background:#34343c;color:#fff}
 @media(max-width:1050px){.child-room-create{padding:0 7px;font-size:11px}}
-@media(max-width:760px){.child-room-create{display:none!important}}
+@media(max-width:760px){.child-room-create{padding:0 7px;min-width:32px;font-size:13px}.child-room-create span{display:none}}
