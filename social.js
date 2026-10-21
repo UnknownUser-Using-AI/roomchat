@@ -139,16 +139,26 @@ export function initSocial(ctx) {
     if (profile.nick_color && HEX.test(profile.nick_color)) node.style.color = profile.nick_color;
   }
   async function followTag(tag) {
-    if (!me()) return ctx.showToast('태그를 따라 하려면 계정으로 로그인해 주세요.');
-    if (!draft || !el.styleDialog.open) {
-      openStyleDialog();
-      if (!el.styleDialog.open || !draft) return;
+    const uid = me();
+    if (!uid) return ctx.showToast('태그를 따라 하려면 계정으로 로그인해 주세요.');
+    const currentProfile = profiles.get(uid) || {};
+    const currentTags = (currentProfile.tags || []).map((item) => item.id);
+    if (currentTags.includes(tag.id)) return ctx.showToast('이미 사용 중인 태그예요.');
+    if (currentTags.length >= MAX_TAGS_WORN) return ctx.showToast(`태그는 최대 ${MAX_TAGS_WORN}개까지 달 수 있어요.`);
+    const nextTags = [...currentTags, tag.id];
+    try {
+      const { error } = await supabase.rpc('roomchat_set_my_tags', { p_tag_ids: nextTags });
+      if (error) throw error;
+      await loadProfiles([uid], true);
+      if (draft && el.styleDialog.open) {
+        draft.tags = nextTags;
+        renderTagGrid();
+      }
+      applyProfileStyles();
+      ctx.showToast('태그를 내 프로필에 적용했어요.');
+    } catch (error) {
+      ctx.showToast(ctx.errorText(error, '태그를 적용하지 못했어요. 잠시 후 다시 시도해 주세요.'));
     }
-    if (draft.tags.includes(tag.id)) return ctx.showToast('이미 사용 중인 태그예요.');
-    if (draft.tags.length >= MAX_TAGS_WORN) return ctx.showToast(`태그는 최대 ${MAX_TAGS_WORN}개까지 달 수 있어요.`);
-    draft.tags.push(tag.id);
-    renderTagGrid();
-    ctx.showToast('태그를 선택했어요. 저장을 누르면 프로필에 적용돼요.');
   }
   function tagPill(tag, interactive = true) {
     const pill = document.createElement('span');
