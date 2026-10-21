@@ -330,9 +330,7 @@ function updateRoomHeading(room) {
   updateComposerAvailability();
   ui.roomName.textContent = room.name;
   ui.bannerName.textContent = room.name;
-  ui.roomTopic.textContent = room.is_featured
-    ? '★ 고정 방 · 누구나 참여할 수 있어요'
-    : `방 ${String(sortedRooms().findIndex((item) => item.id === room.id) + 1).padStart(2, '0')} · 누구나 참여할 수 있어요`;
+  ui.roomTopic.textContent = room.name;
   ui.roomDelete.hidden = !(state.isAdmin && !room.is_featured);
   renderRoomLists();
 }
@@ -705,7 +703,7 @@ async function switchRoom(room) {
   if (ui.adminPanelDialog.open) renderAdminPanel();
 }
 async function createRoom(name) {
-  const cleanName = name.trim().replace(/\s+/gu, ' ');
+  const cleanName = [...name.trim().replace(/\s+/gu, ' ')].slice(0, 20).join('');
   if (cleanName.length < 2 || cleanName.length > 32) return showToast('방 이름은 2~32자로 입력해 주세요.');
   const ownerToken = state.user ? null : `${crypto.randomUUID()}${crypto.randomUUID()}`.replaceAll('-', '');
   const { data, error } = await supabase.rpc('roomchat_create_room', {
@@ -1511,7 +1509,7 @@ function setupEvents() {
   ui.accountForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const invite = state.pendingAdminInvite && !state.user ? state.pendingAdminInvite : null;
-    const name = invite?.nickname || ui.accountNickname.value.normalize('NFC').trim().replace(/\s+/gu, ' ');
+    const name = [...(invite?.nickname || ui.accountNickname.value.normalize('NFC').trim().replace(/\s+/gu, ' '))].slice(0, 20).join('');
     const password = ui.accountPassword.value;
     const code = invite?.code || ui.adminCode.value.trim();
     const action = invite ? 'register' : state.accountMode;
