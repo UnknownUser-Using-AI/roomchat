@@ -1227,3 +1227,37 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
+
+
+/* Keep the room list in one place: the left text sidebar. */
+.rail-room-list{display:none!important}
+.server-rail{gap:0}
+.server-rail .server-home,.server-rail .server-add{flex:none}
+.server-rail .server-add{margin-top:auto}
+
+/* Room title glides into focus when the pointer approaches a room. */
+.room-item .room-title{
+  opacity:.84;
+  transform:translateX(-5px);
+  transform-origin:left center;
+  transition:opacity .22s ease,transform .28s cubic-bezier(.2,.8,.2,1),color .2s ease;
+}
+.room-item:hover .room-title,
+.room-item:focus-visible .room-title,
+.room-item.active .room-title{
+  opacity:1;
+  transform:translateX(0);
+}
+.room-item:hover .room-title{color:#fff}
+.room-item.active .room-title{transition-delay:.02s}
+.room-item .room-arrow{
+  transform:translateX(-5px);
+  transition:opacity .2s ease,transform .24s cubic-bezier(.2,.8,.2,1);
+}
+.room-item:hover .room-arrow,.room-item.active .room-arrow{
+  opacity:1;
+  transform:translateX(0);
+}
+@media(prefers-reduced-motion:reduce){
+  .room-item .room-title,.room-item .room-arrow{transition:none;transform:none}
+}
