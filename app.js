@@ -29,6 +29,7 @@ const ui = {
   toast: $('#toast'), charCount: $('#char-count'),
   messageSearch: $('#message-search'), messageSearchDate: $('#message-search-date'), messageSearchClear: $('#message-search-clear'),
   chatSettingsButton: $('#chat-settings-button'), chatSettings: $('#chat-settings'),
+  chatSettingsClose: $('#chat-settings-close'), resetChatSettings: $('#reset-chat-settings'),
   settingDark: $('#setting-dark'), settingFontSize: $('#setting-font-size'),
   settingWide: $('#setting-wide'), settingHideSidebar: $('#setting-hide-sidebar'), settingYouTubePreview: $('#setting-youtube-preview'),
   sidebarCollapseButton: $('#sidebar-collapse-button'),
@@ -2229,6 +2230,26 @@ function setupEvents() {
     try { localStorage.setItem(settingKey, JSON.stringify(chatSettings)); } catch {}
     applyChatSettings(chatSettings);
   };
+  const closeChatSettings = () => {
+    if (ui.chatSettings) ui.chatSettings.hidden = true;
+    ui.chatSettingsButton?.setAttribute('aria-expanded', 'false');
+  };
+  ui.chatSettingsClose?.addEventListener('click', closeChatSettings);
+  ui.resetChatSettings?.addEventListener('click', () => {
+    chatSettings = {
+      dark: false,
+      wide: false,
+      hideSidebar: false,
+      sidebarCollapsed: false,
+      youtubePreview: true,
+      sound: true,
+      fontSize: 16,
+    };
+    applyChatSettings(chatSettings);
+    try { localStorage.setItem(settingKey, JSON.stringify(chatSettings)); } catch {}
+    renderMessages();
+    showToast('화면 설정을 기본값으로 되돌렸어요.');
+  });
   [ui.settingDark, ui.settingWide, ui.settingHideSidebar, ui.settingYouTubePreview, ui.settingSound, ui.settingFontSize].forEach((control) => control?.addEventListener('change', () => {
     saveChatSettings();
     if (control === ui.settingYouTubePreview) renderMessages();
@@ -2269,10 +2290,7 @@ function setupEvents() {
       event.preventDefault();
       ui.messageSearch?.focus();
     }
-    if (event.key === 'Escape' && ui.chatSettings && !ui.chatSettings.hidden) {
-      ui.chatSettings.hidden = true;
-      ui.chatSettingsButton?.setAttribute('aria-expanded', 'false');
-    }
+    if (event.key === 'Escape' && ui.chatSettings && !ui.chatSettings.hidden) closeChatSettings();
   });
   window.addEventListener('offline', () => {
     setConnection(false, '오프라인');
