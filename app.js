@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261018-giphy';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261020-social';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-mentions';
 import { ensureFont, fontStack } from './fonts.js?v=20261020-social';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -8,6 +8,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 });
 const $ = (selector) => document.querySelector(selector);
 const ui = {
+  mentionPopup: $('#mention-popup'),
   roomList: $('#room-list'), mobileRoomList: $('#mobile-room-list'),
   roomName: $('#current-room-name'), bannerName: $('#banner-room-name'), roomTopic: $('#room-topic'),
   presence: $('#presence-count'), presenceButton: $('#presence-button'), messages: $('#message-list'),
@@ -75,6 +76,9 @@ const state = {
   profiles: new Map(),
 };
 let social = null;
+let mentionItems = [];
+let mentionActiveIndex = 0;
+let mentionToken = null;
 
 const ADMIN_INVITE_STORAGE_KEY = 'roomchat:admin-invite';
 function restoreAdminInvite() {
@@ -1028,6 +1032,62 @@ async function openRoomDialog(parentRoomId = null) {
   ui.roomDialog.showModal();
   ui.roomInput.focus();
 }
+function closeMentionPopup() {
+  if (!ui.mentionPopup) return;
+  ui.mentionPopup.hidden = true;
+  ui.mentionPopup.replaceChildren();
+  mentionItems = [];
+  mentionToken = null;
+}
+function updateMentionSuggestions() {
+  if (!ui.mentionPopup || !state.room || isGuideRoom(state.room)) return closeMentionPopup();
+  const value = ui.messageInput.value;
+  const caret = ui.messageInput.selectionStart ?? value.length;
+  const beforeCaret = value.slice(0, caret);
+  const match = beforeCaret.match(/(?:^|\\s)@([^\\s@]*)$/u);
+  if (!match) return closeMentionPopup();
+  const query = match[1].toLocaleLowerCase();
+  const start = caret - match[0].length + match[0].lastIndexOf('@');
+  const names = [...new Set(getMentionNames().filter(Boolean))]
+    .filter((name) => name.toLocaleLowerCase().includes(query))
+    .sort((a, b) => {
+      const aStarts = a.toLocaleLowerCase().startsWith(query);
+      const bStarts = b.toLocaleLowerCase().startsWith(query);
+      return Number(bStarts) - Number(aStarts) || a.localeCompare(b, 'ko');
+    }).slice(0, 8);
+  if (!names.length) return closeMentionPopup();
+  mentionItems = names;
+  mentionActiveIndex = Math.min(mentionActiveIndex, names.length - 1);
+  mentionToken = { start, end: caret };
+  renderMentionPopup();
+}
+function renderMentionPopup() {
+  ui.mentionPopup.replaceChildren();
+  mentionItems.forEach((name, index) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = `mention-option${index === mentionActiveIndex ? ' active' : ''}`;
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', String(index === mentionActiveIndex));
+    option.textContent = `@${name}`;
+    option.addEventListener('click', () => chooseMention(name));
+    ui.mentionPopup.append(option);
+  });
+  ui.mentionPopup.hidden = false;
+}
+function chooseMention(name) {
+  if (!mentionToken || !name) return closeMentionPopup();
+  const value = ui.messageInput.value;
+  const insertion = `@${name} `;
+  ui.messageInput.value = value.slice(0, mentionToken.start) + insertion + value.slice(mentionToken.end);
+  const caret = mentionToken.start + insertion.length;
+  ui.messageInput.focus();
+  ui.messageInput.setSelectionRange(caret, caret);
+  ui.charCount.textContent = `${ui.messageInput.value.length} / 2000`;
+  ui.messageInput.style.height = 'auto';
+  ui.messageInput.style.height = `${Math.min(ui.messageInput.scrollHeight, 150)}px`;
+  closeMentionPopup();
+}
 async function sendMessage(event) {
   event?.preventDefault();
   if (isGuideRoom(state.room)) return showToast('안내 채널에서는 메시지를 보낼 수 없어요.');
@@ -1636,13 +1696,23 @@ function setupEvents() {
   });
   ui.messageForm.addEventListener('submit', sendMessage);
   ui.messageInput.addEventListener('input', () => {
+    updateMentionSuggestions();
     ui.messageInput.style.height = 'auto';
     ui.messageInput.style.height = `${Math.min(ui.messageInput.scrollHeight, 150)}px`;
     ui.charCount.textContent = `${ui.messageInput.value.length} / 2000`;
   });
   ui.messageInput.addEventListener('keydown', (event) => {
+    if (!ui.mentionPopup.hidden && mentionItems.length) {
+      if (event.key === 'ArrowDown') { event.preventDefault(); mentionActiveIndex = (mentionActiveIndex + 1) % mentionItems.length; renderMentionPopup(); return; }
+      if (event.key === 'ArrowUp') { event.preventDefault(); mentionActiveIndex = (mentionActiveIndex - 1 + mentionItems.length) % mentionItems.length; renderMentionPopup(); return; }
+      if (event.key === 'Escape') { closeMentionPopup(); return; }
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); chooseMention(mentionItems[mentionActiveIndex]); return; }
+    }
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); sendMessage(event); }
   });
+  ui.messageInput.addEventListener('click', updateMentionSuggestions);
+  ui.messageInput.addEventListener('blur', () => window.setTimeout(closeMentionPopup, 120));
+  ui.mentionPopup.addEventListener('mousedown', (event) => event.preventDefault());
   ui.imageFile.addEventListener('change', (event) => chooseAttachment(event.target.files?.[0]));
   ui.removeAttachment.addEventListener('click', clearAttachment);
   ui.messageInput.addEventListener('paste', (event) => {
