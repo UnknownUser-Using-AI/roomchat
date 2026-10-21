@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261021-unread-typing-v1" />
+  <link rel="stylesheet" href="./styles.css?v=20261021-sidebar-connection-v1" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -28,7 +28,10 @@
       </a>
       <div class="room-heading">
         <span>채널</span>
-        <button id="new-room-button" class="icon-button small" type="button" aria-label="새 방 만들기" title="새 방 만들기">＋</button>
+        <div class="room-heading-actions">
+          <button id="sidebar-collapse-button" class="icon-button small sidebar-collapse-button" type="button" aria-pressed="false" aria-label="사이드바 접기" title="채팅방 목록 접기">⇤</button>
+          <button id="new-room-button" class="icon-button small" type="button" aria-label="새 방 만들기" title="새 방 만들기">＋</button>
+        </div>
       </div>
       <div id="room-list" class="room-list" aria-live="polite"></div>
       <div class="sidebar-bottom">
@@ -95,6 +98,7 @@
         <label>글자 크기 <select id="setting-font-size"><option value="14">작게</option><option value="16" selected>보통</option><option value="18">크게</option><option value="20">아주 크게</option></select></label>
         <label><input id="setting-wide" type="checkbox" /> 넓은 채팅</label>
         <label><input id="setting-hide-sidebar" type="checkbox" /> 접속자 목록 숨기기</label>
+        <label><input id="setting-youtube-preview" type="checkbox" checked /> YouTube 미리보기</label>
         <label><input id="setting-sound" type="checkbox" checked /> 메시지 소리</label>
         <div class="notification-history-panel"><div class="notification-history-heading"><strong>이 기기의 알림 기록</strong><button id="clear-notification-history" class="header-tool" type="button">기록 지우기</button></div><ol id="notification-history-list" class="notification-history-list"><li class="notification-history-empty">아직 알림 기록이 없어요.</li></ol></div>
       </section>
