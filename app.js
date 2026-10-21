@@ -1304,6 +1304,42 @@ async function showSystemNotification(title, body, tag) {
   } catch { /* Notifications are an optional browser capability. */ }
 }
 // 알림 켜기를 누른 사람에게만 소리와 알림을 냅니다.
+function readNotificationHistory() {
+  try {
+    const value = JSON.parse(localStorage.getItem('roomchat:notification-history') || '[]');
+    return Array.isArray(value) ? value.slice(0, 50) : [];
+  } catch { return []; }
+}
+function renderNotificationHistory() {
+  if (!ui.notificationHistoryList) return;
+  ui.notificationHistoryList.replaceChildren();
+  const history = state.notificationHistory || [];
+  if (!history.length) {
+    const empty = document.createElement('li');
+    empty.className = 'notification-history-empty';
+    empty.textContent = '아직 알림 기록이 없어요.';
+    ui.notificationHistoryList.append(empty);
+    return;
+  }
+  history.forEach((item) => {
+    const row = document.createElement('li');
+    row.className = 'notification-history-item';
+    const title = document.createElement('strong');
+    title.textContent = item.title || '알림';
+    const body = document.createElement('span');
+    body.textContent = item.body || '';
+    const time = document.createElement('time');
+    time.textContent = item.at ? new Date(item.at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    row.append(title, body, time);
+    ui.notificationHistoryList.append(row);
+  });
+}
+function recordNotificationHistory(title, body) {
+  const entry = { title: String(title || '').slice(0, 160), body: String(body || '').slice(0, 300), at: new Date().toISOString() };
+  state.notificationHistory = [entry, ...readNotificationHistory()].slice(0, 50);
+  try { localStorage.setItem('roomchat:notification-history', JSON.stringify(state.notificationHistory)); } catch {}
+  renderNotificationHistory();
+}
 function notifyUser(title, body, tag) {
   if (!state.notifications) return;
   playMessageSound();
