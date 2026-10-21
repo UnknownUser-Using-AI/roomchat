@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261018-giphy';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-dm-images-v1';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-dm-images-v2';
 import { ensureFont, fontStack } from './fonts.js?v=20261020-social';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
