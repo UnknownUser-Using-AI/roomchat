@@ -1686,8 +1686,8 @@ async function moderateNickname(member) {
 function cleanGiphyUrl(value) {
   try {
     const url = new URL(value);
-    if (url.protocol !== 'https:' || !/^media\d*\.giphy\.com$/u.test(url.hostname)) return null;
-    if (!/^\/media\/[A-Za-z0-9_\-/.]+\.gif$/u.test(url.pathname)) return null;
+    if (url.protocol !== 'https:' || !/(^|\.)giphy\.com$/u.test(url.hostname)) return null;
+    if (!/^\/media\/[A-Za-z0-9_\-/.]+\.(gif|webp)$/iu.test(url.pathname)) return null;
     return `${url.origin}${url.pathname}`;
   } catch { return null; }
 }
@@ -1699,11 +1699,16 @@ async function loadGifs(query = '') {
     return;
   }
   ui.gifStatus.textContent = query ? `“${query}” 검색 중…` : '인기 GIF를 불러오는 중…';
-  const params = new URLSearchParams({ api_key: GIPHY_API_KEY, limit: '24', rating: 'g', lang: 'ko' });
+  const params = new URLSearchParams({ api_key: GIPHY_API_KEY, limit: '24', rating: 'g', lang: 'en', bundle: 'messaging_non_clips' });
   if (query) params.set('q', query);
   try {
     const response = await fetch(`https://api.giphy.com/v1/gifs/${query ? 'search' : 'trending'}?${params}`);
-    if (!response.ok) throw new Error('giphy');
+    if (!response.ok) {
+      const detail = response.status === 401 || response.status === 403 ? 'GIPHY API 키가 거부됐어요. 키와 API 앱 상태를 확인해 주세요.'
+        : response.status === 429 ? 'GIF 검색 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
+        : `GIPHY 검색 오류 (HTTP ${response.status})`;
+      throw new Error(detail);
+    }
     const result = await response.json();
     if (request !== state.gifRequest) return;
     const items = (result.data || []).map((item) => ({
@@ -1711,7 +1716,7 @@ async function loadGifs(query = '') {
       preview: cleanGiphyUrl(item.images?.fixed_width_small?.url || item.images?.fixed_width?.url),
       send: cleanGiphyUrl(item.images?.downsized_medium?.url || item.images?.fixed_height?.url || item.images?.original?.url),
     })).filter((item) => item.preview && item.send);
-    ui.gifStatus.textContent = items.length ? (query ? `“${query}” 검색 결과` : '인기 GIF') : '검색 결과가 없어요. 다른 단어로 찾아보세요.';
+    ui.gifStatus.textContent = items.length ? (query ? `“${query}” 검색 결과` : '인기 GIF') : ((result.data || []).length ? 'GIF는 검색됐지만 지원되는 미리보기 파일이 없어요. 다른 검색어로 시도해 주세요.' : '검색 결과가 없어요. 영어 검색어도 시도해 보세요.');
     for (const item of items) {
       const button = document.createElement('button');
       button.type = 'button';
@@ -1726,7 +1731,7 @@ async function loadGifs(query = '') {
       ui.gifGrid.append(button);
     }
   } catch {
-    if (request === state.gifRequest) ui.gifStatus.textContent = 'GIF를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
+    if (request === state.gifRequest) ui.gifStatus.textContent = error instanceof Error && error.message !== 'Failed to fetch' ? error.message : 'GIF 서버에 연결하지 못했어요. 네트워크나 브라우저 확장 프로그램을 확인해 주세요.';
   }
 }
 function openGifDialog() {
