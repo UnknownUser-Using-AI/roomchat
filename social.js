@@ -115,6 +115,7 @@ export function initSocial(ctx) {
     if (!pill) return;
     const card = findTagCard(pill);
     pill.classList.remove('is-tag-card-open');
+    pill.setAttribute('aria-expanded', 'false');
     if (!card) return;
     card.classList.remove('is-open', 'is-touch-popup');
     card.style.removeProperty('left');
@@ -162,6 +163,7 @@ export function initSocial(ctx) {
     const card = findTagCard(pill);
     if (!card) return;
     pill.classList.add('is-tag-card-open');
+    pill.setAttribute('aria-expanded', 'true');
     card.classList.add('is-open');
     if (isTouchUi()) {
       card.classList.add('is-touch-popup');
@@ -236,6 +238,8 @@ export function initSocial(ctx) {
     pill.title = '';
     pill.tabIndex = interactive ? 0 : -1;
     pill.setAttribute('aria-label', `${tag.name}, 일반 태그`);
+    pill.setAttribute('aria-haspopup', 'true');
+    pill.setAttribute('aria-expanded', 'false');
     const image = document.createElement('img');
     image.src = tagUrl(tag.image_path);
     image.alt = '';
@@ -280,6 +284,7 @@ export function initSocial(ctx) {
     return pill;
   }
   function applyProfileStyles() {
+    closeAllTagPopovers();
     document.querySelectorAll('[data-style-user]').forEach((node) => styleNode(node, profiles.get(node.dataset.styleUser), node.dataset.styleKind));
     document.querySelectorAll('.tag-slot[data-user-id]').forEach((slot) => {
       const tags = profiles.get(slot.dataset.userId)?.tags || [];
