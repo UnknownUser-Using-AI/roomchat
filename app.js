@@ -527,6 +527,13 @@ function renderMessage(message) {
   time.dateTime = message.created_at;
   time.textContent = formatTime(message.created_at);
   meta.append(time);
+  if (message.edited_at) {
+    const edited = document.createElement('span');
+    edited.className = 'message-edited';
+    edited.textContent = '수정됨';
+    edited.title = `수정 시간: ${formatTime(message.edited_at)}`;
+    meta.append(edited);
+  }
   body.append(meta);
   const gifMatch = typeof message.content === 'string' ? message.content.match(GIF_URL_PATTERN) : null;
   const youtubeVideoId = !gifMatch ? extractYouTubeVideoId(message.content) : null;
@@ -575,6 +582,15 @@ function renderMessage(message) {
     body.append(imageLink);
   }
   row.append(body);
+  if (isOwn && message.content && !message.image_path) {
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'admin-action message-edit';
+    edit.textContent = '수정';
+    edit.setAttribute('aria-label', '내 메시지 수정');
+    edit.addEventListener('click', () => editMessage(message));
+    row.append(edit);
+  }
   if (state.isAdmin || isOwn) {
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -1276,6 +1292,32 @@ async function removeImages(paths) {
   for (let offset = 0; offset < usable.length; offset += 100) {
     const { error } = await supabase.storage.from('chat-images').remove(usable.slice(offset, offset + 100));
     if (error) throw error;
+  }
+}
+async function editMessage(message) {
+  if (!isOwnMessage(message) || !message?.id) return;
+  const nextContent = window.prompt('메시지를 수정해 주세요. (최대 2000자)', message.content || '');
+  if (nextContent === null) return;
+  const content = nextContent.trim();
+  if (!content) return showToast('메시지 내용을 입력해 주세요.');
+  if (content.length > 2000) return showToast('메시지는 2000자 이내로 입력해 주세요.');
+  if (content === message.content) return;
+  try {
+    const { data, error } = await supabase.rpc('roomchat_edit_my_message', {
+      p_message_id: message.id,
+      p_content: content,
+      p_guest_session_id: state.user ? null : guestSessionId,
+      p_guest_token: state.user ? null : guestToken,
+    });
+    if (error) throw error;
+    const updated = normalizeRpcRow(data);
+    if (updated) {
+      state.messages = state.messages.map((item) => String(item.id) === String(updated.id) ? updated : item);
+      renderMessages();
+    }
+    showToast('메시지를 수정했어요.');
+  } catch (error) {
+    showToast(errorText(error, '메시지를 수정하지 못했어요.'));
   }
 }
 async function deleteMessage(message) {
