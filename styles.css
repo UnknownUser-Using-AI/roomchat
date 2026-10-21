@@ -2107,3 +2107,212 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .message-tools .header-tool { min-width: 0; padding-inline: 8px; }
   .message-tools .message-search-date { font-size: 14px; padding-inline: 7px; }
 }
+
+
+/* Clear, grouped chat settings panel */
+.chat-settings {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-height: min(58dvh, 620px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid #303a55;
+  background: #151b2a;
+  color: #edf1ff;
+  scrollbar-width: thin;
+  scrollbar-color: #444e70 transparent;
+}
+.chat-settings[hidden] { display: none !important; }
+.settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.settings-header h2 {
+  margin: 0;
+  color: #f1f3ff;
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -.3px;
+}
+.settings-header p {
+  margin: 5px 0 0;
+  color: #9ca8c6;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.settings-close {
+  flex: none;
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid #39435e;
+  border-radius: 10px;
+  background: #20283a;
+  color: #dce3fa;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.settings-close:hover { border-color: #8477ff; background: #2a3048; }
+.settings-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.settings-group {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #303a53;
+  border-radius: 13px;
+  background: #1a2132;
+}
+.settings-group h3 {
+  margin: 0 0 7px;
+  color: #aebaff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 0;
+  border-top: 1px solid rgba(89, 103, 140, .2);
+  cursor: pointer;
+}
+.setting-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.setting-copy strong {
+  color: #e6ebfb;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+.setting-copy small {
+  color: #909dbb;
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 450;
+}
+.setting-row input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  accent-color: #8172ff;
+  cursor: pointer;
+}
+.setting-row select {
+  flex: 0 0 auto;
+  max-width: 104px;
+  min-height: 36px;
+  padding: 5px 8px;
+  border: 1px solid #414c6a;
+  border-radius: 9px;
+  background: #101625;
+  color: #edf1ff;
+  font: inherit;
+  font-size: 12px;
+}
+.settings-notifications { grid-column: 1 / -1; }
+.settings-notifications .notification-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-notifications .notification-history-heading h3 { margin: 0; }
+.settings-notifications .notification-history-heading .setting-copy { gap: 4px; }
+.settings-notifications .notification-history-panel { min-width: 0; }
+.settings-notifications .notification-history-list {
+  max-height: 120px;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 0 0 0 20px;
+  color: #a5b1cc;
+  font-size: 11px;
+}
+.settings-notifications .notification-history-list li { padding: 5px 2px; overflow-wrap: anywhere; }
+.settings-notifications #clear-notification-history {
+  min-height: 34px;
+  flex: none;
+  padding: 0 10px;
+  border-color: #3f4966;
+  background: #222a3d;
+  color: #d7def4;
+}
+.settings-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.settings-reset {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(145, 132, 255, .55);
+  border-radius: 10px;
+  background: rgba(129, 114, 255, .12);
+  color: #cfc9ff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.settings-reset:hover { background: rgba(129, 114, 255, .2); border-color: #8c80ff; }
+.settings-footer > span { color: #8996b5; font-size: 11px; }
+.settings-close:focus-visible, .settings-reset:focus-visible,
+.settings-notifications #clear-notification-history:focus-visible {
+  outline: 2px solid #a49aff;
+  outline-offset: 2px;
+}
+.roomchat-dark .chat-settings { background: #121620; color: #edf1ff; border-color: #30384b; }
+.roomchat-dark .settings-group { background: #191f2d; border-color: #323b50; }
+.roomchat-dark .setting-row select { background: #10141e; color: #edf1ff; }
+@media (max-width: 900px) {
+  .settings-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settings-notifications { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .chat-settings {
+    max-height: min(56dvh, 520px);
+    padding: 12px 10px max(12px, env(safe-area-inset-bottom));
+  }
+  .settings-header { margin-bottom: 10px; gap: 8px; }
+  .settings-header h2 { font-size: 16px; }
+  .settings-header p { max-width: 230px; font-size: 11px; }
+  .settings-close { min-height: 38px; padding-inline: 10px; }
+  .settings-groups { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .settings-group { padding: 10px 11px; border-radius: 11px; }
+  .settings-group h3 { margin-bottom: 5px; font-size: 12px; }
+  .setting-row { min-height: 50px; gap: 10px; padding: 9px 0; }
+  .setting-copy strong { font-size: 12px; }
+  .setting-copy small { font-size: 11px; }
+  .setting-row input[type="checkbox"] { width: 22px; height: 22px; }
+  .setting-row select { max-width: 120px; min-height: 40px; font-size: 13px; }
+  .settings-notifications .notification-history-heading { align-items: flex-start; }
+  .settings-notifications #clear-notification-history { min-height: 38px; }
+  .settings-notifications .notification-history-list { max-height: 90px; }
+  .settings-footer { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .settings-reset { width: 100%; min-height: 42px; }
+}
+@media (max-width: 360px) {
+  .chat-settings { padding-inline: 8px; }
+  .settings-notifications .notification-history-heading { flex-direction: column; }
+  .settings-notifications #clear-notification-history { width: 100%; }
+}
