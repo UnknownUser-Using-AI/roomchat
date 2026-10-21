@@ -23,6 +23,8 @@
 .message-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 18px; border-bottom:1px solid var(--line,#e8e6e1); }
 .message-search-label { font-size:12px; color:var(--muted,#777); }
 .message-search { min-width:160px; flex:1; max-width:420px; border:1px solid var(--line,#ddd); border-radius:10px; padding:8px 10px; background:var(--surface,#fff); color:var(--text,#222); font:inherit; }
+.message-search-date-label { font-size:12px; color:var(--muted,#777); }
+.message-search-date { min-width:132px; border:1px solid var(--line,#ddd); border-radius:10px; padding:8px 9px; background:var(--surface,#fff); color:var(--text,#222); font:inherit; }
 .chat-settings { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:12px 18px; border-bottom:1px solid var(--line,#e8e6e1); font-size:13px; }
 .chat-settings label { display:flex; align-items:center; gap:6px; }
 .chat-settings select { border:1px solid var(--line,#ddd); border-radius:8px; padding:5px; background:var(--surface,#fff); color:var(--text,#222); }
@@ -30,7 +32,7 @@
 .roomchat-dark { --surface:#171a22; --text:#edf0f7; --muted:#a4adbd; --line:#343947; color:var(--text); background:#11141b; color-scheme:dark; }
 .roomchat-dark body,.roomchat-dark .app-shell,.roomchat-dark .main-panel,.roomchat-dark .message-list,.roomchat-dark .composer-wrap,.roomchat-dark .member-sidebar,.roomchat-dark .sidebar,.roomchat-dark .topbar { background:#171a22; color:#edf0f7; border-color:#343947; }
 .roomchat-dark .message-row,.roomchat-dark .chat-settings,.roomchat-dark .message-tools { border-color:#343947; }
-.roomchat-dark .message-search,.roomchat-dark .chat-settings select { background:#202531; color:#edf0f7; border-color:#454c5d; }
+.roomchat-dark .message-search,.roomchat-dark .message-search-date,.roomchat-dark .chat-settings select { background:#202531; color:#edf0f7; border-color:#454c5d; }
 .roomchat-wide .main-panel { max-width:none; }
 .roomchat-hide-members .member-sidebar { display:none !important; }
 .message-delete { align-self:flex-start; opacity:.65; }
