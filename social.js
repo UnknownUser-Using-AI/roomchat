@@ -14,14 +14,14 @@ function escapeRegExp(value) {
 // @닉네임 부분만 강조합니다. 내용은 항상 텍스트 노드로 넣어서 HTML이 끼어들 수 없어요.
 export function renderMentions(content, names = [], selfName = '') {
   const fragment = document.createDocumentFragment();
-  const list = [...new Set(names.filter(Boolean))].sort((a, b) => b.length - a.length).slice(0, 200);
-  if (!list.length || !content.includes('@')) { fragment.append(content); return fragment; }
-  const pattern = new RegExp(`@(${list.map(escapeRegExp).join('|')})`, 'gu');
+  const list = [...new Set(['everyone', ...names.filter(Boolean)])].sort((a, b) => b.length - a.length).slice(0, 201);
+  if (!content.includes('@')) { fragment.append(content); return fragment; }
+  const pattern = new RegExp(`@(${list.map(escapeRegExp).join('|')})(?![\\p{L}\\p{N}_])`, 'giu');
   let last = 0;
   for (const match of content.matchAll(pattern)) {
     if (match.index > last) fragment.append(content.slice(last, match.index));
     const span = document.createElement('span');
-    span.className = `mention${match[1] === selfName ? ' mention-me' : ''}`;
+    span.className = `mention${match[1].toLocaleLowerCase() === 'everyone' ? ' mention-everyone' : match[1] === selfName ? ' mention-me' : ''}`;
     span.textContent = match[0];
     fragment.append(span);
     last = match.index + match[0].length;
@@ -31,7 +31,7 @@ export function renderMentions(content, names = [], selfName = '') {
 }
 
 export function mentionsName(content, name) {
-  return Boolean(name && typeof content === 'string' && content.includes(`@${name}`));
+  return Boolean(typeof content === 'string' && (/@everyone(?![\\p{L}\\p{N}_])/iu.test(content) || (name && content.includes(`@${name}`))));
 }
 
 export function initSocial(ctx) {
