@@ -1523,3 +1523,18 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
   .channel-topic{max-width:100px}
 }
 
+
+
+/* The welcome card is removed; the guide lives behind a compact button on the guide room. */
+.guide-open-button{flex:0 0 auto;min-width:54px;padding:0 13px;font-weight:700;color:#c8c4ff;border-color:rgba(151,145,255,.28);background:rgba(118,103,255,.12)}
+.guide-open-button:hover{background:rgba(118,103,255,.2);border-color:rgba(169,159,255,.48)}
+.guide-modal{width:min(560px,calc(100% - 28px));max-height:min(82dvh,760px);overflow:auto}
+.guide-card{gap:14px;padding:clamp(20px,4vw,32px)}
+.guide-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.guide-dialog-header h2{margin:7px 0 0;font-size:25px}
+.guide-card>p{margin:0;color:#a4afcc;font-size:13px}
+.guide-list{display:grid;gap:9px}
+.guide-list article{display:grid;gap:5px;padding:12px 14px;border:1px solid rgba(151,154,204,.12);border-radius:11px;background:rgba(255,255,255,.025)}
+.guide-list article strong{color:#aaa4ff;font-size:13px}
+.guide-list article span{color:#c4c9da;font-size:12px;line-height:1.65}
+@media(max-width:760px){.guide-open-button{min-width:44px;padding:0 9px;font-size:12px}.guide-card{padding:20px}.guide-dialog-header h2{font-size:22px}}
