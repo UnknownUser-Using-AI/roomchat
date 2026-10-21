@@ -79,7 +79,7 @@ const state = {
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
-  profiles: new Map(), messageSearchQuery: '', soundEnabled: true, notificationHistory: [],
+  profiles: new Map(), messageSearchQuery: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(),
 };
 let social = null;
 let mentionItems = [];
@@ -499,6 +499,70 @@ function linkifyTextNodes(root) {
     node.replaceWith(fragment);
   }
 }
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🎉'];
+async function refreshMessageReactions(messageIds = state.messages.map((message) => message.id)) {
+  const ids = [...new Set(messageIds.map((id) => String(id)))];
+  if (!ids.length) { state.messageReactions = new Map(); return; }
+  const { data, error } = await supabase.from('roomchat_message_reactions')
+    .select('message_id,user_id,emoji').in('message_id', ids);
+  if (error) {
+    // Reactions are optional; a missing table or policy must not break chat history.
+    console.warn('Message reactions are unavailable.');
+    return;
+  }
+  const grouped = new Map();
+  for (const reaction of data || []) {
+    const key = String(reaction.message_id);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(reaction);
+  }
+  state.messageReactions = grouped;
+}
+async function toggleMessageReaction(message, emoji, button) {
+  if (!state.user) return showToast('이모지 반응을 사용하려면 계정에 로그인해 주세요.');
+  button.disabled = true;
+  const existing = (state.messageReactions.get(String(message.id)) || [])
+    .some((reaction) => reaction.user_id === state.user.id && reaction.emoji === emoji);
+  try {
+    const request = existing
+      ? supabase.from('roomchat_message_reactions').delete().eq('message_id', message.id).eq('user_id', state.user.id).eq('emoji', emoji)
+      : supabase.from('roomchat_message_reactions').insert({ message_id: message.id, user_id: state.user.id, emoji });
+    const { error } = await request;
+    if (error) throw error;
+    await refreshMessageReactions([message.id]);
+    const row = ui.messages.querySelector(`[data-message-id="${CSS.escape(String(message.id))}"]`);
+    if (row) {
+      const oldBar = row.querySelector('.message-reactions');
+      oldBar?.remove();
+      const bar = createReactionBar(message);
+      const body = row.querySelector('.message-body');
+      body?.append(bar);
+    }
+  } catch (error) {
+    showToast(errorText(error, '반응을 저장하지 못했어요. 로그인 상태를 확인해 주세요.'));
+  } finally {
+    button.disabled = false;
+  }
+}
+function createReactionBar(message) {
+  const bar = document.createElement('div');
+  bar.className = 'message-reactions';
+  bar.setAttribute('aria-label', '메시지 이모지 반응');
+  const reactions = state.messageReactions.get(String(message.id)) || [];
+  for (const emoji of REACTION_EMOJIS) {
+    const matching = reactions.filter((reaction) => reaction.emoji === emoji);
+    const mine = Boolean(state.user && matching.some((reaction) => reaction.user_id === state.user.id));
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `message-reaction${mine ? ' selected' : ''}`;
+    button.textContent = matching.length ? `${emoji} ${matching.length}` : emoji;
+    button.title = state.user ? (mine ? '내 반응 취소' : '반응 추가') : '반응하려면 로그인하세요';
+    button.setAttribute('aria-pressed', String(mine));
+    button.addEventListener('click', () => toggleMessageReaction(message, emoji, button));
+    bar.append(button);
+  }
+  return bar;
+}
 function renderMessage(message) {
   const key = String(message.id);
   if (ui.messages.querySelector(`[data-message-id="${CSS.escape(key)}"]`)) return;
@@ -587,6 +651,7 @@ function renderMessage(message) {
     imageLink.append(image);
     body.append(imageLink);
   }
+  body.append(createReactionBar(message));
   row.append(body);
   const reply = document.createElement('button');
   reply.type = 'button';
@@ -931,7 +996,7 @@ async function switchRoom(room) {
     const pageSize = 1000;
     for (let offset = 0; ; offset += pageSize) {
       const page = await supabase.from('messages')
-        .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified')
+        .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified,edited_at')
         .eq('room_id', room.id).order('created_at', { ascending: true }).range(offset, offset + pageSize - 1);
       if (page.error) { error = page.error; break; }
       data.push(...(page.data || []));
@@ -952,6 +1017,9 @@ async function switchRoom(room) {
     return;
   }
   state.messages = data || [];
+  state.messageReactions = new Map();
+  await refreshMessageReactions(state.messages.map((message) => message.id));
+  if (request !== state.roomRequest) return;
   renderMessages();
   if (state.nickname) await subscribeCurrentRoom(request);
   if (ui.adminPanelDialog.open) renderAdminPanel();
