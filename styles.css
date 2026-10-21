@@ -1111,3 +1111,119 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
     transition-duration:.01ms!important;
   }
 }
+
+
+/* Roomchat micro-motion polish */
+@keyframes rc-room-bar-rise{
+  from{height:0;top:calc(50% + 10px);opacity:0}
+  to{height:23px;top:calc(50% - 12px);opacity:1}
+}
+@keyframes rc-room-bar-settle{
+  from{height:23px;top:calc(50% - 12px)}
+  to{height:17px;top:calc(50% - 9px)}
+}
+@keyframes rc-soft-arrive{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes rc-icon-wiggle{
+  0%,100%{transform:rotate(0) scale(1)}
+  35%{transform:rotate(-7deg) scale(1.05)}
+  70%{transform:rotate(4deg) scale(1.03)}
+}
+@keyframes rc-button-press{
+  0%{transform:scale(1)}
+  50%{transform:scale(.965)}
+  100%{transform:scale(1)}
+}
+@keyframes rc-online-breathe{
+  0%,100%{box-shadow:0 0 0 0 rgba(85,169,130,0)}
+  50%{box-shadow:0 0 0 4px rgba(85,169,130,.10)}
+}
+@keyframes rc-banner-orbit{
+  from{transform:rotate(0deg) translateY(0)}
+  50%{transform:rotate(2deg) translateY(-3px)}
+  to{transform:rotate(0deg) translateY(0)}
+}
+/* Room selection indicator: the slim white bar rises when hovering a room. */
+.room-item{position:relative;isolation:isolate}
+.room-item::before{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:0;
+  top:calc(50% + 10px);
+  width:3px;
+  height:0;
+  border-radius:0 5px 5px 0;
+  background:#fff;
+  box-shadow:0 0 0 1px rgba(23,107,99,.12),0 0 9px rgba(255,255,255,.22);
+  opacity:0;
+  pointer-events:none;
+  transition:top .22s cubic-bezier(.2,.8,.2,1),height .22s cubic-bezier(.2,.8,.2,1),opacity .16s ease;
+}
+.room-item:hover::before{
+  top:calc(50% - 12px);
+  height:23px;
+  opacity:1;
+}
+.room-item.active::before{
+  top:calc(50% - 9px);
+  height:17px;
+  opacity:1;
+}
+.room-item.active:hover::before{
+  top:calc(50% - 13px);
+  height:25px;
+}
+.room-item{transition:background-color .2s ease,color .2s ease,box-shadow .2s ease,transform .2s cubic-bezier(.2,.8,.2,1)}
+.room-item:hover{transform:translateX(2px)}
+.room-item:active{transform:translateX(1px) scale(.995)}
+.room-number{transition:background-color .2s ease,color .2s ease,transform .2s cubic-bezier(.2,.8,.2,1)}
+.room-item:hover .room-number{transform:scale(1.06)}
+.room-arrow{transform:translateX(-3px);transition:opacity .18s ease,transform .18s ease}
+.room-item:hover .room-arrow,.room-item.active .room-arrow{transform:translateX(0)}
+.brand-mark{transition:transform .25s ease,filter .25s ease}
+.brand:hover .brand-mark{transform:rotate(-6deg) scale(1.07);filter:drop-shadow(0 3px 6px rgba(23,107,99,.12))}
+.icon-button,.notification-button,.nickname-chip,.attach-button,.send-button,.header-tool,.secondary-button{
+  transition:transform .18s ease,background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+.icon-button:hover,.notification-button:hover,.nickname-chip:hover,.attach-button:hover,.header-tool:hover,.secondary-button:hover{
+  transform:translateY(-1px);
+}
+.icon-button:active,.notification-button:active,.nickname-chip:active,.attach-button:active,.header-tool:active,.secondary-button:active,.send-button:active{
+  transform:scale(.97);
+}
+.topbar{background-image:linear-gradient(90deg,rgba(23,107,99,0),rgba(23,107,99,.025),rgba(23,107,99,0));background-size:200% 100%;transition:background-position .35s ease}
+.topbar:hover{background-position:100% 0}
+.room-banner{transition:box-shadow .25s ease,border-color .25s ease,transform .25s ease}
+.room-banner:hover{border-color:#c5ddd3;box-shadow:0 12px 30px rgba(45,65,57,.055)}
+.banner-orbit{animation:rc-banner-orbit 7s ease-in-out infinite}
+.orbit-two{animation-delay:-3.5s}
+.presence-card{transition:transform .2s ease,background-color .2s ease,box-shadow .2s ease}
+.presence-card:hover{transform:translateY(-2px);background:rgba(255,255,255,.78);box-shadow:0 5px 15px rgba(45,65,57,.045)}
+.message-avatar{transition:transform .2s cubic-bezier(.2,.8,.2,1),border-radius .2s ease}
+.message-row:hover .message-avatar{transform:translateY(-1px) scale(1.035);border-radius:10px}
+.message-content{transition:background-color .18s ease,border-color .18s ease,box-shadow .18s ease}
+.message-row:hover .message-content{border-color:#e1e9e2;box-shadow:0 3px 10px rgba(45,65,57,.025)}
+.message-image{transition:transform .28s ease,filter .28s ease}
+.message-image-link:hover .message-image{transform:scale(1.025);filter:saturate(1.04)}
+.composer{transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease,transform .2s ease}
+.composer:focus-within{transform:translateY(-1px)}
+.composer textarea::placeholder{transition:color .18s ease}
+.composer:focus-within textarea::placeholder{color:#9baea6}
+.connection-state.online i{animation:rc-online-breathe 2.7s ease-in-out infinite}
+.live-dot{animation:rc-online-breathe 2.7s ease-in-out infinite}
+.empty-symbol{transition:transform .25s ease,background-color .25s ease}
+.empty-state:hover .empty-symbol{transform:translateY(-2px) rotate(-3deg)}
+.spinner{will-change:transform}
+button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
+  outline:2px solid #7ba99a;
+  outline-offset:3px;
+}
+@media(hover:none){
+  .room-item:hover,.presence-card:hover,.room-banner:hover,.message-row:hover .message-content{transform:none;box-shadow:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
