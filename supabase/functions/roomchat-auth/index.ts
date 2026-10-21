@@ -89,8 +89,8 @@ Deno.serve(async (request: Request) => {
     const action = input?.action;
     const nickname = normalizeNickname(input?.nickname);
     const password = input?.password;
-    if (nickname.length < 1 || nickname.length > 24 || /[\u0000-\u001f\u007f]/u.test(nickname)) {
-      return jsonResponse({ error: "닉네임은 1~24자로 입력해 주세요." }, 400, origin);
+    if (nickname.length < 1 || nickname.length > 20 || /[\u0000-\u001f\u007f]/u.test(nickname)) {
+      return jsonResponse({ error: "닉네임은 1~20자로 입력해 주세요." }, 400, origin);
     }
     if (!passwordIsValid(password)) {
       return jsonResponse({ error: "비밀번호는 8~72바이트로 입력해 주세요." }, 400, origin);
