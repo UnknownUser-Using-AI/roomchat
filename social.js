@@ -94,6 +94,7 @@ export function initSocial(ctx) {
   let activeFriend = null;
   let thread = [];
   let dmSearchQuery = '';
+  let dmReplyTarget = null;
   let socialChannel = null;
   let onlineChannel = null;
   let tagLibrary = [];
@@ -407,7 +408,7 @@ export function initSocial(ctx) {
     dmSearchQuery = '';
     renderThread();
     const mine = me();
-    const { data, error } = await supabase.from('roomchat_dms').select('id,sender,recipient,content,created_at,read_at')
+    const { data, error } = await supabase.from('roomchat_dms').select('id,sender,recipient,content,created_at,read_at,reply_to')
       .or(`and(sender.eq.${mine},recipient.eq.${friendId}),and(sender.eq.${friendId},recipient.eq.${mine})`)
       .order('created_at', { ascending: false }).limit(100);
     if (activeFriend !== friendId) return;
@@ -420,6 +421,7 @@ export function initSocial(ctx) {
   }
   function closeThread() {
     clearDmImagePreview();
+    clearDmReply();
     activeFriend = null;
     el.dmView.hidden = true;
     el.dmBack.hidden = true;
@@ -442,6 +444,19 @@ export function initSocial(ctx) {
   dmSearch.autocomplete = 'off';
   dmSearch.addEventListener('input', () => { dmSearchQuery = dmSearch.value.trim().toLocaleLowerCase(); renderThread(); });
   el.dmView.insertBefore(dmSearch, el.dmThread);
+  const dmReplyPreview = document.createElement('div'); dmReplyPreview.className = 'dm-reply-preview'; dmReplyPreview.hidden = true;
+  const dmReplyText = document.createElement('span'); dmReplyText.className = 'dm-reply-preview-text';
+  const dmReplyCancel = document.createElement('button'); dmReplyCancel.type = 'button'; dmReplyCancel.className = 'secondary-button'; dmReplyCancel.textContent = '답장 취소';
+  dmReplyCancel.addEventListener('click', clearDmReply);
+  dmReplyPreview.append(dmReplyText, dmReplyCancel);
+  el.dmView.insertBefore(dmReplyPreview, el.dmForm);
+  function clearDmReply() { dmReplyTarget = null; dmReplyPreview.hidden = true; dmReplyText.textContent = ''; }
+  function setDmReply(dm) {
+    dmReplyTarget = dm;
+    dmReplyText.textContent = `${nameOf(dm.sender)}에게 답장: ${String(dm.content || '').slice(0, 100)}`;
+    dmReplyPreview.hidden = false;
+    el.dmInput.focus();
+  }
   const dmAttachmentPreview = document.createElement('div'); dmAttachmentPreview.className = 'dm-attachment-preview'; dmAttachmentPreview.hidden = true;
   el.dmView.insertBefore(dmAttachmentPreview, el.dmForm);
   const dmTools = document.createElement('div'); dmTools.className = 'dm-tools';
@@ -536,6 +551,12 @@ export function initSocial(ctx) {
       row.className = `dm-row${dm.sender === me() ? ' own' : ''}`;
       const bubble = document.createElement('p');
       bubble.className = 'dm-bubble';
+      if (dm.reply_to) {
+        const original = thread.find((item) => String(item.id) === String(dm.reply_to));
+        const quote = document.createElement('span'); quote.className = 'dm-reply-quote';
+        quote.textContent = original ? `${nameOf(original.sender)}: ${String(original.content || '').slice(0, 100)}` : '이전 메시지에 답장했어요';
+        bubble.append(quote);
+      }
       const gifUrl = typeof dm.content === 'string' && dm.content.startsWith(DM_GIF_PREFIX) ? cleanDmGifUrl(dm.content.slice(DM_GIF_PREFIX.length)) : null;
       const imagePath = typeof dm.content === 'string' && dm.content.startsWith(DM_IMAGE_PREFIX) ? dm.content.slice(DM_IMAGE_PREFIX.length) : null;
       if (gifUrl) {
@@ -555,6 +576,14 @@ export function initSocial(ctx) {
       const time = document.createElement('time');
       time.textContent = formatTime(dm.created_at);
       row.append(bubble, time);
+      const actions = document.createElement('div'); actions.className = 'dm-message-actions';
+      const replyButton = document.createElement('button'); replyButton.type = 'button'; replyButton.className = 'dm-message-action'; replyButton.textContent = '답장'; replyButton.setAttribute('aria-label', '이 메시지에 답장');
+      replyButton.addEventListener('click', () => setDmReply(dm)); actions.append(replyButton);
+      if (dm.sender !== me()) {
+        const reportButton = document.createElement('button'); reportButton.type = 'button'; reportButton.className = 'dm-message-action dm-report-action'; reportButton.textContent = '신고'; reportButton.setAttribute('aria-label', '이 DM 신고');
+        reportButton.addEventListener('click', () => reportDm(dm)); actions.append(reportButton);
+      }
+      row.append(actions);
       if (dm.sender === me()) {
         const receipt = document.createElement('span');
         receipt.className = `dm-read-receipt${dm.read_at ? ' is-read' : ''}`;
@@ -566,18 +595,34 @@ export function initSocial(ctx) {
     }
     if (!dmSearchQuery) el.dmThread.scrollTop = el.dmThread.scrollHeight;
   }
+  async function reportDm(dm) {
+    if (!dm || dm.sender === me() || dm.recipient !== me()) return;
+    const choice = window.prompt('신고 사유를 번호로 선택해 주세요.\n1. 스팸\n2. 괴롭힘\n3. 부적절한 내용\n4. 사기 또는 피싱\n5. 기타', '1');
+    if (choice === null) return;
+    const reason = ({ '1': 'spam', '2': 'harassment', '3': 'inappropriate', '4': 'scam', '5': 'other' })[choice.trim()];
+    if (!reason) return ctx.showToast('1부터 5까지 번호를 입력해 주세요.');
+    const details = window.prompt('추가 설명이 있다면 입력해 주세요. (선택 사항)', '') ?? '';
+    try {
+      const { error } = await supabase.rpc('roomchat_report_dm', { p_message_id: dm.id, p_reason: reason, p_details: details.slice(0, 500) });
+      if (error) throw error;
+      ctx.showToast('신고를 접수했어요. 같은 메시지는 한 번만 신고할 수 있어요.');
+    } catch (error) { ctx.showToast(ctx.errorText(error, '신고를 접수하지 못했어요.')); }
+  }
   async function sendDm(event) {
     event.preventDefault();
     const text = el.dmInput.value.trim();
     if (!text || !activeFriend) return;
     emojiPanel.hidden = true; gifPanel.hidden = true;
     el.dmInput.disabled = true;
-    const { data, error } = await supabase.rpc('roomchat_send_dm', { p_to: activeFriend, p_content: text });
+    const { data, error } = dmReplyTarget
+      ? await supabase.rpc('roomchat_send_dm_reply', { p_to: activeFriend, p_content: text, p_reply_to: dmReplyTarget.id })
+      : await supabase.rpc('roomchat_send_dm', { p_to: activeFriend, p_content: text });
     el.dmInput.disabled = false;
     if (error) { ctx.showToast(ctx.errorText(error, 'DM을 보내지 못했어요.')); el.dmInput.focus(); return; }
     const row = Array.isArray(data) ? data[0] : data;
     if (row && !thread.some((item) => String(item.id) === String(row.id))) thread.push(row);
     el.dmInput.value = '';
+    clearDmReply();
     renderThread();
     el.dmInput.focus();
   }
