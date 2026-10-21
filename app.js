@@ -532,33 +532,48 @@ function removeMessage(messageId) {
 }
 function extractYouTubeVideoId(content) {
   if (typeof content !== 'string') return null;
-  const candidates = content.match(/https?:\/\/[^\s<>]+/giu) || [];
+  // Mobile share sheets and some apps omit the protocol or use the mobile host.
+  const pattern = /(?:(?:https?:\\/\\/)?(?:www\\.)?(?:(?:m|music)\\.)?youtube(?:-nocookie)?\\.com\\/[^\\s<>]+|(?:https?:\\/\\/)?(?:www\\.)?youtu\\.be\\/[^\\s<>]+)/giu;
+  const candidates = content.match(pattern) || [];
   for (const candidate of candidates) {
+    const cleaned = candidate.replace(/[),.!?;]+$/u, '');
     let url;
-    try { url = new URL(candidate.replace(/[),.!?;]+$/u, '')); } catch { continue; }
-    const host = url.hostname.toLowerCase().replace(/^www\./u, '');
+    try { url = new URL(/^https?:\\/\\//iu.test(cleaned) ? cleaned : `https://${cleaned}`); } catch { continue; }
+    const host = url.hostname.toLowerCase().replace(/^www\\./u, '');
     let id = null;
     if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || null;
     else if (['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(host)) {
       const parts = url.pathname.split('/').filter(Boolean);
       if (url.pathname === '/watch') id = url.searchParams.get('v');
-      else if (['shorts', 'embed', 'live'].includes(parts[0])) id = parts[1] || null;
+      else if (['shorts', 'embed', 'live', 'v'].includes(parts[0])) id = parts[1] || null;
     }
     if (id && /^[A-Za-z0-9_-]{11}$/u.test(id)) return id;
   }
   return null;
 }
+function stripYouTubeUrls(content) {
+  return String(content || '')
+    .replace(/(?:(?:https?:\\/\\/)?(?:www\\.)?(?:(?:m|music)\\.)?youtube(?:-nocookie)?\\.com\\/[^\\s<>]+|(?:https?:\\/\\/)?(?:www\\.)?youtu\\.be\\/[^\\s<>]+)/giu, ' ')
+    .replace(/[ \\t]{2,}/gu, ' ')
+    .replace(/[ \\t]+\\n/gu, '\\n')
+    .replace(/\\n[ \\t]+/gu, '\\n')
+    .trim();
+}
 function createYouTubeEmbed(videoId) {
   const frame = document.createElement('iframe');
   frame.className = 'message-youtube-player';
-  frame.src = `https://www.youtube-nocookie.com/embed/${videoId}`;
+  // Explicit inline playback improves the mobile experience, especially on iOS.
+  frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0`;
   frame.title = 'YouTube 동영상 플레이어';
   frame.loading = 'lazy';
   frame.referrerPolicy = 'strict-origin-when-cross-origin';
   frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
   frame.allowFullscreen = true;
+  frame.setAttribute('playsinline', '');
+  frame.setAttribute('webkit-playsinline', '');
   return frame;
 }
+
 function linkifyTextNodes(root) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes = [];
@@ -782,7 +797,8 @@ function renderMessage(message) {
   if (replyQuote) body.append(replyQuote);
   const gifMatch = typeof message.content === 'string' ? message.content.match(GIF_URL_PATTERN) : null;
   const youtubeVideoId = !gifMatch ? extractYouTubeVideoId(message.content) : null;
-  if (youtubeVideoId && state.youtubePreviewEnabled !== false) {
+  const showYoutubePreview = Boolean(youtubeVideoId && state.youtubePreviewEnabled !== false);
+  if (showYoutubePreview) {
     const videoCard = document.createElement('div');
     videoCard.className = 'message-youtube';
     videoCard.append(createYouTubeEmbed(youtubeVideoId));
@@ -803,13 +819,18 @@ function renderMessage(message) {
     gif.loading = 'lazy';
     gifLink.append(gif);
     body.append(gifLink);
-  } else if (message.content && !youtubeVideoId) {
-    const text = document.createElement('p');
-    text.className = 'message-content';
-    if (message.user_id) { text.dataset.styleUser = message.user_id; text.dataset.styleKind = 'text'; }
-    text.append(renderMentions(message.content, getMentionNames(), state.nickname));
-    linkifyTextNodes(text);
-    body.append(text);
+  } else {
+    // Keep any caption the sender wrote next to a video. If previews are disabled,
+    // retain the original URL text so the message never disappears from the thread.
+    const displayContent = showYoutubePreview ? stripYouTubeUrls(message.content) : String(message.content || '');
+    if (displayContent) {
+      const text = document.createElement('p');
+      text.className = 'message-content';
+      if (message.user_id) { text.dataset.styleUser = message.user_id; text.dataset.styleKind = 'text'; }
+      text.append(renderMentions(displayContent, getMentionNames(), state.nickname));
+      linkifyTextNodes(text);
+      body.append(text);
+    }
   }
   if (message.image_path) {
     const { data } = supabase.storage.from('chat-images').getPublicUrl(message.image_path);
