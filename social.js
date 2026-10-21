@@ -426,6 +426,11 @@ export function initSocial(ctx) {
     renderFriendsList();
   }
   const DM_GIF_PREFIX = '[gif]';
+  const DM_IMAGE_PREFIX = '[image]';
+  const DM_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+  const DM_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+  let pendingDmImage = null;
+  let pendingDmImageUrl = '';
   const DM_EMOJIS = ['😀','😂','😊','😍','😎','😭','🤔','🙄','😴','🥳','👍','👎','❤️','💖','🔥','🎉','🙏','👏','💀','✨','🐱','🐸','💯','🤝'];
   const dmSearch = document.createElement('input');
   dmSearch.type = 'search';
@@ -435,9 +440,14 @@ export function initSocial(ctx) {
   dmSearch.autocomplete = 'off';
   dmSearch.addEventListener('input', () => { dmSearchQuery = dmSearch.value.trim().toLocaleLowerCase(); renderThread(); });
   el.dmView.insertBefore(dmSearch, el.dmThread);
+  const dmAttachmentPreview = document.createElement('div'); dmAttachmentPreview.className = 'dm-attachment-preview'; dmAttachmentPreview.hidden = true;
+  el.dmView.insertBefore(dmAttachmentPreview, el.dmForm);
   const dmTools = document.createElement('div'); dmTools.className = 'dm-tools';
+  const dmImageInput = document.createElement('input'); dmImageInput.type = 'file'; dmImageInput.accept = 'image/jpeg,image/png,image/webp,image/gif,image/avif'; dmImageInput.hidden = true; dmImageInput.setAttribute('aria-label', '보낼 이미지 선택');
+  const dmImageButton = document.createElement('button'); dmImageButton.type = 'button'; dmImageButton.className = 'secondary-button dm-tool-button'; dmImageButton.textContent = '📎'; dmImageButton.setAttribute('aria-label', 'DM 이미지 첨부'); dmImageButton.title = '이미지 첨부';
+  dmImageButton.addEventListener('click', () => dmImageInput.click());
   const emojiButton = document.createElement('button'); emojiButton.type = 'button'; emojiButton.className = 'secondary-button dm-tool-button'; emojiButton.textContent = '😊'; emojiButton.setAttribute('aria-label','이모지 선택');
-  const gifButton = document.createElement('button'); gifButton.type = 'button'; gifButton.className = 'secondary-button dm-tool-button'; gifButton.textContent = 'GIF'; gifButton.setAttribute('aria-label','GIF 검색'); dmTools.append(emojiButton,gifButton); el.dmForm.insertBefore(dmTools,el.dmInput);
+  const gifButton = document.createElement('button'); gifButton.type = 'button'; gifButton.className = 'secondary-button dm-tool-button'; gifButton.textContent = 'GIF'; gifButton.setAttribute('aria-label','GIF 검색'); dmTools.append(dmImageButton, emojiButton, gifButton, dmImageInput); el.dmForm.insertBefore(dmTools,el.dmInput);
   const emojiPanel = document.createElement('div'); emojiPanel.className = 'dm-emoji-panel'; emojiPanel.hidden = true; emojiPanel.setAttribute('aria-label','이모지 선택');
   for (const emoji of DM_EMOJIS) { const button = document.createElement('button'); button.type='button'; button.className='dm-emoji'; button.textContent=emoji; button.addEventListener('click',()=>{const start=el.dmInput.selectionStart ?? el.dmInput.value.length; const end=el.dmInput.selectionEnd ?? start; el.dmInput.setRangeText(emoji,start,end,'end'); el.dmInput.focus(); emojiPanel.hidden=true;}); emojiPanel.append(button); }
   const gifPanel = document.createElement('div'); gifPanel.className='dm-gif-panel'; gifPanel.hidden=true;
@@ -450,6 +460,68 @@ export function initSocial(ctx) {
     try { const response=await fetch('https://api.giphy.com/v1/gifs/'+(query?'search':'trending')+'?'+params); let result={}; try { result=await response.json(); } catch {} if(request!==dmGifRequest)return; if(!response.ok){gifStatus.textContent=response.status===401||response.status===403?'GIPHY API 키가 거부됐어요. 키와 API 앱 상태를 확인해 주세요.':response.status===429?'GIF 검색 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.':`GIPHY 검색 오류 (HTTP ${response.status})`;return;} const items=(result.data||[]).map(item=>({title:String(item.title||'GIF').slice(0,80),preview:cleanDmGifUrl(item.images?.fixed_width_small?.url||item.images?.fixed_width?.url||item.images?.downsized_small?.mp4),send:cleanDmGifUrl(item.images?.downsized_medium?.url||item.images?.fixed_height?.url||item.images?.original?.url||item.images?.downsized_small?.mp4)})).filter(item=>item.preview&&item.send); gifStatus.textContent=items.length?(query?'검색 결과를 선택하세요.':'인기 GIF'):(result.data?.length?'GIF는 검색됐지만 지원되는 미리보기 파일이 없어요. 다른 검색어로 시도해 주세요.':'검색 결과가 없어요. 영어 검색어도 시도해 보세요.');
       for(const item of items){const button=document.createElement('button');button.type='button';button.className='dm-gif-item';button.setAttribute('aria-label',item.title+' 보내기');const image=document.createElement('img');image.src=item.preview;image.alt=item.title;image.loading='lazy';button.append(image);button.addEventListener('click',async()=>{if(!activeFriend)return;gifPanel.hidden=true;const {data,error}=await supabase.rpc('roomchat_send_dm',{p_to:activeFriend,p_content:DM_GIF_PREFIX+item.send});if(error)return ctx.showToast(ctx.errorText(error,'GIF를 보내지 못했어요.'));const row=Array.isArray(data)?data[0]:data;if(row&&!thread.some(message=>String(message.id)===String(row.id)))thread.push(row);renderThread();});gifGrid.append(button);} } catch (error) {if(request===dmGifRequest)gifStatus.textContent=error instanceof Error && error.message!=='Failed to fetch'?error.message:'GIF 서버에 연결하지 못했어요. 네트워크나 브라우저 확장 프로그램을 확인해 주세요.';} }
   emojiButton.addEventListener('click',()=>{emojiPanel.hidden=!emojiPanel.hidden;gifPanel.hidden=true;}); gifButton.addEventListener('click',()=>{gifPanel.hidden=!gifPanel.hidden;emojiPanel.hidden=true;if(!gifPanel.hidden&&!gifGrid.childElementCount)loadDmGifs('');}); gifSearchForm.addEventListener('submit',event=>{event.preventDefault();loadDmGifs(gifSearch.value.trim());});
+  function validDmImagePath(path) {
+    return typeof path === 'string'
+      && /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[a-z0-9_-]{1,128}\.(jpg|png|webp|gif|avif)$/iu.test(path);
+  }
+  function clearDmImagePreview() {
+    if (pendingDmImageUrl) URL.revokeObjectURL(pendingDmImageUrl);
+    pendingDmImageUrl = '';
+    pendingDmImage = null;
+    dmImageInput.value = '';
+    dmAttachmentPreview.replaceChildren();
+    dmAttachmentPreview.hidden = true;
+  }
+  function prepareDmImage(file) {
+    if (!file) return;
+    if (!DM_IMAGE_TYPES.has(file.type) || file.size <= 0 || file.size > DM_IMAGE_MAX_BYTES) {
+      dmImageInput.value = '';
+      ctx.showToast('JPG, PNG, WEBP, GIF, AVIF 이미지 파일만 첨부할 수 있어요. 최대 크기는 8MB예요.');
+      return;
+    }
+    clearDmImagePreview();
+    pendingDmImage = file;
+    pendingDmImageUrl = URL.createObjectURL(file);
+    const preview = document.createElement('img'); preview.src = pendingDmImageUrl; preview.alt = '보낼 이미지 미리보기'; preview.className = 'dm-attachment-preview-image';
+    const details = document.createElement('div'); details.className = 'dm-attachment-preview-details';
+    const name = document.createElement('span'); name.textContent = file.name || '이미지'; name.className = 'dm-attachment-preview-name';
+    const send = document.createElement('button'); send.type = 'button'; send.className = 'primary-button'; send.textContent = '이미지 보내기';
+    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'secondary-button'; cancel.textContent = '취소';
+    send.addEventListener('click', sendDmImage);
+    cancel.addEventListener('click', clearDmImagePreview);
+    details.append(name, send, cancel); dmAttachmentPreview.append(preview, details); dmAttachmentPreview.hidden = false;
+  }
+  dmImageInput.addEventListener('change', () => prepareDmImage(dmImageInput.files?.[0]));
+  async function sendDmImage() {
+    if (!pendingDmImage || !activeFriend || !me()) return;
+    if (relation(activeFriend) !== 'friends') return ctx.showToast('친구끼리만 DM을 보낼 수 있어요.');
+    const file = pendingDmImage;
+    const friendId = activeFriend;
+    const extension = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' })[file.type];
+    const path = me() + '/' + friendId + '/' + crypto.randomUUID() + '.' + extension;
+    dmImageButton.disabled = true;
+    dmImageInput.disabled = true;
+    const sendButton = dmAttachmentPreview.querySelector('button.primary-button');
+    if (sendButton) { sendButton.disabled = true; sendButton.textContent = '전송 중…'; }
+    try {
+      const { error: uploadError } = await supabase.storage.from('dm-images').upload(path, file, { contentType: file.type, cacheControl: '3600', upsert: false });
+      if (uploadError) throw uploadError;
+      const { data, error } = await supabase.rpc('roomchat_send_dm', { p_to: friendId, p_content: DM_IMAGE_PREFIX + path });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row && activeFriend === friendId && !thread.some((item) => String(item.id) === String(row.id))) thread.push(row);
+      clearDmImagePreview();
+      if (activeFriend === friendId) renderThread();
+    } catch (error) {
+      await supabase.storage.from('dm-images').remove([path]).catch(() => {});
+      ctx.showToast(ctx.errorText(error, '이미지를 보내지 못했어요. 다시 시도해 주세요.'));
+      const button = dmAttachmentPreview.querySelector('button.primary-button');
+      if (button) { button.disabled = false; button.textContent = '이미지 보내기'; }
+    } finally {
+      dmImageButton.disabled = false;
+      dmImageInput.disabled = false;
+    }
+  }
   function renderThread() {
     el.dmThread.replaceChildren();
     const visibleThread = dmSearchQuery
@@ -463,7 +535,21 @@ export function initSocial(ctx) {
       const bubble = document.createElement('p');
       bubble.className = 'dm-bubble';
       const gifUrl = typeof dm.content === 'string' && dm.content.startsWith(DM_GIF_PREFIX) ? cleanDmGifUrl(dm.content.slice(DM_GIF_PREFIX.length)) : null;
-      if (gifUrl) { const image=document.createElement('img'); image.className='dm-gif-image'; image.src=gifUrl; image.alt='공유된 GIF'; image.loading='lazy'; bubble.append(image); } else linkifyDmText(bubble,dm.content);
+      const imagePath = typeof dm.content === 'string' && dm.content.startsWith(DM_IMAGE_PREFIX) ? dm.content.slice(DM_IMAGE_PREFIX.length) : null;
+      if (gifUrl) {
+        const image=document.createElement('img'); image.className='dm-gif-image'; image.src=gifUrl; image.alt='공유된 GIF'; image.loading='lazy'; bubble.append(image);
+      } else if (imagePath && validDmImagePath(imagePath)) {
+        const image=document.createElement('img'); image.className='dm-gif-image dm-shared-image'; image.alt='공유된 이미지'; image.loading='lazy'; image.setAttribute('aria-busy','true');
+        const caption=document.createElement('span'); caption.className='dm-image-loading'; caption.textContent='이미지를 불러오는 중…'; bubble.append(image,caption);
+        supabase.storage.from('dm-images').createSignedUrl(imagePath, 3600).then(({data,error}) => {
+          if (!image.isConnected) return;
+          if (error || !data?.signedUrl) { caption.textContent='이미지를 불러오지 못했어요.'; image.hidden=true; return; }
+          image.src=data.signedUrl; image.removeAttribute('aria-busy'); caption.remove();
+          image.tabIndex=0; image.setAttribute('role','link'); image.setAttribute('aria-label','이미지를 새 탭에서 크게 보기');
+          const openImage=()=>window.open(data.signedUrl,'_blank','noopener,noreferrer');
+          image.addEventListener('click',openImage); image.addEventListener('keydown',(event)=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openImage();}});
+        }).catch(() => { if(image.isConnected){caption.textContent='이미지를 불러오지 못했어요.';image.hidden=true;} });
+      } else linkifyDmText(bubble,dm.content);
       const time = document.createElement('time');
       time.textContent = formatTime(dm.created_at);
       row.append(bubble, time);
