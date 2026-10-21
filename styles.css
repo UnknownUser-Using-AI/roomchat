@@ -1331,7 +1331,7 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 /* Clean, video-only YouTube embeds */
 .message-youtube{width:min(100%,480px);margin-top:9px;overflow:hidden;border-radius:10px;background:#000;aspect-ratio:16/9}
 .message-youtube-player{display:block;width:100%;height:100%;border:0}
-.message-youtube+.message-content{display:none}
+
 @media(max-width:760px){.message-youtube{width:100%;max-width:480px}}
 
 
@@ -2014,4 +2014,96 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .message-actions, .message-buttons, .message-row-actions { justify-content: flex-start; gap: 5px; }
   .message-reactions { gap: 5px; margin-top: 8px; }
   .message-reaction { min-width: 34px; min-height: 34px; }
+}
+
+
+/* Mobile interaction compatibility: YouTube embeds, search controls and touch-first tags. */
+@media (max-width: 760px) {
+  .message-body { min-width: 0; width: 100%; }
+  .message-youtube {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 16 / 9;
+    margin-top: 9px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #000;
+    isolation: isolate;
+    flex: 0 0 auto;
+  }
+  .message-youtube-player {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    border: 0;
+    touch-action: auto;
+  }
+  .message-youtube + .message-content {
+    display: table !important;
+    max-width: 100%;
+  }
+  .message-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    padding: 10px 12px;
+  }
+  .message-tools .keyboard-hint { display: none; }
+  .message-tools .message-search-label { grid-column: 1 / -1; }
+  .message-tools .message-search { grid-column: 1 / -1; width: 100%; min-width: 0; }
+  .message-tools .message-search-date-label { grid-column: 1; align-self: center; }
+  .message-tools .message-search-date { grid-column: 2; width: 100%; min-width: 0; }
+  .message-tools #message-search-clear { grid-column: 1; width: 100%; justify-content: center; }
+  .message-tools #chat-settings-button { grid-column: 2; width: 100%; justify-content: center; }
+  .message-tools .media-gallery-toggle { grid-column: 1 / -1; width: 100%; margin: 0; justify-content: center; }
+}
+
+/* On touch screens, tag cards open from an explicit tap and are rendered above scroll clipping. */
+@media (hover: none), (pointer: coarse) {
+  .user-tag { cursor: pointer; touch-action: manipulation; }
+  .user-tag:hover .tag-hover-card,
+  .user-tag:focus-within .tag-hover-card,
+  .user-tag:focus-visible .tag-hover-card { display: none !important; }
+  .tag-hover-card.is-touch-popup {
+    display: flex !important;
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    right: auto;
+    bottom: auto;
+    z-index: 10000;
+    box-sizing: border-box;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform: none;
+    touch-action: pan-y;
+  }
+  .tag-hover-card.is-touch-popup::after { display: none; }
+  .tag-hover-card .tag-follow-button { min-height: 40px; touch-action: manipulation; }
+  .verified-box.is-tooltip-open::after,
+  .role-chip.role-admin.is-tooltip-open::after { display: block; }
+  .verified-box.tooltip-align-left::after,
+  .role-chip.role-admin.tooltip-align-left::after { left: 0; right: auto; transform: none; }
+  .verified-box.tooltip-align-right::after,
+  .role-chip.role-admin.tooltip-align-right::after { left: auto; right: 0; transform: none; }
+  .verified-box.tooltip-open-below::after,
+  .role-chip.role-admin.tooltip-open-below::after { top: calc(100% + 7px); bottom: auto; }
+  .tag-slot { min-width: 0; max-width: 100%; }
+}
+
+@media (max-width: 380px) {
+  .message-youtube { border-radius: 8px; }
+  .message-tools { gap: 6px; padding-inline: 9px; }
+  .message-tools .header-tool { min-width: 0; padding-inline: 8px; }
+  .message-tools .message-search-date { font-size: 14px; padding-inline: 7px; }
 }
