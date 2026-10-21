@@ -341,6 +341,7 @@ html, body { min-height: 0; }
 .friend-copy span{color:#87928d;font-size:11px}
 .unread-pill{min-width:18px;padding:1px 6px;border-radius:999px;background:var(--coral);color:#fff;font-size:10px;font-weight:700;text-align:center}
 .dm-view{display:flex;flex:1;flex-direction:column;min-height:0}
+.dm-search{width:100%;margin:0 0 8px;min-height:38px;padding:8px 10px;font-size:13px}
 .dm-thread{display:flex;flex:1;flex-direction:column;gap:8px;min-height:0;overflow:auto;padding:4px 2px}
 .dm-row{display:flex;align-items:flex-end;gap:6px}
 .dm-row.own{flex-direction:row-reverse}
