@@ -106,6 +106,71 @@ export function initSocial(ctx) {
   let openProfileId = null;
   let noteTargetId = null;
   let noteTimer = 0;
+  let tagPopupSequence = 0;
+  const isTouchUi = () => window.matchMedia('(pointer: coarse), (hover: none)').matches;
+  const findTagCard = (pill) => pill?.dataset.tagPopupId
+    ? document.getElementById(pill.dataset.tagPopupId)
+    : pill?.querySelector('.tag-hover-card');
+  function closeTagPopover(pill) {
+    if (!pill) return;
+    const card = findTagCard(pill);
+    pill.classList.remove('is-tag-card-open');
+    if (!card) return;
+    card.classList.remove('is-open', 'is-touch-popup');
+    card.style.removeProperty('left');
+    card.style.removeProperty('top');
+    card.style.removeProperty('max-width');
+    card.style.removeProperty('max-height');
+    if (card.dataset.portaled === 'true') {
+      delete card.dataset.portaled;
+      pill.append(card);
+    }
+  }
+  function closeAllTagPopovers(except = null) {
+    document.querySelectorAll('.user-tag.is-tag-card-open').forEach((pill) => {
+      if (pill !== except) closeTagPopover(pill);
+    });
+  }
+  function placeTouchTagPopover(pill, card) {
+    if (!pill.classList.contains('is-tag-card-open') || card.parentElement !== document.body) return;
+    const anchor = pill.getBoundingClientRect();
+    const visual = window.visualViewport;
+    const viewportLeft = visual?.offsetLeft || 0;
+    const viewportTop = visual?.offsetTop || 0;
+    const viewportWidth = visual?.width || document.documentElement.clientWidth;
+    const viewportHeight = visual?.height || window.innerHeight;
+    const pad = 12;
+    card.style.maxWidth = Math.max(120, viewportWidth - pad * 2) + 'px';
+    card.style.maxHeight = Math.max(120, viewportHeight - pad * 2) + 'px';
+    const cardRect = card.getBoundingClientRect();
+    const desiredLeft = anchor.left + anchor.width / 2 - cardRect.width / 2;
+    const left = Math.max(viewportLeft + pad, Math.min(desiredLeft, viewportLeft + viewportWidth - cardRect.width - pad));
+    let top = anchor.top - cardRect.height - 9;
+    if (top < viewportTop + pad) top = anchor.bottom + 9;
+    if (top + cardRect.height > viewportTop + viewportHeight - pad) {
+      top = Math.max(viewportTop + pad, viewportTop + viewportHeight - cardRect.height - pad);
+    }
+    card.style.left = Math.round(left) + 'px';
+    card.style.top = Math.round(top) + 'px';
+  }
+  function toggleTagPopover(pill) {
+    if (pill.classList.contains('is-tag-card-open')) {
+      closeTagPopover(pill);
+      return;
+    }
+    closeAllTagPopovers(pill);
+    const card = findTagCard(pill);
+    if (!card) return;
+    pill.classList.add('is-tag-card-open');
+    card.classList.add('is-open');
+    if (isTouchUi()) {
+      card.classList.add('is-touch-popup');
+      card.dataset.portaled = 'true';
+      document.body.append(card);
+      window.requestAnimationFrame(() => placeTouchTagPopover(pill, card));
+    }
+  }
+
 
   /* ---------- 프로필 캐시와 꾸밈 ---------- */
   async function loadProfiles(ids, force = false) {
@@ -190,27 +255,26 @@ export function initSocial(ctx) {
     copy.type = 'button';
     copy.className = 'tag-follow-button';
     copy.textContent = '태그 따라하기';
+    card.id = 'roomchat-tag-card-' + (++tagPopupSequence);
+    pill.dataset.tagPopupId = card.id;
     copy.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      pill.classList.remove('is-tag-card-open');
+      closeTagPopover(pill);
       followTag(tag);
     });
     card.append(status, copy);
     pill.append(card);
     pill.addEventListener('click', (event) => {
-      if (!window.matchMedia('(pointer: coarse)').matches || event.target.closest('.tag-hover-card')) return;
+      if (!isTouchUi() || event.target.closest('.tag-hover-card')) return;
       event.stopPropagation();
-      document.querySelectorAll('.user-tag.is-tag-card-open').forEach((node) => {
-        if (node !== pill) node.classList.remove('is-tag-card-open');
-      });
-      pill.classList.toggle('is-tag-card-open');
+      toggleTagPopover(pill);
     });
     pill.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') pill.classList.remove('is-tag-card-open');
+      if (event.key === 'Escape') closeTagPopover(pill);
       if ((event.key === 'Enter' || event.key === ' ') && event.target === pill) {
         event.preventDefault();
-        pill.classList.toggle('is-tag-card-open');
+        toggleTagPopover(pill);
       }
     });
     return pill;
@@ -1094,9 +1158,33 @@ export function initSocial(ctx) {
   });
   [el.profileDialog, el.styleDialog, el.friendsDialog].forEach(bindDialogBackdrop);
   document.addEventListener('click', (event) => {
-    if (event.target.closest('.user-tag')) return;
-    document.querySelectorAll('.user-tag.is-tag-card-open').forEach((node) => node.classList.remove('is-tag-card-open'));
+    if (event.target.closest('.user-tag, .tag-hover-card')) return;
+    closeAllTagPopovers();
   });
+  // Hover-only administrator labels are also discoverable with a tap on phones.
+  document.addEventListener('click', (event) => {
+    if (!isTouchUi()) return;
+    const selector = '.verified-box, .role-chip.role-admin';
+    const target = event.target.closest(selector);
+    document.querySelectorAll('.verified-box.is-tooltip-open, .role-chip.role-admin.is-tooltip-open').forEach((node) => {
+      if (node !== target) node.classList.remove('is-tooltip-open', 'tooltip-align-left', 'tooltip-align-right', 'tooltip-open-below');
+    });
+    if (!target) return;
+    event.stopPropagation();
+    if (target.classList.contains('is-tooltip-open')) {
+      target.classList.remove('is-tooltip-open', 'tooltip-align-left', 'tooltip-align-right', 'tooltip-open-below');
+      return;
+    }
+    target.classList.add('is-tooltip-open');
+    const rect = target.getBoundingClientRect();
+    const half = Math.min(110, (window.innerWidth - 24) / 2);
+    if (rect.left + rect.width / 2 < half + 12) target.classList.add('tooltip-align-left');
+    else if (window.innerWidth - rect.right + rect.width / 2 < half + 12) target.classList.add('tooltip-align-right');
+    if (rect.top < 56) target.classList.add('tooltip-open-below');
+  }, true);
+  window.addEventListener('resize', () => closeAllTagPopovers(), { passive: true });
+  window.visualViewport?.addEventListener('resize', () => closeAllTagPopovers(), { passive: true });
+  document.addEventListener('scroll', () => closeAllTagPopovers(), { capture: true, passive: true });
 
   el.messageInput.addEventListener('input', refreshMentions);
   el.messageInput.addEventListener('click', refreshMentions);
