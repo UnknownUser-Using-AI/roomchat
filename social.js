@@ -92,6 +92,7 @@ export function initSocial(ctx) {
   let friendsTab = 'friends';
   let activeFriend = null;
   let thread = [];
+  let dmSearchQuery = '';
   let socialChannel = null;
   let onlineChannel = null;
   let tagLibrary = [];
@@ -369,6 +370,8 @@ export function initSocial(ctx) {
     el.dmBack.hidden = false;
     el.friendsTitle.textContent = nameOf(friendId);
     thread = [];
+    dmSearch.value = '';
+    dmSearchQuery = '';
     renderThread();
     const mine = me();
     const { data, error } = await supabase.from('roomchat_dms').select('id,sender,recipient,content,created_at')
@@ -391,6 +394,14 @@ export function initSocial(ctx) {
   }
   const DM_GIF_PREFIX = '[gif]';
   const DM_EMOJIS = ['😀','😂','😊','😍','😎','😭','🤔','🙄','😴','🥳','👍','👎','❤️','💖','🔥','🎉','🙏','👏','💀','✨','🐱','🐸','💯','🤝'];
+  const dmSearch = document.createElement('input');
+  dmSearch.type = 'search';
+  dmSearch.className = 'text-field dm-search';
+  dmSearch.placeholder = '이 대화에서 메시지 검색';
+  dmSearch.setAttribute('aria-label', 'DM 대화 검색');
+  dmSearch.autocomplete = 'off';
+  dmSearch.addEventListener('input', () => { dmSearchQuery = dmSearch.value.trim().toLocaleLowerCase(); renderThread(); });
+  el.dmView.insertBefore(dmSearch, el.dmThread);
   const dmTools = document.createElement('div'); dmTools.className = 'dm-tools';
   const emojiButton = document.createElement('button'); emojiButton.type = 'button'; emojiButton.className = 'secondary-button dm-tool-button'; emojiButton.textContent = '😊'; emojiButton.setAttribute('aria-label','이모지 선택');
   const gifButton = document.createElement('button'); gifButton.type = 'button'; gifButton.className = 'secondary-button dm-tool-button'; gifButton.textContent = 'GIF'; gifButton.setAttribute('aria-label','GIF 검색'); dmTools.append(emojiButton,gifButton); el.dmForm.insertBefore(dmTools,el.dmInput);
@@ -408,8 +419,12 @@ export function initSocial(ctx) {
   emojiButton.addEventListener('click',()=>{emojiPanel.hidden=!emojiPanel.hidden;gifPanel.hidden=true;}); gifButton.addEventListener('click',()=>{gifPanel.hidden=!gifPanel.hidden;emojiPanel.hidden=true;if(!gifPanel.hidden&&!gifGrid.childElementCount)loadDmGifs('');}); gifSearchForm.addEventListener('submit',event=>{event.preventDefault();loadDmGifs(gifSearch.value.trim());});
   function renderThread() {
     el.dmThread.replaceChildren();
+    const visibleThread = dmSearchQuery
+      ? thread.filter((dm) => String(dm.content || '').toLocaleLowerCase().includes(dmSearchQuery))
+      : thread;
     if (!thread.length) el.dmThread.append(emptyNote('첫 메시지를 보내 보세요.'));
-    for (const dm of thread) {
+    else if (!visibleThread.length) el.dmThread.append(emptyNote('검색 결과가 없어요.'));
+    for (const dm of visibleThread) {
       const row = document.createElement('div');
       row.className = `dm-row${dm.sender === me() ? ' own' : ''}`;
       const bubble = document.createElement('p');
@@ -421,7 +436,7 @@ export function initSocial(ctx) {
       row.append(bubble, time);
       el.dmThread.append(row);
     }
-    el.dmThread.scrollTop = el.dmThread.scrollHeight;
+    if (!dmSearchQuery) el.dmThread.scrollTop = el.dmThread.scrollHeight;
   }
   async function sendDm(event) {
     event.preventDefault();
