@@ -1310,3 +1310,11 @@ button:focus-visible,.room-item:focus-visible,a:focus-visible,input:focus-visibl
 .message-youtube-player{display:block;width:100%;height:100%;border:0}
 .message-youtube+.message-content{display:none}
 @media(max-width:760px){.message-youtube{width:100%;max-width:480px}}
+
+
+/* Admin room type option in the room creation dialog */
+.room-unlimited-choice{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.room-unlimited-choice[hidden]{display:none}
+.room-unlimited-choice input{margin-top:3px;accent-color:var(--accent,#8b7cf6)}
+.room-unlimited-choice span{display:grid;gap:3px}
+.room-unlimited-choice small{font-size:12px;line-height:1.4;color:var(--muted,#9ca3af)}
