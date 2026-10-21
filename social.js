@@ -1,4 +1,5 @@
 import { FONTS, fontStack, ensureFont } from './fonts.js?v=20261020-social';
+import { GIPHY_API_KEY } from './config.js?v=20261018-giphy';
 
 const WEIGHTS = [[400, '보통'], [500, '조금 굵게'], [600, '중간'], [700, '굵게'], [800, '아주 굵게'], [900, '가장 굵게']];
 const COLORS = ['#e05d5d', '#e8873f', '#d9a21b', '#8caf40', '#3aa56b', '#24a9a6', '#3b9bd6', '#5a6fe0',
@@ -359,6 +360,23 @@ export function initSocial(ctx) {
     el.friendsTitle.textContent = '친구';
     renderFriendsList();
   }
+  const DM_GIF_PREFIX = '[gif]';
+  const DM_EMOJIS = ['😀','😂','🥹','😍','😎','😭','🤔','🙄','😴','🥳','👍','👎','❤️','💖','🔥','🎉','🙏','👏','💀','✨','🐱','🐸','💯','🤝'];
+  const dmTools = document.createElement('div'); dmTools.className = 'dm-tools';
+  const emojiButton = document.createElement('button'); emojiButton.type = 'button'; emojiButton.className = 'secondary-button dm-tool-button'; emojiButton.textContent = '😊'; emojiButton.setAttribute('aria-label','이모지 선택');
+  const gifButton = document.createElement('button'); gifButton.type = 'button'; gifButton.className = 'secondary-button dm-tool-button'; gifButton.textContent = 'GIF'; gifButton.setAttribute('aria-label','GIF 검색'); dmTools.append(emojiButton,gifButton); el.dmForm.insertBefore(dmTools,el.dmInput);
+  const emojiPanel = document.createElement('div'); emojiPanel.className = 'dm-emoji-panel'; emojiPanel.hidden = true; emojiPanel.setAttribute('aria-label','이모지 선택');
+  for (const emoji of DM_EMOJIS) { const button = document.createElement('button'); button.type='button'; button.className='dm-emoji'; button.textContent=emoji; button.addEventListener('click',()=>{const start=el.dmInput.selectionStart ?? el.dmInput.value.length; const end=el.dmInput.selectionEnd ?? start; el.dmInput.setRangeText(emoji,start,end,'end'); el.dmInput.focus(); emojiPanel.hidden=true;}); emojiPanel.append(button); }
+  const gifPanel = document.createElement('div'); gifPanel.className='dm-gif-panel'; gifPanel.hidden=true;
+  const gifSearchForm=document.createElement('form'); gifSearchForm.className='dm-gif-search'; const gifSearch=document.createElement('input'); gifSearch.className='text-field'; gifSearch.type='search'; gifSearch.placeholder='GIF 검색'; gifSearch.setAttribute('aria-label','GIF 검색어');
+  const gifSearchButton=document.createElement('button'); gifSearchButton.className='secondary-button'; gifSearchButton.type='submit'; gifSearchButton.textContent='검색'; gifSearchForm.append(gifSearch,gifSearchButton);
+  const gifStatus=document.createElement('div'); gifStatus.className='dm-gif-status'; gifStatus.textContent='인기 GIF를 불러오는 중…'; const gifGrid=document.createElement('div'); gifGrid.className='dm-gif-grid'; gifPanel.append(gifSearchForm,gifStatus,gifGrid);
+  el.dmForm.parentElement.insertBefore(emojiPanel,el.dmForm); el.dmForm.parentElement.insertBefore(gifPanel,el.dmForm); let dmGifRequest=0;
+  function cleanDmGifUrl(value) { try { const url=new URL(value); if(url.protocol!=='https:' || !/^media\\d*\\.giphy\\.com$/u.test(url.hostname) || !url.pathname.startsWith('/media/') || !url.pathname.endsWith('.gif') || !/^[A-Za-z0-9_./-]+$/u.test(url.pathname.slice(7))) return null; return url.href; } catch { return null; } }
+  async function loadDmGifs(query='') { const request=++dmGifRequest; gifGrid.replaceChildren(); if(!GIPHY_API_KEY){gifStatus.textContent='GIF 검색을 사용할 수 없어요.';return;} gifStatus.textContent=query?'검색 중…':'인기 GIF를 불러오는 중…'; const params=new URLSearchParams({api_key:GIPHY_API_KEY,limit:'18',rating:'g',lang:'ko'}); if(query) params.set('q',query);
+    try { const response=await fetch('https://api.giphy.com/v1/gifs/'+(query?'search':'trending')+'?'+params); if(!response.ok) throw new Error('GIF search failed'); const result=await response.json(); if(request!==dmGifRequest)return; const items=(result.data||[]).map(item=>({title:String(item.title||'GIF').slice(0,80),preview:cleanDmGifUrl(item.images?.fixed_width_small?.url||item.images?.fixed_width?.url),send:cleanDmGifUrl(item.images?.downsized_medium?.url||item.images?.fixed_height?.url||item.images?.original?.url)})).filter(item=>item.preview&&item.send); gifStatus.textContent=items.length?(query?'검색 결과를 선택하세요.':'인기 GIF'):'결과가 없어요. 다른 검색어를 입력해 보세요.';
+      for(const item of items){const button=document.createElement('button');button.type='button';button.className='dm-gif-item';button.setAttribute('aria-label',item.title+' 보내기');const image=document.createElement('img');image.src=item.preview;image.alt=item.title;image.loading='lazy';button.append(image);button.addEventListener('click',async()=>{if(!activeFriend)return;gifPanel.hidden=true;const {data,error}=await supabase.rpc('roomchat_send_dm',{p_to:activeFriend,p_content:DM_GIF_PREFIX+item.send});if(error)return ctx.showToast(ctx.errorText(error,'GIF를 보내지 못했어요.'));const row=Array.isArray(data)?data[0]:data;if(row&&!thread.some(message=>String(message.id)===String(row.id)))thread.push(row);renderThread();});gifGrid.append(button);} } catch {if(request===dmGifRequest)gifStatus.textContent='GIF를 불러오지 못했어요. 다시 시도해 주세요.';} }
+  emojiButton.addEventListener('click',()=>{emojiPanel.hidden=!emojiPanel.hidden;gifPanel.hidden=true;}); gifButton.addEventListener('click',()=>{gifPanel.hidden=!gifPanel.hidden;emojiPanel.hidden=true;if(!gifPanel.hidden&&!gifGrid.childElementCount)loadDmGifs('');}); gifSearchForm.addEventListener('submit',event=>{event.preventDefault();loadDmGifs(gifSearch.value.trim());});
   function renderThread() {
     el.dmThread.replaceChildren();
     if (!thread.length) el.dmThread.append(emptyNote('첫 메시지를 보내 보세요.'));
@@ -367,7 +385,8 @@ export function initSocial(ctx) {
       row.className = `dm-row${dm.sender === me() ? ' own' : ''}`;
       const bubble = document.createElement('p');
       bubble.className = 'dm-bubble';
-      linkifyDmText(bubble, dm.content);
+      const gifUrl = typeof dm.content === 'string' && dm.content.startsWith(DM_GIF_PREFIX) ? cleanDmGifUrl(dm.content.slice(DM_GIF_PREFIX.length)) : null;
+      if (gifUrl) { const image=document.createElement('img'); image.className='dm-gif-image'; image.src=gifUrl; image.alt='공유된 GIF'; image.loading='lazy'; bubble.append(image); } else linkifyDmText(bubble,dm.content);
       const time = document.createElement('time');
       time.textContent = formatTime(dm.created_at);
       row.append(bubble, time);
@@ -379,6 +398,7 @@ export function initSocial(ctx) {
     event.preventDefault();
     const text = el.dmInput.value.trim();
     if (!text || !activeFriend) return;
+    emojiPanel.hidden = true; gifPanel.hidden = true;
     el.dmInput.disabled = true;
     const { data, error } = await supabase.rpc('roomchat_send_dm', { p_to: activeFriend, p_content: text });
     el.dmInput.disabled = false;
