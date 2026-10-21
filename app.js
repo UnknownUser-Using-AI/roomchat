@@ -339,7 +339,9 @@ function updateRoomHeading(room) {
   updateComposerAvailability();
   ui.roomName.textContent = room.name;
   ui.bannerName.textContent = room.name;
-  ui.roomTopic.textContent = room.name;
+  ui.roomTopic.textContent = isGuideRoom(room)
+    ? '안내: 채팅방에는 최근 메시지 30개만 보관되며, 이전 메시지는 자동 삭제됩니다.'
+    : room.name;
   ui.roomDelete.hidden = !(state.isAdmin && !room.is_featured);
   renderRoomLists();
 }
