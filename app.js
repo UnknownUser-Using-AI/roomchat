@@ -27,6 +27,11 @@ const ui = {
   send: $('#send-button'), imageFile: $('#image-file'), preview: $('#attachment-preview'),
   thumbnail: $('#attachment-thumbnail'), attachmentName: $('#attachment-name'), removeAttachment: $('#remove-attachment'),
   toast: $('#toast'), charCount: $('#char-count'),
+  messageSearch: $('#message-search'), messageSearchClear: $('#message-search-clear'),
+  chatSettingsButton: $('#chat-settings-button'), chatSettings: $('#chat-settings'),
+  settingDark: $('#setting-dark'), settingFontSize: $('#setting-font-size'),
+  settingWide: $('#setting-wide'), settingHideSidebar: $('#setting-hide-sidebar'),
+  settingSound: $('#setting-sound'), clearNotificationHistory: $('#clear-notification-history'),
   accountModeGroup: $('#account-mode-group'), adminCodeHelp: $('#admin-code-help'),
   adminPanelButton: $('#admin-panel-button'), adminPanelDialog: $('#admin-panel-dialog'),
   adminPanelClose: $('#admin-panel-close'), adminPanelSummary: $('#admin-panel-summary'),
@@ -73,7 +78,7 @@ const state = {
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
-  profiles: new Map(),
+  profiles: new Map(), messageSearchQuery: '', soundEnabled: true, notificationHistory: [],
 };
 let social = null;
 let mentionItems = [];
@@ -644,7 +649,8 @@ function renderMessages() {
     }
     return;
   }
-  state.messages.forEach(renderMessage);
+  const query = (state.messageSearchQuery || '').trim().toLocaleLowerCase();
+  state.messages.filter((message) => !query || [message.content, message.nickname].some((value) => String(value || '').toLocaleLowerCase().includes(query))).forEach(renderMessage);
   ui.messages.scrollTop = guide ? 0 : ui.messages.scrollHeight;
   loadAvatars(state.messages.map((message) => message.user_id));
 }
@@ -1221,6 +1227,7 @@ function unlockAudio() {
   } catch { /* Sound is optional. */ }
 }
 function playMessageSound() {
+  if (state.soundEnabled === false) return;
   try {
     if (!audioContext || audioContext.state !== 'running') return;
     const now = audioContext.currentTime;
@@ -1755,6 +1762,64 @@ function setupEvents() {
   ui.presenceButton.addEventListener('click', openMembers);
   ui.membersClose.addEventListener('click', () => ui.membersDialog.close());
   ui.notificationButton.addEventListener('click', enableNotifications);
+  const settingKey = 'roomchat:chat-settings:v1';
+  const savedSettings = (() => { try { return JSON.parse(localStorage.getItem(settingKey) || '{}'); } catch { return {}; } })();
+  const applyChatSettings = (settings = {}) => {
+    document.documentElement.classList.toggle('roomchat-dark', Boolean(settings.dark));
+    document.documentElement.classList.toggle('roomchat-wide', Boolean(settings.wide));
+    document.documentElement.classList.toggle('roomchat-hide-members', Boolean(settings.hideSidebar));
+    document.documentElement.style.setProperty('--roomchat-message-font-size', `${[14,16,18,20].includes(Number(settings.fontSize)) ? Number(settings.fontSize) : 16}px`);
+    state.soundEnabled = settings.sound !== false;
+    if (ui.settingDark) ui.settingDark.checked = Boolean(settings.dark);
+    if (ui.settingWide) ui.settingWide.checked = Boolean(settings.wide);
+    if (ui.settingHideSidebar) ui.settingHideSidebar.checked = Boolean(settings.hideSidebar);
+    if (ui.settingSound) ui.settingSound.checked = state.soundEnabled;
+    if (ui.settingFontSize) ui.settingFontSize.value = String(settings.fontSize || 16);
+  };
+  let chatSettings = { ...savedSettings };
+  applyChatSettings(chatSettings);
+  ui.chatSettingsButton?.addEventListener('click', () => {
+    const opening = ui.chatSettings.hidden;
+    ui.chatSettings.hidden = !opening;
+    ui.chatSettingsButton.setAttribute('aria-expanded', String(opening));
+  });
+  const saveChatSettings = () => {
+    chatSettings = {
+      dark: Boolean(ui.settingDark?.checked),
+      wide: Boolean(ui.settingWide?.checked),
+      hideSidebar: Boolean(ui.settingHideSidebar?.checked),
+      sound: Boolean(ui.settingSound?.checked),
+      fontSize: Number(ui.settingFontSize?.value || 16),
+    };
+    try { localStorage.setItem(settingKey, JSON.stringify(chatSettings)); } catch {}
+    applyChatSettings(chatSettings);
+  };
+  [ui.settingDark, ui.settingWide, ui.settingHideSidebar, ui.settingSound, ui.settingFontSize].forEach((control) => control?.addEventListener('change', saveChatSettings));
+  ui.messageSearch?.addEventListener('input', () => {
+    state.messageSearchQuery = ui.messageSearch.value;
+    renderMessages();
+  });
+  ui.messageSearchClear?.addEventListener('click', () => {
+    if (ui.messageSearch) ui.messageSearch.value = '';
+    state.messageSearchQuery = '';
+    renderMessages();
+    ui.messageSearch?.focus();
+  });
+  ui.clearNotificationHistory?.addEventListener('click', () => {
+    state.notificationHistory = [];
+    try { localStorage.removeItem('roomchat:notification-history'); } catch {}
+    showToast('이 기기의 알림 기록을 초기화했어요.');
+  });
+  document.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      ui.messageSearch?.focus();
+    }
+    if (event.key === 'Escape' && ui.chatSettings && !ui.chatSettings.hidden) {
+      ui.chatSettings.hidden = true;
+      ui.chatSettingsButton?.setAttribute('aria-expanded', 'false');
+    }
+  });
   document.addEventListener('pointerdown', unlockAudio, { passive: true });
   ui.gifButton.addEventListener('click', openGifDialog);
   ui.gifClose.addEventListener('click', () => ui.gifDialog.close());
