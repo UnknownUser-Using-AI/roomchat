@@ -106,7 +106,7 @@ function showToast(message) {
   window.clearTimeout(state.toastTimer);
   state.toastTimer = window.setTimeout(() => ui.toast.classList.remove('visible'), 3600);
 }
-function errorText(error, fallback = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.') {
+function errorText(error, fallback = '요청을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.') {
   const text = String(error?.message || '');
   // 서버가 직접 만든 안내 문구는 한국어라서 그대로 보여주고, 영어 시스템 오류는 숨깁니다.
   return /[가-힣]/u.test(text) ? text : fallback;
@@ -211,14 +211,14 @@ function isGuideRoom(room) { return Boolean(room?.is_featured && room.name === G
 function updateComposerAvailability() {
   const guide = isGuideRoom(state.room);
   ui.messageInput.disabled = guide;
-  ui.messageInput.placeholder = guide ? '설명 방에서는 채팅할 수 없어요.' : '이 방에 한마디 남겨보세요…';
+  ui.messageInput.placeholder = guide ? '안내 채널에서는 메시지를 보낼 수 없어요.' : '메시지를 입력하세요…';
   ui.send.disabled = guide || ui.send.classList.contains('sending');
   ui.imageFile.disabled = guide;
   ui.gifButton.disabled = guide;
   const imageButton = ui.messageForm.querySelector('label[for="image-file"]');
   if (imageButton) imageButton.hidden = guide;
   const footnote = ui.messageForm.parentElement.querySelector('.composer-foot span');
-  if (footnote) footnote.textContent = guide ? '이 방은 안내 전용이에요.' : 'Enter로 전송 · Shift + Enter로 줄바꿈';
+  if (footnote) footnote.textContent = guide ? '안내 전용 채널 · 메시지 전송 불가' : 'Enter 전송 · Shift + Enter 줄바꿈';
 }
 const ROOM_ORDER_KEY = 'roomchat:room-order:v1';
 function savedRoomOrder() {
@@ -356,7 +356,7 @@ function renderRoomImageControls(room) {
   const canEdit = canManageRoom(room);
   ui.roomImageButton.hidden = !canEdit;
   ui.roomImageRemove.hidden = !(canEdit && room.image_path);
-  ui.roomImageButton.textContent = room.image_path ? '방 이미지 바꾸기' : '방 이미지 추가';
+  ui.roomImageButton.textContent = room.image_path ? '채널 이미지 변경' : '채널 이미지 추가';
 }
 async function setRoomImage(file) {
   const room = state.room;
@@ -390,11 +390,11 @@ async function removeRoomImage() {
   const room = state.room;
   if (!room || !canManageRoom(room) || !room.image_path) return;
   const { error } = await supabase.rpc('roomchat_set_room_image', { p_room_id: room.id, p_image_path: null, p_owner_token: roomOwnerToken(room.id) });
-  if (error) return showToast(errorText(error, '방 이미지를 지우지 못했어요.'));
+  if (error) return showToast(errorText(error, '채널 이미지를 삭제하지 못했어요.'));
   room.image_path = null;
   renderRoomImageControls(room);
   renderRoomLists();
-  showToast('방 이미지를 지웠어요.');
+  showToast('채널 이미지를 삭제했어요.');
 }
 function updateRoomHeading(room) {
   renderRoomImageControls(room);
@@ -403,8 +403,8 @@ function updateRoomHeading(room) {
   ui.bannerName.textContent = room.name;
   const parentRoom = room.parent_id ? state.rooms.find((item) => item.id === room.parent_id) : null;
   ui.roomTopic.textContent = isGuideRoom(room)
-    ? '안내: 채팅방에는 최근 메시지 30개만 보관되며, 이전 메시지는 자동 삭제됩니다.'
-    : parentRoom ? `하위 방 · ${parentRoom.name}` : '상위 채널';
+    ? '안내 채널 · 일반 채널은 최근 메시지 30개만 보관하며, 이전 메시지는 자동 정리됩니다.'
+    : parentRoom ? `하위 채널 · ${parentRoom.name}` : '공개 채널';
   ui.childRoomButton.hidden = Boolean(room.parent_id || isGuideRoom(room));
   ui.roomDelete.hidden = !(state.isAdmin && !room.is_featured);
   renderRoomLists();
@@ -545,19 +545,19 @@ function buildGuideCard() {
   card.className = 'guide-card';
   card.setAttribute('aria-label', '사이트 소개');
   const title = document.createElement('h2');
-  title.textContent = 'roomchat에 오신 걸 환영해요';
+  title.textContent = 'RoomChat에 오신 것을 환영해요';
   const lead = document.createElement('p');
   lead.className = 'guide-lead';
-  lead.textContent = '닉네임만 정하면 바로 참여할 수 있는 실시간 공개 채팅 서비스예요. 이 안내 방에서 주요 기능과 이용 방법을 빠르게 확인할 수 있어요.';
+  lead.textContent = '닉네임만 정하면 바로 대화에 참여할 수 있어요. 이 안내에서 RoomChat의 주요 기능과 이용 방법을 확인해 보세요.';
   const list = document.createElement('ul');
   list.className = 'guide-list';
   for (const [head, text] of [
-    ['게스트 또는 계정', '게스트로 가볍게 시작하거나 닉네임과 비밀번호로 계정을 만들 수 있어요. 계정을 만들면 닉네임이 저장되어 다음에도 이어서 사용할 수 있어요.'],
-    ['닉네임 규칙', '사용할 수 없거나 이미 사용 중인 닉네임은 안전한 대체 닉네임으로 자동 변경돼요.'],
-    ['[인증됨] 관리자', '무지갯빛 닉네임과 [인증됨] 배지는 공식 관리자 계정에만 표시돼요. 다른 사용자가 직접 설정할 수 없어요.'],
-    ['방 만들기', '누구나 공개 방을 만들 수 있어요. 방을 만든 사람은 해당 방의 운영자로서 참여자를 관리할 수 있어요.'],
-    ['관리자의 정리', '운영진은 이용 규칙에 어긋나는 방과 닉네임, 메시지를 정리해 쾌적한 대화 환경을 유지해요.'],
-    ['GIF · 사진 · 알림', 'GIF를 검색해 공유하고, 계정 프로필에 사진을 설정할 수 있어요. 알림을 켜면 새 메시지도 놓치지 않을 수 있어요.'],
+    ['간편한 시작', '게스트로 바로 참여하거나 닉네임과 비밀번호로 계정을 만들 수 있어요. 계정을 만들면 닉네임을 안전하게 이어서 사용할 수 있어요.'],
+    ['닉네임', '사용할 수 없거나 이미 사용 중인 닉네임은 다른 이름으로 자동 조정될 수 있어요.'],
+    ['관리자 인증', '인증 배지는 공식 관리자 계정에만 표시돼요. 다른 사용자는 직접 설정할 수 없어요.'],
+    ['채널 만들기', '누구나 공개 채널을 만들 수 있어요. 채널을 만든 사람은 해당 채널의 운영 권한을 갖게 돼요.'],
+    ['안전한 대화', '운영진은 이용 규칙을 지키고 쾌적한 대화 환경을 유지할 수 있도록 관리해요.'],
+    ['미디어와 알림', 'GIF와 사진을 공유하고, 프로필을 꾸며 보세요. 알림을 켜면 새 메시지도 놓치지 않을 수 있어요.'],
   ]) {
     const item = document.createElement('li');
     const strong = document.createElement('strong');
@@ -576,7 +576,7 @@ function renderMessages() {
     if (!guide) {
       const empty = document.createElement('div');
       empty.className = 'empty-state';
-      empty.innerHTML = '<span class="empty-symbol">✳</span><strong>아직 첫 메시지가 없어요.</strong><span>먼저 가볍게 인사해보세요.</span>';
+      empty.innerHTML = '<span class="empty-symbol">✳</span><strong>아직 대화가 시작되지 않았어요.</strong><span>먼저 인사를 건네 보세요.</span>';
       ui.messages.append(empty);
     }
     return;
@@ -625,16 +625,16 @@ function renderMembers() {
   if (sidebarMemberCount) sidebarMemberCount.textContent = String(members.length);
   if (sidebarMembers) sidebarMembers.replaceChildren();
   ui.membersNote.textContent = canManageRoom(state.room)
-    ? '이 방의 관리자예요. 원하지 않는 참여자는 방에서 내보낼 수 있어요.'
-    : '각 방을 만든 사람은 자기 방의 운영자로 참여자를 내보낼 수 있어요.';
+    ? '이 채널의 운영 권한이 있어요. 필요한 경우 참여자를 내보낼 수 있어요.'
+    : '채널 운영자는 해당 채널의 참여자를 관리할 수 있어요.';
   if (!members.length) {
     const empty = document.createElement('div');
     empty.className = 'member-empty';
-    empty.textContent = '아직 함께 있는 사람이 없어요.';
+    empty.textContent = '현재 접속 중인 사용자가 없어요.';
     ui.memberList.append(empty);
     const sidebarEmpty = document.createElement('p');
     sidebarEmpty.className = 'sidebar-member-empty';
-    sidebarEmpty.textContent = '아직 접속자가 없어요.';
+    sidebarEmpty.textContent = '현재 접속자가 없어요.';
     sidebarMembers?.append(sidebarEmpty);
     return;
   }
@@ -963,10 +963,10 @@ function setAccountMode(mode) {
   for (const button of document.querySelectorAll('[data-account-mode]')) {
     button.classList.toggle('active', button.dataset.accountMode === mode);
   }
-  ui.accountTitle.textContent = mode === 'register' ? '계정 만들기' : '계정 로그인';
+  ui.accountTitle.textContent = mode === 'register' ? '계정 만들기' : '로그인';
   ui.accountDescription.textContent = mode === 'register'
-    ? '닉네임과 비밀번호만으로 계정을 만들어요. 실제 이메일은 받거나 저장하지 않습니다.'
-    : '저장된 계정 닉네임과 비밀번호로 로그인해요.';
+    ? '닉네임과 비밀번호로 간편하게 계정을 만들 수 있어요. 이메일은 필요하지 않아요.'
+    : '등록한 닉네임과 비밀번호로 로그인하세요.';
   ui.accountSubmit.innerHTML = `${mode === 'register' ? '계정 만들기' : '로그인'} <span aria-hidden="true">↗</span>`;
   ui.accountPassword.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
   updateAdminCodeVisibility();
@@ -986,10 +986,10 @@ function updateAdminCodeVisibility() {
 }
 function showNicknameDialog() {
   ui.nicknameEyebrow.textContent = state.user ? 'ACCOUNT NICKNAME' : 'GUEST MODE';
-  ui.nicknameTitle.innerHTML = state.user ? '닉네임을<br />바꿀까요?' : '어떤 이름으로<br />인사할까요?';
+  ui.nicknameTitle.innerHTML = state.user ? '닉네임을<br />변경할까요?' : '어떤 닉네임으로<br />참여할까요?';
   ui.nicknameDescription.textContent = state.user
-    ? '계정 닉네임은 저장되어 다음에도 사용할 수 있어요. 관리자도 이름을 바꿀 수 있고 [인증됨] 표시는 유지돼요.'
-    : '게스트 닉네임은 이 탭에서만 사용돼요. 계정을 만들면 닉네임이 저장되고 언제든 바꿀 수 있어요. 프로필 사진도 계정에서 지정할 수 있어요.';
+    ? '계정 닉네임은 저장되어 다음에도 사용할 수 있어요. 닉네임을 변경해도 관리자 인증은 유지돼요.'
+    : '게스트 닉네임은 현재 탭에서만 사용돼요. 계정을 만들면 닉네임과 프로필을 저장해 계속 사용할 수 있어요.';
   ui.avatarSection.hidden = !state.user;
   ui.styleOpen.hidden = !state.user;
   applyAvatars();
@@ -1020,19 +1020,19 @@ async function openRoomDialog(parentRoomId = null) {
   if (unlimitedWrap) unlimitedWrap.hidden = !state.isAdmin || Boolean(parentRoom);
   if (ui.roomUnlimitedChoice) ui.roomUnlimitedChoice.checked = false;
   ui.roomInput.value = '';
-  ui.roomDialog.querySelector('h2').textContent = parentRoom ? '하위 방 만들기' : '새 대화방 만들기';
+  ui.roomDialog.querySelector('h2').textContent = parentRoom ? '하위 채널 만들기' : '새 채널 만들기';
   ui.roomDialog.querySelector('p').textContent = parentRoom
-    ? `“${parentRoom.name}” 채널 안에 새 하위 방을 만들어요. 하위 방 안에는 또 다른 방을 만들 수 없어요.`
-    : '게스트도 상위 채널을 만들 수 있어요. 만든 사람은 그 방의 운영자가 됩니다.';
-  ui.roomDialog.querySelector('label[for="room-input"]').textContent = parentRoom ? '하위 방 이름' : '채널 이름';
+    ? `“${parentRoom.name}” 안에 하위 채널을 만들어요. 하위 채널 안에는 또 다른 채널을 만들 수 없어요.`
+    : '누구나 공개 채널을 만들 수 있어요. 채널을 만든 사람은 해당 채널의 운영자가 됩니다.';
+  ui.roomDialog.querySelector('label[for="room-input"]').textContent = parentRoom ? '하위 채널 이름' : '채널 이름';
   ui.roomDialog.showModal();
   ui.roomInput.focus();
 }
 async function sendMessage(event) {
   event?.preventDefault();
-  if (isGuideRoom(state.room)) return showToast('설명 방에서는 채팅할 수 없어요.');
+  if (isGuideRoom(state.room)) return showToast('안내 채널에서는 메시지를 보낼 수 없어요.');
   if (!state.nickname) { showNicknameDialog(); return; }
-  if (!state.room) return showToast('먼저 채팅방을 선택해 주세요.');
+  if (!state.room) return showToast('먼저 채널을 선택해 주세요.');
   const content = ui.messageInput.value.trim();
   const image = state.attachment;
   if (!content && !image) return;
@@ -1194,7 +1194,7 @@ async function deleteMessage(message) {
 }
 async function deleteRoomRecord(room) {
   if (!state.isAdmin || !room || room.is_featured) return;
-  if (!window.confirm(`“${room.name}” 방과 그 방의 메시지 기록을 삭제할까요?`)) return;
+  if (!window.confirm(`“${room.name}” 채널과 메시지 기록을 삭제할까요?`)) return;
   try {
     const { data: paths, error: pathError } = await supabase.rpc('roomchat_admin_room_image_paths', { p_room_id: room.id });
     if (pathError) throw pathError;
@@ -1209,7 +1209,7 @@ async function deleteRoomRecord(room) {
       if (fallback) await switchRoom(fallback);
     }
     renderAdminPanel();
-    showToast('방과 메시지를 삭제했어요.');
+    showToast('채널과 메시지 기록을 삭제했어요.');
   } catch (error) { showToast(errorText(error, '방을 삭제하지 못했어요.')); }
 }
 async function deleteRoom() { return deleteRoomRecord(state.room); }
@@ -1306,7 +1306,7 @@ async function loadGifs(query = '') {
 }
 function openGifDialog() {
   if (!state.nickname) { showNicknameDialog(); return; }
-  if (!state.room) return showToast('먼저 채팅방을 선택해 주세요.');
+  if (!state.room) return showToast('먼저 채널을 선택해 주세요.');
   ui.gifQuery.value = '';
   ui.gifDialog.showModal();
   loadGifs('');
