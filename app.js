@@ -488,6 +488,11 @@ function addMessage(message) {
   loadAvatars([message.user_id]);
   state.messages.push(message);
   state.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  while (state.messages.length > 30) {
+    const oldest = state.messages.shift();
+    const oldNode = ui.messages.querySelector(`[data-message-id="${CSS.escape(String(oldest.id))}"]`);
+    oldNode?.remove();
+  }
   renderMessage(message);
   ui.messages.scrollTop = ui.messages.scrollHeight;
   if (ui.adminPanelDialog.open) renderAdminPanel();
@@ -698,7 +703,7 @@ async function switchRoom(room) {
   renderMembers();
   const { data, error } = await supabase.from('messages')
     .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified')
-    .eq('room_id', room.id).order('created_at', { ascending: true }).limit(100);
+    .eq('room_id', room.id).order('created_at', { ascending: true }).limit(30);
   if (request !== state.roomRequest) return;
   if (error) {
     ui.messages.replaceChildren();
