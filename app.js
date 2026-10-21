@@ -44,6 +44,8 @@ const ui = {
   kickDialog: $('#kick-dialog'), kickTarget: $('#kick-target'), styleOpen: $('#style-open-button'),
   roomIcon: $('#room-icon'), roomImageButton: $('#room-image-button'), roomImageRemove: $('#room-image-remove'),
   roomImageFile: $('#room-image-file'), roomBanner: $('.topbar'),
+  replyPreview: $('#reply-preview'), replyPreviewName: $('#reply-preview-name'),
+  replyPreviewContent: $('#reply-preview-content'), cancelReply: $('#cancel-reply'),
 };
 const GUEST_ID_KEY = 'roomchat:guest-id';
 const GUEST_TOKEN_KEY = 'roomchat:guest-token';
@@ -79,7 +81,7 @@ const state = {
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
-  profiles: new Map(), messageSearchQuery: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(),
+  profiles: new Map(), messageSearchQuery: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null,
 };
 let social = null;
 let mentionItems = [];
@@ -563,6 +565,45 @@ function createReactionBar(message) {
   }
   return bar;
 }
+function setReplyTarget(message) {
+  if (!message || !state.room || message.room_id !== state.room.id) return;
+  state.replyTarget = message;
+  ui.replyPreviewName.textContent = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
+  ui.replyPreviewContent.textContent = (message.content || (message.image_path ? '사진' : '메시지')).replace(/\s+/gu, ' ').slice(0, 180);
+  ui.replyPreview.hidden = false;
+  ui.messageInput.focus();
+}
+function clearReplyTarget() {
+  state.replyTarget = null;
+  if (ui.replyPreview) ui.replyPreview.hidden = true;
+  if (ui.replyPreviewName) ui.replyPreviewName.textContent = '';
+  if (ui.replyPreviewContent) ui.replyPreviewContent.textContent = '';
+}
+function createReplyQuote(message) {
+  if (!message.reply_to) return null;
+  const original = state.messages.find((item) => String(item.id) === String(message.reply_to));
+  const quote = document.createElement('button');
+  quote.type = 'button';
+  quote.className = 'message-reply-quote';
+  quote.setAttribute('aria-label', '답글 원본 메시지로 이동');
+  const heading = document.createElement('strong');
+  heading.textContent = original ? displayNickname(original.nickname || '익명', Boolean(original.is_verified)) : '원본 메시지';
+  const excerpt = document.createElement('span');
+  excerpt.textContent = original
+    ? (original.content || (original.image_path ? '사진' : '메시지')).replace(/\s+/gu, ' ').slice(0, 180)
+    : '원본 메시지가 최근 기록에 없어요.';
+  quote.append(heading, excerpt);
+  if (original) quote.addEventListener('click', () => {
+    const target = ui.messages.querySelector(`[data-message-id="${CSS.escape(String(original.id))}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('message-link-target');
+      window.setTimeout(() => target.classList.remove('message-link-target'), 1800);
+    } else showToast('원본 메시지가 현재 화면에 없어요.');
+  });
+  else quote.disabled = true;
+  return quote;
+}
 function renderMessage(message) {
   const key = String(message.id);
   if (ui.messages.querySelector(`[data-message-id="${CSS.escape(key)}"]`)) return;
@@ -605,6 +646,8 @@ function renderMessage(message) {
     meta.append(edited);
   }
   body.append(meta);
+  const replyQuote = createReplyQuote(message);
+  if (replyQuote) body.append(replyQuote);
   const gifMatch = typeof message.content === 'string' ? message.content.match(GIF_URL_PATTERN) : null;
   const youtubeVideoId = !gifMatch ? extractYouTubeVideoId(message.content) : null;
   if (youtubeVideoId) {
@@ -658,13 +701,7 @@ function renderMessage(message) {
   reply.className = 'admin-action message-reply';
   reply.textContent = '답글';
   reply.setAttribute('aria-label', '이 메시지에 답글 쓰기');
-  reply.addEventListener('click', () => {
-    const quoteName = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
-    const quote = (message.content || (message.image_path ? '사진' : '')).replace(/\s+/gu, ' ').slice(0, 180);
-    ui.messageInput.value = `↪ ${quoteName}: ${quote}\n` + ui.messageInput.value;
-    ui.messageInput.focus();
-    ui.messageInput.dispatchEvent(new Event('input', { bubbles: true }));
-  });
+  reply.addEventListener('click', () => setReplyTarget(message));
   row.append(reply);
   const copy = document.createElement('button');
   copy.type = 'button';
@@ -1022,7 +1059,7 @@ async function switchRoom(room) {
     const pageSize = 1000;
     for (let offset = 0; ; offset += pageSize) {
       const page = await supabase.from('messages')
-        .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified,edited_at')
+        .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified,edited_at,reply_to')
         .eq('room_id', room.id).order('created_at', { ascending: true }).range(offset, offset + pageSize - 1);
       if (page.error) { error = page.error; break; }
       data.push(...(page.data || []));
@@ -1030,7 +1067,7 @@ async function switchRoom(room) {
     }
   } else {
     const result = await supabase.from('messages')
-      .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified,edited_at')
+      .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified,edited_at,reply_to')
       .eq('room_id', room.id).order('created_at', { ascending: true }).limit(30);
     data = result.data || [];
     error = result.error;
@@ -1325,17 +1362,22 @@ async function sendMessage(event) {
       });
       if (uploadError) throw uploadError;
     }
-    const { data, error } = await supabase.rpc('roomchat_post_message', {
+    const postArgs = {
       p_room_id: state.room.id,
       p_content: content || null,
       p_image_path: imagePath,
       p_guest_session_id: state.user ? null : guestSessionId,
       p_guest_token: state.user ? null : guestToken,
-    });
+    };
+    const { data, error } = await supabase.rpc(
+      state.replyTarget ? 'roomchat_post_reply' : 'roomchat_post_message',
+      state.replyTarget ? { ...postArgs, p_reply_to: state.replyTarget.id } : postArgs,
+    );
     if (error) throw error;
     const inserted = normalizeRpcRow(data);
     if (inserted) addMessage(inserted);
     ui.messageInput.value = '';
+    clearReplyTarget();
     ui.messageInput.style.height = 'auto';
     ui.charCount.textContent = '0 / 2000';
     clearAttachment();
@@ -2034,6 +2076,7 @@ function setupEvents() {
     setAvatarFromFile(file);
   });
   ui.messageForm.addEventListener('submit', sendMessage);
+  ui.cancelReply.addEventListener('click', clearReplyTarget);
   ui.messageInput.addEventListener('input', () => {
     updateMentionSuggestions();
     ui.messageInput.style.height = 'auto';
