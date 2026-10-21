@@ -81,7 +81,7 @@ const state = {
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
-  profiles: new Map(), messageSearchQuery: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null,
+  profiles: new Map(), messageSearchQuery: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null, pinnedMessageIds: new Set(),
 };
 let social = null;
 let mentionItems = [];
@@ -565,6 +565,29 @@ function createReactionBar(message) {
   }
   return bar;
 }
+async function loadPinnedMessages(roomId) {
+  const { data, error } = await supabase.from('roomchat_message_pins').select('message_id').eq('room_id', roomId);
+  if (error) {
+    console.warn('Could not load pinned messages');
+    state.pinnedMessageIds = new Set();
+    return;
+  }
+  state.pinnedMessageIds = new Set((data || []).map((item) => String(item.message_id)));
+}
+async function toggleMessagePin(message) {
+  if (!state.isAdmin) return showToast('관리자만 메시지를 고정할 수 있어요.');
+  const currentlyPinned = state.pinnedMessageIds.has(String(message.id));
+  const { error } = await supabase.rpc('roomchat_admin_set_message_pin', {
+    p_room_id: message.room_id || state.room?.id,
+    p_message_id: message.id,
+    p_pin: !currentlyPinned,
+  });
+  if (error) return showToast(errorText(error, '메시지 고정 상태를 바꾸지 못했어요.'));
+  if (currentlyPinned) state.pinnedMessageIds.delete(String(message.id));
+  else state.pinnedMessageIds.add(String(message.id));
+  renderMessages();
+  showToast(currentlyPinned ? '메시지 고정을 해제했어요.' : '메시지를 고정했어요.');
+}
 function setReplyTarget(message) {
   if (!message || !state.room || message.room_id !== state.room.id) return;
   state.replyTarget = message;
@@ -644,6 +667,13 @@ function renderMessage(message) {
     edited.textContent = '수정됨';
     edited.title = `수정 시간: ${formatTime(message.edited_at)}`;
     meta.append(edited);
+  }
+  if (state.pinnedMessageIds?.has(String(message.id))) {
+    const pinned = document.createElement('span');
+    pinned.className = 'message-pinned-label';
+    pinned.textContent = '📌 고정됨';
+    pinned.setAttribute('aria-label', '고정된 메시지');
+    meta.append(pinned);
   }
   body.append(meta);
   const replyQuote = createReplyQuote(message);
@@ -743,6 +773,16 @@ function renderMessage(message) {
     }
   });
   row.append(permalink);
+  if (state.isAdmin) {
+    const pin = document.createElement('button');
+    pin.type = 'button';
+    pin.className = 'admin-action message-pin';
+    const pinned = state.pinnedMessageIds?.has(String(message.id));
+    pin.textContent = pinned ? '고정 해제' : '고정';
+    pin.setAttribute('aria-label', pinned ? '메시지 고정 해제' : '메시지 고정');
+    pin.addEventListener('click', () => toggleMessagePin(message));
+    row.append(pin);
+  }
   if (isOwn && message.content && !message.image_path) {
     const edit = document.createElement('button');
     edit.type = 'button';
@@ -1082,6 +1122,8 @@ async function switchRoom(room) {
   }
   state.messages = data || [];
   state.messageReactions = new Map();
+  await loadPinnedMessages(room.id);
+  if (request !== state.roomRequest) return;
   await refreshMessageReactions(state.messages.map((message) => message.id));
   if (request !== state.roomRequest) return;
   renderMessages();
