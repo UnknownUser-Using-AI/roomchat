@@ -358,6 +358,35 @@ function removeMessage(messageId) {
   if (!state.messages.length) renderMessages();
   if (ui.adminPanelDialog.open) renderAdminPanel();
 }
+function extractYouTubeVideoId(content) {
+  if (typeof content !== 'string') return null;
+  const candidates = content.match(/https?:\/\/[^\s<>]+/giu) || [];
+  for (const candidate of candidates) {
+    let url;
+    try { url = new URL(candidate.replace(/[),.!?;]+$/u, '')); } catch { continue; }
+    const host = url.hostname.toLowerCase().replace(/^www\./u, '');
+    let id = null;
+    if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || null;
+    else if (['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(host)) {
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (url.pathname === '/watch') id = url.searchParams.get('v');
+      else if (['shorts', 'embed', 'live'].includes(parts[0])) id = parts[1] || null;
+    }
+    if (id && /^[A-Za-z0-9_-]{11}$/u.test(id)) return id;
+  }
+  return null;
+}
+function createYouTubeEmbed(videoId) {
+  const frame = document.createElement('iframe');
+  frame.className = 'message-youtube-player';
+  frame.src = `https://www.youtube-nocookie.com/embed/${videoId}`;
+  frame.title = 'YouTube 동영상 플레이어';
+  frame.loading = 'lazy';
+  frame.referrerPolicy = 'strict-origin-when-cross-origin';
+  frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+  frame.allowFullscreen = true;
+  return frame;
+}
 function renderMessage(message) {
   const key = String(message.id);
   if (ui.messages.querySelector(`[data-message-id="${CSS.escape(key)}"]`)) return;
@@ -394,6 +423,13 @@ function renderMessage(message) {
   meta.append(time);
   body.append(meta);
   const gifMatch = typeof message.content === 'string' ? message.content.match(GIF_URL_PATTERN) : null;
+  const youtubeVideoId = !gifMatch ? extractYouTubeVideoId(message.content) : null;
+  if (youtubeVideoId) {
+    const videoCard = document.createElement('div');
+    videoCard.className = 'message-youtube';
+    videoCard.append(createYouTubeEmbed(youtubeVideoId));
+    body.append(videoCard);
+  }
   if (gifMatch) {
     const gifLink = document.createElement('a');
     gifLink.className = 'message-image-link message-gif-link';
