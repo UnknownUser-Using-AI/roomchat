@@ -50,6 +50,7 @@ const ui = {
 const GUEST_ID_KEY = 'roomchat:guest-id';
 const GUEST_TOKEN_KEY = 'roomchat:guest-token';
 const ROOM_OWNER_PREFIX = 'roomchat:owner:';
+const ROOM_FAVORITES_KEY = 'roomchat:room-favorites:v1';
 const FIXED_ROOM_NAME = '슬랩배틀 라이벌 입양 피기';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const ADMIN_INITIAL_NAMES = new Set(['천사', '크리스탈']);
@@ -84,6 +85,21 @@ const state = {
   profiles: new Map(), messageSearchQuery: '', messageSearchDate: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null, pinnedMessageIds: new Set(),
 };
 let social = null;
+let roomSearchQuery = '';
+let roomFavorites = new Set((() => { try { const value = JSON.parse(localStorage.getItem(ROOM_FAVORITES_KEY) || '[]'); return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : []; } catch { return []; } })());
+const roomSearchInput = document.createElement('input');
+roomSearchInput.type = 'search';
+roomSearchInput.className = 'text-field room-search-input';
+roomSearchInput.placeholder = '방 이름 검색';
+roomSearchInput.setAttribute('aria-label', '채팅방 검색');
+roomSearchInput.autocomplete = 'off';
+roomSearchInput.addEventListener('input', () => { roomSearchQuery = roomSearchInput.value.trim().toLocaleLowerCase(); renderRoomLists(); });
+ui.roomList.parentElement.insertBefore(roomSearchInput, ui.roomList);
+function toggleRoomFavorite(room) {
+  if (roomFavorites.has(room.id)) roomFavorites.delete(room.id); else roomFavorites.add(room.id);
+  try { localStorage.setItem(ROOM_FAVORITES_KEY, JSON.stringify([...roomFavorites])); } catch {}
+  renderRoomLists();
+}
 let mentionItems = [];
 let mentionActiveIndex = 0;
 let mentionToken = null;
@@ -247,6 +263,9 @@ function sortedRooms() {
     if (guideDiff) return guideDiff;
     // Preserve parent/child grouping; users can reorder top-level rooms only.
     if (Boolean(a.parent_id) !== Boolean(b.parent_id)) return Number(Boolean(a.parent_id)) - Number(Boolean(b.parent_id));
+    const aFavorite = roomFavorites.has(a.id);
+    const bFavorite = roomFavorites.has(b.id);
+    if (aFavorite !== bFavorite) return Number(bFavorite) - Number(aFavorite);
     const aRank = rank.get(a.id);
     const bRank = rank.get(b.id);
     if (aRank !== undefined || bRank !== undefined) {
@@ -264,7 +283,13 @@ function renderRoomLists() {
   const railRooms = $('#rail-room-list');
   railRooms?.replaceChildren();
   const allRooms = sortedRooms();
-  const displayRooms = allRooms.filter((room) => !room.parent_id).flatMap((parent) => [parent, ...allRooms.filter((room) => room.parent_id === parent.id)]);
+  const query = roomSearchQuery;
+  const matchingIds = new Set(allRooms.filter((room) => !query || room.name.toLocaleLowerCase().includes(query)).map((room) => room.id));
+  for (const room of allRooms) {
+    if (room.parent_id && matchingIds.has(room.id)) matchingIds.add(room.parent_id);
+  }
+  const visibleRooms = allRooms.filter((room) => matchingIds.has(room.id));
+  const displayRooms = visibleRooms.filter((room) => !room.parent_id).flatMap((parent) => [parent, ...visibleRooms.filter((room) => room.parent_id === parent.id)]);
   displayRooms.forEach((room, index) => {
     if (railRooms) {
       const railButton = document.createElement('button');
@@ -343,6 +368,17 @@ function renderRoomLists() {
     desktop.append(number, title, arrow);
     desktop.addEventListener('click', () => switchRoom(room));
     row.append(desktop);
+    if (!isGuideRoom(room)) {
+      const favorite = document.createElement('button');
+      favorite.type = 'button';
+      favorite.className = `room-favorite-button${roomFavorites.has(room.id) ? ' active' : ''}`;
+      favorite.textContent = roomFavorites.has(room.id) ? '★' : '☆';
+      favorite.title = roomFavorites.has(room.id) ? '즐겨찾기 해제' : '방 즐겨찾기';
+      favorite.setAttribute('aria-label', `${room.name} ${favorite.title}`);
+      favorite.setAttribute('aria-pressed', String(roomFavorites.has(room.id)));
+      favorite.addEventListener('click', (event) => { event.stopPropagation(); toggleRoomFavorite(room); });
+      row.append(favorite);
+    }
     ui.roomList.append(row);
 
     const mobile = document.createElement('button');
