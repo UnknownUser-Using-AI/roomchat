@@ -395,6 +395,7 @@ export function initSocial(ctx) {
   /* ---------- DM ---------- */
   async function openThread(friendId) {
     if (relation(friendId) !== 'friends') return ctx.showToast('친구끼리만 DM을 보낼 수 있어요.');
+    clearDmImagePreview();
     activeFriend = friendId;
     if (!el.friendsDialog.open) el.friendsDialog.showModal();
     el.friendsListView.hidden = true;
@@ -418,6 +419,7 @@ export function initSocial(ctx) {
     if (!window.matchMedia('(pointer: coarse)').matches) el.dmInput.focus();
   }
   function closeThread() {
+    clearDmImagePreview();
     activeFriend = null;
     el.dmView.hidden = true;
     el.dmBack.hidden = true;
