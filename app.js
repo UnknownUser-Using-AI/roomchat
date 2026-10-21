@@ -2176,7 +2176,8 @@ function setupEvents() {
     if (ui.settingYouTubePreview) ui.settingYouTubePreview.checked = state.youtubePreviewEnabled;
     if (ui.sidebarCollapseButton) {
       ui.sidebarCollapseButton.setAttribute('aria-pressed', String(Boolean(settings.sidebarCollapsed)));
-      ui.sidebarCollapseButton.textContent = settings.sidebarCollapsed ? '사이드바 열기' : '사이드바 접기';
+      ui.sidebarCollapseButton.textContent = settings.sidebarCollapsed ? '⇥' : '⇤';
+      ui.sidebarCollapseButton.setAttribute('aria-label', settings.sidebarCollapsed ? '사이드바 펼치기' : '사이드바 접기');
       ui.sidebarCollapseButton.title = settings.sidebarCollapsed ? '채팅방 목록 펼치기' : '채팅방 목록 접기';
     }
     document.documentElement.style.setProperty('--roomchat-message-font-size', `${[14,16,18,20].includes(Number(settings.fontSize)) ? Number(settings.fontSize) : 16}px`);
