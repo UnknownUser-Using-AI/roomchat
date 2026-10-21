@@ -150,11 +150,11 @@ export function initSocial(ctx) {
     renderTagGrid();
     ctx.showToast('태그를 선택했어요. 저장을 누르면 프로필에 적용돼요.');
   }
-  function tagPill(tag) {
+  function tagPill(tag, interactive = true) {
     const pill = document.createElement('span');
     pill.className = 'user-tag';
     pill.title = '';
-    pill.tabIndex = 0;
+    pill.tabIndex = interactive ? 0 : -1;
     pill.setAttribute('aria-label', `${tag.name}, 일반 태그`);
     const image = document.createElement('img');
     image.src = tagUrl(tag.image_path);
@@ -162,6 +162,9 @@ export function initSocial(ctx) {
     image.loading = 'lazy';
     const label = document.createElement('b');
     label.textContent = tag.name;
+    pill.append(image, label);
+    // 선택 목록은 이미 버튼 안에 있으므로, 안쪽에 버튼을 중첩하지 않습니다.
+    if (!interactive) return pill;
     const card = document.createElement('span');
     card.className = 'tag-hover-card';
     card.setAttribute('role', 'group');
@@ -175,10 +178,26 @@ export function initSocial(ctx) {
     copy.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
+      pill.classList.remove('is-tag-card-open');
       followTag(tag);
     });
     card.append(status, copy);
-    pill.append(image, label, card);
+    pill.append(card);
+    pill.addEventListener('click', (event) => {
+      if (!window.matchMedia('(pointer: coarse)').matches || event.target.closest('.tag-hover-card')) return;
+      event.stopPropagation();
+      document.querySelectorAll('.user-tag.is-tag-card-open').forEach((node) => {
+        if (node !== pill) node.classList.remove('is-tag-card-open');
+      });
+      pill.classList.toggle('is-tag-card-open');
+    });
+    pill.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') pill.classList.remove('is-tag-card-open');
+      if ((event.key === 'Enter' || event.key === ' ') && event.target === pill) {
+        event.preventDefault();
+        pill.classList.toggle('is-tag-card-open');
+      }
+    });
     return pill;
   }
   function applyProfileStyles() {
@@ -606,7 +625,7 @@ export function initSocial(ctx) {
       const selected = draft.tags.includes(tag.id);
       pick.className = `tag-pick${selected ? ' active' : ''}`;
       pick.setAttribute('aria-pressed', String(selected));
-      pick.append(tagPill(tag));
+      pick.append(tagPill(tag, false));
       pick.addEventListener('click', () => {
         if (draft.tags.includes(tag.id)) draft.tags = draft.tags.filter((id) => id !== tag.id);
         else if (draft.tags.length >= MAX_TAGS_WORN) return ctx.showToast(`태그는 최대 ${MAX_TAGS_WORN}개까지 달 수 있어요.`);
@@ -670,6 +689,7 @@ export function initSocial(ctx) {
       const { data, error } = await supabase.rpc('roomchat_create_tag', { p_name: name, p_image_path: path });
       if (error) throw error;
       const tag = Array.isArray(data) ? data[0] : data;
+      if (!tag?.id || !tag?.name || !tag?.image_path) throw new Error('태그 생성 응답이 올바르지 않아요. 데이터베이스 설정을 확인해 주세요.');
       tagLibrary.unshift({ id: tag.id, name: tag.name, image_path: tag.image_path, created_by: me() });
       if (draft.tags.length < MAX_TAGS_WORN) draft.tags.push(tag.id);
       el.tagName.value = '';
@@ -812,6 +832,10 @@ export function initSocial(ctx) {
     ctx.showToast('붙여넣은 이미지를 태그 이미지로 골랐어요.');
   });
   [el.profileDialog, el.styleDialog, el.friendsDialog].forEach(bindDialogBackdrop);
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('.user-tag')) return;
+    document.querySelectorAll('.user-tag.is-tag-card-open').forEach((node) => node.classList.remove('is-tag-card-open'));
+  });
 
   el.messageInput.addEventListener('input', refreshMentions);
   el.messageInput.addEventListener('click', refreshMentions);
