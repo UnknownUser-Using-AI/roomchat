@@ -112,17 +112,47 @@ export function initSocial(ctx) {
     if (profile.nick_weight) node.style.fontWeight = String(profile.nick_weight);
     if (profile.nick_color && HEX.test(profile.nick_color)) node.style.color = profile.nick_color;
   }
+  async function followTag(tag) {
+    if (!me()) return ctx.showToast('태그를 따라 하려면 계정으로 로그인해 주세요.');
+    if (!draft || !el.styleDialog.open) {
+      openStyleDialog();
+      if (!el.styleDialog.open || !draft) return;
+    }
+    if (draft.tags.includes(tag.id)) return ctx.showToast('이미 사용 중인 태그예요.');
+    if (draft.tags.length >= MAX_TAGS_WORN) return ctx.showToast(`태그는 최대 ${MAX_TAGS_WORN}개까지 달 수 있어요.`);
+    draft.tags.push(tag.id);
+    renderTagGrid();
+    ctx.showToast('태그를 선택했어요. 저장을 누르면 프로필에 적용돼요.');
+  }
   function tagPill(tag) {
     const pill = document.createElement('span');
     pill.className = 'user-tag';
-    pill.title = tag.name;
+    pill.title = '';
+    pill.tabIndex = 0;
+    pill.setAttribute('aria-label', `${tag.name}, 일반 태그`);
     const image = document.createElement('img');
     image.src = tagUrl(tag.image_path);
     image.alt = '';
     image.loading = 'lazy';
     const label = document.createElement('b');
     label.textContent = tag.name;
-    pill.append(image, label);
+    const card = document.createElement('span');
+    card.className = 'tag-hover-card';
+    card.setAttribute('role', 'group');
+    const status = document.createElement('span');
+    status.className = 'tag-hover-status';
+    status.textContent = '일반 태그';
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'tag-follow-button';
+    copy.textContent = '태그 따라하기';
+    copy.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      followTag(tag);
+    });
+    card.append(status, copy);
+    pill.append(image, label, card);
     return pill;
   }
   function applyProfileStyles() {
