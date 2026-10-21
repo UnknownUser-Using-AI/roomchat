@@ -183,7 +183,16 @@ function displayNickname(value, verified = false) {
   return verified ? name.replace(/^\[인증됨\]\s*/u, '') || '관리자' : name;
 }
 function formatTime(value) {
-  return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).format(date);
 }
 function showLoading() {
   ui.messages.replaceChildren();
