@@ -1667,3 +1667,7 @@ img, video, iframe { max-width: 100%; }
 
 /* 자동 인식되는 채팅 하이퍼링크 */
 .chat-hyperlink{color:#6478f5;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;overflow-wrap:anywhere;cursor:pointer;font-weight:600}.chat-hyperlink:hover{color:#394dc7;text-decoration-thickness:2px}.chat-hyperlink:focus-visible{outline:2px solid #6478f5;outline-offset:2px;border-radius:3px}.dm-bubble .chat-hyperlink{color:#4058d6}.dm-row.own .dm-bubble .chat-hyperlink{color:#263f9f}
+
+/* Mobile browsers: keep chat links reliably tappable and visible. */
+.chat-hyperlink{display:inline;position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;-webkit-touch-callout:default;user-select:text;-webkit-user-select:text;cursor:pointer}
+@media(max-width:760px){.message-content .chat-hyperlink,.dm-bubble .chat-hyperlink{display:inline-block;max-width:100%;min-height:24px;line-height:1.55;padding:1px 0;overflow-wrap:anywhere;word-break:break-word;touch-action:pan-y manipulation}}
