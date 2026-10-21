@@ -20,7 +20,7 @@ const ui = {
   accountPassword: $('#account-password'), adminCodeWrap: $('#admin-code-wrap'), adminCode: $('#admin-claim-code'),
   accountTitle: $('#account-title'), accountDescription: $('#account-description'), accountSubmit: $('#account-submit-button'),
   accountCancel: $('#account-cancel-button'), roomDialog: $('#room-dialog'), roomForm: $('#room-form'), roomInput: $('#room-input'),
-  roomDelete: $('#room-delete-button'), membersDialog: $('#members-dialog'), memberList: $('#member-list'),
+  roomDelete: $('#room-delete-button'), childRoomButton: $('#new-child-room-button'), membersDialog: $('#members-dialog'), memberList: $('#member-list'),
   membersNote: $('#members-note'), membersClose: $('#members-close-button'), notificationButton: $('#notification-button'),
   notificationLabel: $('#notification-label'), messageForm: $('#message-form'), messageInput: $('#message-input'),
   send: $('#send-button'), imageFile: $('#image-file'), preview: $('#attachment-preview'),
@@ -70,7 +70,7 @@ const state = {
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
   attachment: null, attachmentUrl: '', notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
-  accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null,
+  accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
   profiles: new Map(),
 };
@@ -230,7 +230,9 @@ function renderRoomLists() {
   ui.mobileRoomList.replaceChildren();
   const railRooms = $('#rail-room-list');
   railRooms?.replaceChildren();
-  sortedRooms().forEach((room, index) => {
+  const allRooms = sortedRooms();
+  const displayRooms = allRooms.filter((room) => !room.parent_id).flatMap((parent) => [parent, ...allRooms.filter((room) => room.parent_id === parent.id)]);
+  displayRooms.forEach((room, index) => {
     if (railRooms) {
       const railButton = document.createElement('button');
       railButton.type = 'button';
@@ -254,12 +256,12 @@ function renderRoomLists() {
     row.className = 'room-row';
     const desktop = document.createElement('button');
     desktop.type = 'button';
-    desktop.className = `room-item${state.room?.id === room.id ? ' active' : ''}${room.is_featured ? ' featured' : ''}`;
+    desktop.className = `room-item${state.room?.id === room.id ? ' active' : ''}${room.is_featured ? ' featured' : ''}${room.parent_id ? ' child-room' : ''}`;
     desktop.setAttribute('aria-current', state.room?.id === room.id ? 'page' : 'false');
     const number = document.createElement('span');
-    number.className = 'room-number';
+    number.className = `room-number${room.parent_id ? ' child-room-number' : ''}`;
     if (room.image_path) { number.classList.add('has-image'); paintAvatar(number, room.name, roomImageUrl(room)); }
-    else number.textContent = room.is_featured ? '★' : '#';
+    else number.textContent = room.parent_id ? '↳' : room.is_featured ? '★' : '#';
     const title = document.createElement('span');
     title.className = 'room-title';
     title.textContent = room.name;
@@ -273,13 +275,13 @@ function renderRoomLists() {
 
     const mobile = document.createElement('button');
     mobile.type = 'button';
-    mobile.className = `mobile-room-chip${state.room?.id === room.id ? ' active' : ''}${room.is_featured ? ' featured' : ''}`;
+    mobile.className = `mobile-room-chip${state.room?.id === room.id ? ' active' : ''}${room.is_featured ? ' featured' : ''}${room.parent_id ? ' child-room' : ''}`;
     if (room.image_path) {
       const icon = document.createElement('span');
       icon.className = 'chip-icon';
       paintAvatar(icon, room.name, roomImageUrl(room));
       mobile.append(icon, document.createTextNode(`${room.is_featured ? '★ ' : ''}${room.name}`));
-    } else mobile.textContent = `${room.is_featured ? '★ ' : ''}${room.name}`;
+    } else mobile.textContent = `${room.parent_id ? '↳ ' : room.is_featured ? '★ ' : ''}${room.name}`;
     mobile.addEventListener('click', () => switchRoom(room));
     ui.mobileRoomList.append(mobile);
   });
@@ -339,9 +341,11 @@ function updateRoomHeading(room) {
   updateComposerAvailability();
   ui.roomName.textContent = room.name;
   ui.bannerName.textContent = room.name;
+  const parentRoom = room.parent_id ? state.rooms.find((item) => item.id === room.parent_id) : null;
   ui.roomTopic.textContent = isGuideRoom(room)
     ? '안내: 채팅방에는 최근 메시지 30개만 보관되며, 이전 메시지는 자동 삭제됩니다.'
-    : room.name;
+    : parentRoom ? `하위 방 · ${parentRoom.name}` : '상위 채널';
+  ui.childRoomButton.hidden = Boolean(room.parent_id || isGuideRoom(room));
   ui.roomDelete.hidden = !(state.isAdmin && !room.is_featured);
   renderRoomLists();
 }
@@ -503,9 +507,9 @@ function normalizeRpcRow(data) { return Array.isArray(data) ? data[0] : data; }
 async function loadRooms() {
   const fetchRooms = (columns) => supabase.from('rooms').select(columns)
     .order('is_featured', { ascending: false }).order('created_at', { ascending: true }).limit(100);
-  let { data, error } = await fetchRooms('id,name,created_at,created_by,is_featured,image_path');
-  // 방 이미지 마이그레이션 전에도 방 목록은 보이도록 예전 열만으로 다시 시도합니다.
-  if (error) ({ data, error } = await fetchRooms('id,name,created_at,created_by,is_featured'));
+  let { data, error } = await fetchRooms('id,name,created_at,created_by,is_featured,image_path,parent_id');
+  // 방 이미지 열이 없는 이전 DB에서도 목록을 표시합니다. 하위 방 열은 필수입니다.
+  if (error) ({ data, error } = await fetchRooms('id,name,created_at,created_by,is_featured,parent_id'));
   if (error) throw error;
   state.rooms = data || [];
   renderRoomLists();
@@ -718,7 +722,7 @@ async function switchRoom(room) {
   if (state.nickname) await subscribeCurrentRoom(request);
   if (ui.adminPanelDialog.open) renderAdminPanel();
 }
-async function createRoom(name) {
+async function createRoom(name, parentRoomId = null) {
   const cleanName = [...name.trim().replace(/\s+/gu, ' ')].slice(0, 20).join('');
   if (cleanName.length < 2 || cleanName.length > 32) return showToast('방 이름은 2~32자로 입력해 주세요.');
   const ownerToken = state.user ? null : `${crypto.randomUUID()}${crypto.randomUUID()}`.replaceAll('-', '');
@@ -727,6 +731,7 @@ async function createRoom(name) {
     p_guest_session_id: state.user ? null : guestSessionId,
     p_guest_token: state.user ? null : guestToken,
     p_owner_token: ownerToken,
+    p_parent_room_id: parentRoomId,
   });
   if (error) { showToast(errorText(error, '방을 만들지 못했어요.')); return; }
   const room = normalizeRpcRow(data);
@@ -890,9 +895,17 @@ function showAccountDialog() {
   ui.accountDialog.showModal();
   window.setTimeout(() => ui.accountNickname.focus(), 80);
 }
-async function openRoomDialog() {
+async function openRoomDialog(parentRoomId = null) {
   if (!state.nickname) { showNicknameDialog(); return; }
+  const parentRoom = parentRoomId ? state.rooms.find((room) => room.id === parentRoomId && !room.parent_id) : null;
+  if (parentRoomId && !parentRoom) return showToast('하위 방은 상위 채널에서만 만들 수 있어요.');
+  state.pendingParentRoomId = parentRoom?.id || null;
   ui.roomInput.value = '';
+  ui.roomDialog.querySelector('h2').textContent = parentRoom ? '하위 방 만들기' : '새 대화방 만들기';
+  ui.roomDialog.querySelector('p').textContent = parentRoom
+    ? `“${parentRoom.name}” 채널 안에 새 하위 방을 만들어요. 하위 방 안에는 또 다른 방을 만들 수 없어요.`
+    : '게스트도 상위 채널을 만들 수 있어요. 만든 사람은 그 방의 운영자가 됩니다.';
+  ui.roomDialog.querySelector('label[for="room-input"]').textContent = parentRoom ? '하위 방 이름' : '채널 이름';
   ui.roomDialog.showModal();
   ui.roomInput.focus();
 }
@@ -1437,7 +1450,8 @@ function setupEvents() {
     showToast('로그아웃했어요. 이번 탭에서 게스트로 계속 이용할 수 있어요.');
     showNicknameDialog();
   });
-  $('#new-room-button').addEventListener('click', openRoomDialog);
+  $('#new-room-button').addEventListener('click', () => openRoomDialog());
+  ui.childRoomButton.addEventListener('click', () => { if (state.room && !state.room.parent_id) openRoomDialog(state.room.id); });
   $('#rail-new-room')?.addEventListener('click', openRoomDialog);
   $('#mobile-new-room-button').addEventListener('click', openRoomDialog);
   $('#cancel-room').addEventListener('click', () => ui.roomDialog.close());
@@ -1453,8 +1467,10 @@ function setupEvents() {
   ui.roomForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const value = ui.roomInput.value.trim();
+    const parentRoomId = state.pendingParentRoomId;
+    state.pendingParentRoomId = null;
     ui.roomDialog.close();
-    createRoom(value);
+    createRoom(value, parentRoomId);
   });
   ui.roomDelete.addEventListener('click', deleteRoom);
   ui.adminPanelButton.addEventListener('click', openAdminPanel);
