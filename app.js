@@ -27,7 +27,7 @@ const ui = {
   send: $('#send-button'), imageFile: $('#image-file'), preview: $('#attachment-preview'),
   thumbnail: $('#attachment-thumbnail'), attachmentName: $('#attachment-name'), removeAttachment: $('#remove-attachment'),
   toast: $('#toast'), charCount: $('#char-count'),
-  messageSearch: $('#message-search'), messageSearchClear: $('#message-search-clear'),
+  messageSearch: $('#message-search'), messageSearchDate: $('#message-search-date'), messageSearchClear: $('#message-search-clear'),
   chatSettingsButton: $('#chat-settings-button'), chatSettings: $('#chat-settings'),
   settingDark: $('#setting-dark'), settingFontSize: $('#setting-font-size'),
   settingWide: $('#setting-wide'), settingHideSidebar: $('#setting-hide-sidebar'),
@@ -81,7 +81,7 @@ const state = {
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
-  profiles: new Map(), messageSearchQuery: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null, pinnedMessageIds: new Set(),
+  profiles: new Map(), messageSearchQuery: '', messageSearchDate: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null, pinnedMessageIds: new Set(),
 };
 let social = null;
 let mentionItems = [];
@@ -846,19 +846,25 @@ function renderMessages() {
     return;
   }
   const query = (state.messageSearchQuery || '').trim().toLocaleLowerCase();
-  const filteredMessages = state.messages.filter((message) => !query || [message.content, message.nickname].some((value) => String(value || '').toLocaleLowerCase().includes(query)));
+  const dateFilter = state.messageSearchDate || '';
+  const filteredMessages = state.messages.filter((message) => {
+    const matchesText = !query || [message.content, message.nickname].some((value) => String(value || '').toLocaleLowerCase().includes(query));
+    const created = new Date(message.created_at);
+    const localDate = Number.isNaN(created.getTime()) ? '' : `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}-${String(created.getDate()).padStart(2, '0')}`;
+    return matchesText && (!dateFilter || localDate === dateFilter);
+  });
   filteredMessages.forEach(renderMessage);
-  if (query && filteredMessages.length === 0) {
+  if ((query || dateFilter) && filteredMessages.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty-state search-empty-state';
     const title = document.createElement('strong');
     title.textContent = '검색 결과가 없어요.';
     const hint = document.createElement('span');
-    hint.textContent = '다른 검색어를 입력하거나 검색을 지워 보세요.';
+    hint.textContent = '검색어 또는 날짜를 바꾸거나 초기화해 보세요.';
     empty.append(title, hint);
     ui.messages.append(empty);
   }
-  if (!query) ui.messages.scrollTop = guide ? 0 : ui.messages.scrollHeight;
+  if (!query && !dateFilter) ui.messages.scrollTop = guide ? 0 : ui.messages.scrollHeight;
   const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
   const targetMessageId = hashParams.get('message');
   const targetRoomId = hashParams.get('room');
@@ -2078,9 +2084,15 @@ function setupEvents() {
     state.messageSearchQuery = ui.messageSearch.value;
     renderMessages();
   });
+  ui.messageSearchDate?.addEventListener('change', () => {
+    state.messageSearchDate = ui.messageSearchDate.value;
+    renderMessages();
+  });
   ui.messageSearchClear?.addEventListener('click', () => {
     if (ui.messageSearch) ui.messageSearch.value = '';
+    if (ui.messageSearchDate) ui.messageSearchDate.value = '';
     state.messageSearchQuery = '';
+    state.messageSearchDate = '';
     renderMessages();
     ui.messageSearch?.focus();
   });
