@@ -691,6 +691,21 @@ function renderMessage(message) {
     }
   });
   row.append(copy);
+  const permalink = document.createElement('button');
+  permalink.type = 'button';
+  permalink.className = 'admin-action message-link';
+  permalink.textContent = '링크';
+  permalink.setAttribute('aria-label', '메시지 링크 복사');
+  permalink.addEventListener('click', async () => {
+    const link = `${window.location.origin}${window.location.pathname}#room=${encodeURIComponent(message.room_id || state.room?.id || '')}&message=${encodeURIComponent(message.id)}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast('메시지 링크를 복사했어요.');
+    } catch {
+      showToast('링크를 복사하지 못했어요. 브라우저 권한을 확인해 주세요.');
+    }
+  });
+  row.append(permalink);
   if (isOwn && message.content && !message.image_path) {
     const edit = document.createElement('button');
     edit.type = 'button';
@@ -767,6 +782,17 @@ function renderMessages() {
     ui.messages.append(empty);
   }
   if (!query) ui.messages.scrollTop = guide ? 0 : ui.messages.scrollHeight;
+  const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+  const targetMessageId = hashParams.get('message');
+  const targetRoomId = hashParams.get('room');
+  if (targetMessageId && (!targetRoomId || targetRoomId === state.room?.id)) {
+    const target = ui.messages.querySelector(`[data-message-id="${CSS.escape(targetMessageId)}"]`);
+    if (target) {
+      target.classList.add('message-link-target');
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      window.setTimeout(() => target.classList.remove('message-link-target'), 2200);
+    }
+  }
   loadAvatars(filteredMessages.map((message) => message.user_id));
 }
 function addMessage(message) {
