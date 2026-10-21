@@ -31,7 +31,7 @@ export function renderMentions(content, names = [], selfName = '') {
 }
 
 export function mentionsName(content, name) {
-  return Boolean(typeof content === 'string' && (/@everyone(?![\\p{L}\\p{N}_])/iu.test(content) || (name && content.includes(`@${name}`))));
+  return Boolean(typeof content === 'string' && (/@everyone(?![A-Za-z0-9_가-힣])/iu.test(content) || (name && content.includes(`@${name}`))));
 }
 
 export function initSocial(ctx) {
