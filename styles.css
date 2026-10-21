@@ -1855,3 +1855,9 @@ img, video, iframe { max-width: 100%; }
 .message-reaction.selected{border-color:var(--accent,#8173ef);background:var(--accent-soft,#f0edff);font-weight:700}
 .message-reaction:disabled{opacity:.55;cursor:wait}
 @media(max-width:640px){.message-reactions{gap:4px}.message-reaction{min-height:30px;padding:4px 8px;font-size:12px;touch-action:manipulation}}
+
+
+/* Shareable message links */
+.message-link-target{outline:2px solid var(--accent,#8173ef);outline-offset:3px;border-radius:12px;animation:message-link-pulse 1.8s ease-out}
+@keyframes message-link-pulse{0%,35%{background:var(--accent-soft,#f0edff)}100%{background:transparent}}
+@media(prefers-reduced-motion:reduce){.message-link-target{animation:none}}
