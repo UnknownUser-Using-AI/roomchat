@@ -2112,6 +2112,12 @@ async function boot() {
   }
   try {
     await loadRooms();
+    const sharedLinkParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+    const sharedRoomId = sharedLinkParams.get('room');
+    if (sharedRoomId) {
+      const sharedRoom = state.rooms.find((room) => room.id === sharedRoomId);
+      if (sharedRoom && sharedRoom.id !== state.room?.id) await switchRoom(sharedRoom);
+    }
     state.roomsChannel = supabase.channel('public:rooms', { config: { broadcast: { self: false } } })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rooms' }, ({ new: room }) => {
         if (!state.rooms.some((item) => item.id === room.id)) { state.rooms.push(room); renderRoomLists(); }
