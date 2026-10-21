@@ -1342,6 +1342,7 @@ function recordNotificationHistory(title, body) {
 }
 function notifyUser(title, body, tag) {
   if (!state.notifications) return;
+  recordNotificationHistory(title, body);
   playMessageSound();
   showSystemNotification(title, body, tag);
 }
@@ -1350,6 +1351,7 @@ async function notifyIncoming(message) {
   const author = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
   const title = mentioned ? `${author}님이 회원님을 언급했어요 · ${state.room?.name || 'roomchat'}` : `${author} · ${state.room?.name || 'roomchat'}`;
   const body = GIF_URL_PATTERN.test(message.content || '') ? 'GIF를 보냈어요.' : (message.content || '사진을 공유했어요.');
+  recordNotificationHistory(title, body);
   playMessageSound();
   await showSystemNotification(title, body, `roomchat-${message.id}`);
 }
@@ -1847,6 +1849,8 @@ function setupEvents() {
   ui.presenceButton.addEventListener('click', openMembers);
   ui.membersClose.addEventListener('click', () => ui.membersDialog.close());
   ui.notificationButton.addEventListener('click', enableNotifications);
+  state.notificationHistory = readNotificationHistory();
+  renderNotificationHistory();
   const settingKey = 'roomchat:chat-settings:v1';
   const savedSettings = (() => { try { return JSON.parse(localStorage.getItem(settingKey) || '{}'); } catch { return {}; } })();
   const applyChatSettings = (settings = {}) => {
@@ -1893,6 +1897,7 @@ function setupEvents() {
   ui.clearNotificationHistory?.addEventListener('click', () => {
     state.notificationHistory = [];
     try { localStorage.removeItem('roomchat:notification-history'); } catch {}
+    renderNotificationHistory();
     showToast('이 기기의 알림 기록을 초기화했어요.');
   });
   document.addEventListener('keydown', (event) => {
