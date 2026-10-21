@@ -82,9 +82,33 @@ const state = {
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
-  profiles: new Map(), messageSearchQuery: '', messageSearchDate: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null, pinnedMessageIds: new Set(),
+  profiles: new Map(), messageSearchQuery: '', messageSearchDate: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null, pinnedMessageIds: new Set(), unreadRoomMessages: 0, newMessageDividerId: null, typingLastSentAt: 0, typingClearTimer: 0,
 };
 let social = null;
+let roomSearchQuery = '';
+let remoteTypingName = '';
+const typingIndicator = document.createElement('div');
+typingIndicator.className = 'typing-indicator'; typingIndicator.hidden = true; typingIndicator.setAttribute('aria-live', 'polite');
+const unreadMessagesButton = document.createElement('button');
+unreadMessagesButton.type = 'button'; unreadMessagesButton.className = 'unread-messages-button'; unreadMessagesButton.hidden = true;
+unreadMessagesButton.addEventListener('click', () => { ui.messages.scrollTo({ top: ui.messages.scrollHeight, behavior: 'smooth' }); clearUnreadRoomMessages(); });
+ui.messages.parentElement.append(unreadMessagesButton);
+ui.messageForm.parentElement.insertBefore(typingIndicator, ui.messageForm);
+function updateUnreadRoomMessages() {
+  unreadMessagesButton.textContent = state.unreadRoomMessages ? `새 메시지 ${state.unreadRoomMessages}개 · 아래로 이동` : '';
+  unreadMessagesButton.hidden = !state.unreadRoomMessages;
+}
+function clearUnreadRoomMessages() {
+  state.unreadRoomMessages = 0; state.newMessageDividerId = null; updateUnreadRoomMessages();
+  ui.messages.querySelector('.new-message-divider')?.remove();
+}
+function showRemoteTyping(name) {
+  remoteTypingName = String(name || '누군가').slice(0, 30);
+  typingIndicator.textContent = `${remoteTypingName} 입력 중…`;
+  typingIndicator.hidden = false;
+  window.clearTimeout(state.typingClearTimer);
+  state.typingClearTimer = window.setTimeout(() => { typingIndicator.hidden = true; remoteTypingName = ''; }, 3000);
+}
 let roomSearchQuery = '';
 let mediaOnlyMode = false;
 const imageZoomDialog = document.createElement('dialog');
@@ -705,6 +729,10 @@ function renderMessage(message) {
   const row = document.createElement('article');
   row.className = `message-row${isOwn ? ' own-message' : ''}${message.is_verified ? ' verified-message' : ''}${mentioned ? ' mentioned' : ''}`;
   row.dataset.messageId = key;
+  if (state.newMessageDividerId && String(state.newMessageDividerId) === key) {
+    const divider = document.createElement('div'); divider.className = 'new-message-divider'; divider.textContent = '새 메시지'; divider.setAttribute('role', 'separator');
+    ui.messages.append(divider);
+  }
   row.append(makeAvatar(nickname, message.user_id || null));
   const body = document.createElement('div');
   body.className = 'message-body';
@@ -951,6 +979,13 @@ function renderMessages() {
 }
 function addMessage(message) {
   if (state.messages.some((item) => String(item.id) === String(message.id))) return;
+  const nearBottom = ui.messages.scrollHeight - ui.messages.scrollTop - ui.messages.clientHeight < 80;
+  const incoming = !isOwnMessage(message);
+  if (incoming && !nearBottom && !state.messageSearchQuery && !state.messageSearchDate) {
+    state.unreadRoomMessages += 1;
+    if (!state.newMessageDividerId) state.newMessageDividerId = String(message.id);
+    updateUnreadRoomMessages();
+  }
   loadAvatars([message.user_id]);
   state.messages.push(message);
   state.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
@@ -962,7 +997,7 @@ function addMessage(message) {
     }
   }
   renderMessage(message);
-  ui.messages.scrollTop = ui.messages.scrollHeight;
+  if (nearBottom || isOwnMessage(message)) { ui.messages.scrollTop = ui.messages.scrollHeight; clearUnreadRoomMessages(); }
   if (ui.adminPanelDialog.open) renderAdminPanel();
 }
 function normalizeRpcRow(data) { return Array.isArray(data) ? data[0] : data; }
@@ -1110,6 +1145,10 @@ async function subscribeCurrentRoom(request) {
   }
   const channel = supabase.channel(`room:${room.id}`, { config: { presence: { key: state.user?.id || `guest:${guestSessionId}` }, broadcast: { self: false } } });
   channel
+    .on('broadcast', { event: 'typing' }, ({ payload }) => {
+      if (request !== state.roomRequest || payload?.sender === (state.user?.id || `guest:${guestSessionId}`)) return;
+      showRemoteTyping(payload?.nickname || '누군가');
+    })
     .on('presence', { event: 'sync' }, () => refreshMembers(room.id))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `room_id=eq.${room.id}` }, (payload) => {
       if (payload.eventType === 'DELETE') removeMessage(payload.old?.id);
@@ -1168,6 +1207,8 @@ async function switchRoom(room) {
   state.members = [];
   updateRoomHeading(room);
   state.messages = [];
+  state.unreadRoomMessages = 0; state.newMessageDividerId = null; updateUnreadRoomMessages();
+  typingIndicator.hidden = true; remoteTypingName = ''; window.clearTimeout(state.typingClearTimer);
   showLoading();
   renderMembers();
   let data = [];
@@ -2173,6 +2214,9 @@ function setupEvents() {
     renderNotificationHistory();
     showToast('이 기기의 알림 기록을 초기화했어요.');
   });
+  ui.messages.addEventListener('scroll', () => {
+    if (ui.messages.scrollHeight - ui.messages.scrollTop - ui.messages.clientHeight < 60) clearUnreadRoomMessages();
+  }, { passive: true });
   document.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault();
@@ -2214,6 +2258,13 @@ function setupEvents() {
   ui.messageForm.addEventListener('submit', sendMessage);
   ui.cancelReply.addEventListener('click', clearReplyTarget);
   ui.messageInput.addEventListener('input', () => {
+    if (state.roomChannel && !isGuideRoom(state.room) && ui.messageInput.value.trim()) {
+      const now = Date.now();
+      if (now - state.typingLastSentAt > 1200) {
+        state.typingLastSentAt = now;
+        state.roomChannel.send({ type: 'broadcast', event: 'typing', payload: { sender: state.user?.id || `guest:${guestSessionId}`, nickname: state.nickname || '익명' } }).catch(() => {});
+      }
+    }
     updateMentionSuggestions();
     ui.messageInput.style.height = 'auto';
     ui.messageInput.style.height = `${Math.min(ui.messageInput.scrollHeight, 150)}px`;
