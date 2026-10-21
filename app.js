@@ -1044,7 +1044,7 @@ function updateMentionSuggestions() {
   const value = ui.messageInput.value;
   const caret = ui.messageInput.selectionStart ?? value.length;
   const beforeCaret = value.slice(0, caret);
-  const match = beforeCaret.match(/(?:^|\\s)@([^\\s@]*)$/u);
+  const match = beforeCaret.match(/(?:^|\s)@([^\s@]*)$/u);
   if (!match) return closeMentionPopup();
   const query = match[1].toLocaleLowerCase();
   const start = caret - match[0].length + match[0].lastIndexOf('@');
