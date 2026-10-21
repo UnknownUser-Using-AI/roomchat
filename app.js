@@ -20,7 +20,7 @@ const ui = {
   accountPassword: $('#account-password'), adminCodeWrap: $('#admin-code-wrap'), adminCode: $('#admin-claim-code'),
   accountTitle: $('#account-title'), accountDescription: $('#account-description'), accountSubmit: $('#account-submit-button'),
   accountCancel: $('#account-cancel-button'), roomDialog: $('#room-dialog'), roomForm: $('#room-form'), roomInput: $('#room-input'),
-  roomDelete: $('#room-delete-button'), childRoomButton: $('#new-child-room-button'), membersDialog: $('#members-dialog'), memberList: $('#member-list'),
+  roomDelete: $('#room-delete-button'), childRoomButton: $('#new-child-room-button'), roomUnlimitedChoice: $('#room-unlimited-choice'), membersDialog: $('#members-dialog'), memberList: $('#member-list'),
   membersNote: $('#members-note'), membersClose: $('#members-close-button'), notificationButton: $('#notification-button'),
   notificationLabel: $('#notification-label'), messageForm: $('#message-form'), messageInput: $('#message-input'),
   send: $('#send-button'), imageFile: $('#image-file'), preview: $('#attachment-preview'),
@@ -70,7 +70,7 @@ const state = {
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
   attachment: null, attachmentUrl: '', notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
-  accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null,
+  accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
   profiles: new Map(),
 };
@@ -777,7 +777,7 @@ async function switchRoom(room) {
   if (state.nickname) await subscribeCurrentRoom(request);
   if (ui.adminPanelDialog.open) renderAdminPanel();
 }
-async function createRoom(name, parentRoomId = null) {
+async function createRoom(name, parentRoomId = null, unlimitedMessages = false) {
   const cleanName = [...name.trim().replace(/\s+/gu, ' ')].slice(0, 20).join('');
   if (cleanName.length < 2 || cleanName.length > 32) return showToast('방 이름은 2~32자로 입력해 주세요.');
   const ownerToken = state.user ? null : `${crypto.randomUUID()}${crypto.randomUUID()}`.replaceAll('-', '');
@@ -787,6 +787,7 @@ async function createRoom(name, parentRoomId = null) {
     p_guest_token: state.user ? null : guestToken,
     p_owner_token: ownerToken,
     p_parent_room_id: parentRoomId,
+    p_unlimited_messages: state.isAdmin && !parentRoomId && unlimitedMessages,
   });
   if (error) { showToast(errorText(error, '방을 만들지 못했어요.')); return; }
   const room = normalizeRpcRow(data);
@@ -1523,9 +1524,10 @@ function setupEvents() {
     event.preventDefault();
     const value = ui.roomInput.value.trim();
     const parentRoomId = state.pendingParentRoomId;
+    const unlimitedMessages = Boolean(ui.roomUnlimitedChoice?.checked);
     state.pendingParentRoomId = null;
     ui.roomDialog.close();
-    createRoom(value, parentRoomId);
+    createRoom(value, parentRoomId, unlimitedMessages);
   });
   ui.roomDelete.addEventListener('click', deleteRoom);
   ui.adminPanelButton.addEventListener('click', openAdminPanel);
