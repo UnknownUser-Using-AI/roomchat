@@ -600,6 +600,31 @@ function renderMessage(message) {
     ui.messageInput.dispatchEvent(new Event('input', { bubbles: true }));
   });
   row.append(reply);
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.className = 'admin-action message-copy';
+  copy.textContent = '복사';
+  copy.setAttribute('aria-label', '메시지 내용 복사');
+  copy.addEventListener('click', async () => {
+    const copyText = [message.content || '', message.image_path ? '[사진]' : ''].filter(Boolean).join('\n');
+    if (!copyText) return showToast('복사할 텍스트가 없어요.');
+    try {
+      await navigator.clipboard.writeText(copyText);
+      showToast('메시지를 복사했어요.');
+    } catch {
+      const fallback = document.createElement('textarea');
+      fallback.value = copyText;
+      fallback.setAttribute('readonly', '');
+      fallback.style.position = 'fixed';
+      fallback.style.opacity = '0';
+      document.body.append(fallback);
+      fallback.select();
+      const copied = document.execCommand('copy');
+      fallback.remove();
+      showToast(copied ? '메시지를 복사했어요.' : '복사하지 못했어요. 브라우저 권한을 확인해 주세요.');
+    }
+  });
+  row.append(copy);
   if (isOwn && message.content && !message.image_path) {
     const edit = document.createElement('button');
     edit.type = 'button';
