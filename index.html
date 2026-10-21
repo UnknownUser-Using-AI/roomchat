@@ -81,6 +81,20 @@
         <h1 id="banner-room-name">오늘의 대화</h1>
       </section>
 
+      <div class="message-tools" aria-label="메시지 도구">
+        <label class="message-search-label" for="message-search">대화 검색</label>
+        <input id="message-search" class="message-search" type="search" maxlength="100" placeholder="내용 또는 작성자 검색" />
+        <button id="message-search-clear" class="header-tool" type="button">초기화</button>
+        <button id="chat-settings-button" class="header-tool" type="button" aria-expanded="false">화면 설정</button>
+      </div>
+      <section id="chat-settings" class="chat-settings" hidden aria-label="채팅 화면 설정">
+        <label><input id="setting-dark" type="checkbox" /> 어두운 화면</label>
+        <label>글자 크기 <select id="setting-font-size"><option value="14">작게</option><option value="16" selected>보통</option><option value="18">크게</option><option value="20">아주 크게</option></select></label>
+        <label><input id="setting-wide" type="checkbox" /> 넓은 채팅</label>
+        <label><input id="setting-hide-sidebar" type="checkbox" /> 접속자 목록 숨기기</label>
+        <label><input id="setting-sound" type="checkbox" checked /> 메시지 소리</label>
+        <button id="clear-notification-history" class="header-tool" type="button">알림 기록 초기화</button>
+      </section>
       <div class="messages-heading"><span>메시지</span><span id="message-count-label" class="muted-label">최근 대화</span></div>
       <section id="message-list" class="message-list" aria-label="메시지" aria-live="polite" aria-relevant="additions text">
         <div class="loading-state"><span class="spinner"></span><span>메시지를 불러오는 중…</span></div>
