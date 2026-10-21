@@ -530,10 +530,12 @@ function addMessage(message) {
   loadAvatars([message.user_id]);
   state.messages.push(message);
   state.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-  while (state.messages.length > 30) {
-    const oldest = state.messages.shift();
-    const oldNode = ui.messages.querySelector(`[data-message-id="${CSS.escape(String(oldest.id))}"]`);
-    oldNode?.remove();
+  if (!state.room?.unlimited_messages) {
+    while (state.messages.length > 30) {
+      const oldest = state.messages.shift();
+      const oldNode = ui.messages.querySelector(`[data-message-id="${CSS.escape(String(oldest.id))}"]`);
+      oldNode?.remove();
+    }
   }
   renderMessage(message);
   ui.messages.scrollTop = ui.messages.scrollHeight;
@@ -543,9 +545,9 @@ function normalizeRpcRow(data) { return Array.isArray(data) ? data[0] : data; }
 async function loadRooms() {
   const fetchRooms = (columns) => supabase.from('rooms').select(columns)
     .order('is_featured', { ascending: false }).order('created_at', { ascending: true }).limit(100);
-  let { data, error } = await fetchRooms('id,name,created_at,created_by,is_featured,image_path,parent_id');
+  let { data, error } = await fetchRooms('id,name,created_at,created_by,is_featured,image_path,parent_id,unlimited_messages');
   // 방 이미지 열이 없는 이전 DB에서도 목록을 표시합니다. 하위 방 열은 필수입니다.
-  if (error) ({ data, error } = await fetchRooms('id,name,created_at,created_by,is_featured,parent_id'));
+  if (error) ({ data, error } = await fetchRooms('id,name,created_at,created_by,is_featured,parent_id,unlimited_messages'));
   if (error) throw error;
   state.rooms = data || [];
   renderRoomLists();
@@ -745,7 +747,7 @@ async function switchRoom(room) {
   renderMembers();
   const { data, error } = await supabase.from('messages')
     .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified')
-    .eq('room_id', room.id).order('created_at', { ascending: true }).limit(30);
+    .eq('room_id', room.id).order('created_at', { ascending: true }).limit(room.unlimited_messages ? 1000 : 30);
   if (request !== state.roomRequest) return;
   if (error) {
     ui.messages.replaceChildren();
