@@ -2316,3 +2316,63 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .settings-notifications .notification-history-heading { flex-direction: column; }
   .settings-notifications #clear-notification-history { width: 100%; }
 }
+
+
+/* Final layout guard: keep the settings panel stacked inside the chat column. */
+#chat-settings {
+  display: block !important;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  align-items: initial;
+  justify-content: initial;
+}
+#chat-settings[hidden] { display: none !important; }
+#chat-settings > .settings-header {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+#chat-settings > .settings-groups {
+  display: grid;
+  width: 100%;
+  box-sizing: border-box;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+#chat-settings .settings-group { min-width: 0; }
+#chat-settings .setting-row {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+}
+#chat-settings .setting-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+#chat-settings .setting-copy strong,
+#chat-settings .setting-copy small { display: block; }
+#chat-settings > .settings-footer {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+#chat-settings .settings-notifications { grid-column: 1 / -1; }
+@media (max-width: 900px) {
+  #chat-settings > .settings-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  #chat-settings { max-height: min(56dvh, 520px); }
+  #chat-settings > .settings-groups { grid-template-columns: minmax(0, 1fr); }
+  #chat-settings > .settings-header { align-items: flex-start; }
+  #chat-settings > .settings-footer { flex-direction: column; align-items: stretch; }
+}
