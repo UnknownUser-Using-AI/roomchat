@@ -246,6 +246,17 @@ export function initSocial(ctx) {
     try { const map = readMap(); map[friendId] = new Date().toISOString(); localStorage.setItem(readKey(), JSON.stringify(map)); } catch { /* Storage is optional. */ }
     updateBadge();
   }
+  async function markDmReadOnServer(friendId) {
+    if (!me() || !friendId) return;
+    const { error } = await supabase.rpc('roomchat_mark_dms_read', { p_sender: friendId });
+    if (error) {
+      console.warn('DM 읽음 상태를 저장하지 못했어요.', error.message);
+      return;
+    }
+    const readAt = new Date().toISOString();
+    thread = thread.map((dm) => dm.sender === friendId && !dm.read_at ? { ...dm, read_at: readAt } : dm);
+    renderThread();
+  }
   function updateBadge() {
     const total = [...unread.values()].reduce((sum, count) => sum + count, 0) + incomingRows().length;
     el.friendsBadge.hidden = total === 0;
@@ -374,13 +385,14 @@ export function initSocial(ctx) {
     dmSearchQuery = '';
     renderThread();
     const mine = me();
-    const { data, error } = await supabase.from('roomchat_dms').select('id,sender,recipient,content,created_at')
+    const { data, error } = await supabase.from('roomchat_dms').select('id,sender,recipient,content,created_at,read_at')
       .or(`and(sender.eq.${mine},recipient.eq.${friendId}),and(sender.eq.${friendId},recipient.eq.${mine})`)
       .order('created_at', { ascending: false }).limit(100);
     if (activeFriend !== friendId) return;
     if (error) { ctx.showToast('대화를 불러오지 못했어요.'); return; }
     thread = (data || []).reverse();
     renderThread();
+    await markDmReadOnServer(friendId);
     markRead(friendId);
     if (!window.matchMedia('(pointer: coarse)').matches) el.dmInput.focus();
   }
@@ -434,6 +446,13 @@ export function initSocial(ctx) {
       const time = document.createElement('time');
       time.textContent = formatTime(dm.created_at);
       row.append(bubble, time);
+      if (dm.sender === me()) {
+        const receipt = document.createElement('span');
+        receipt.className = `dm-read-receipt${dm.read_at ? ' is-read' : ''}`;
+        receipt.textContent = dm.read_at ? '읽음' : '전송됨';
+        receipt.setAttribute('aria-label', dm.read_at ? '상대방이 읽음' : '전송됨, 아직 읽지 않음');
+        row.append(receipt);
+      }
       el.dmThread.append(row);
     }
     if (!dmSearchQuery) el.dmThread.scrollTop = el.dmThread.scrollHeight;
@@ -499,6 +518,13 @@ export function initSocial(ctx) {
     subscribeOnline();
     socialChannel = supabase.channel(`roomchat-social:${me()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'roomchat_dms', filter: `recipient=eq.${me()}` }, ({ new: dm }) => onIncomingDm(dm))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roomchat_dms', filter: `sender=eq.${me()}` }, ({ new: dm }) => {
+        if (activeFriend !== dm.recipient) return;
+        const index = thread.findIndex((item) => String(item.id) === String(dm.id));
+        if (index < 0) return;
+        thread[index] = { ...thread[index], read_at: dm.read_at };
+        renderThread();
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roomchat_friendships' }, (payload) => onFriendshipChange(payload))
       .subscribe();
   }
