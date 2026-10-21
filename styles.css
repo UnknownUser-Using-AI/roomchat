@@ -1692,3 +1692,8 @@ img, video, iframe { max-width: 100%; }
   .user-tag { max-width: 38vw; }
   .user-tag img { width: 13px; height: 13px; }
 }
+
+/* DM layout polish */
+@media(max-width:640px){.dm-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.dm-tools{grid-column:1/-1;width:100%}.dm-input{grid-column:1;min-width:0}.dm-send{grid-column:2;align-self:end}.dm-gif-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:32dvh}.dm-gif-item{aspect-ratio:4/3}.dm-gif-panel{box-sizing:border-box;width:100%}}
+.dm-gif-panel,.dm-emoji-panel{box-sizing:border-box;width:100%}.dm-gif-item{aspect-ratio:4/3}
+.user-tag.is-tag-card-open .tag-hover-card{display:flex;flex-direction:column;align-items:stretch;gap:7px}
