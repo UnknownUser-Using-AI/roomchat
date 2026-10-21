@@ -7,6 +7,31 @@ const HEX = /^#[0-9a-f]{6}$/iu;
 const TAG_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 const MAX_TAGS_WORN = 3;
 
+function linkifyDmText(parent, content) {
+  const pattern = /https?:\/\/[^\s<>"']+/giu;
+  let last = 0;
+  for (const match of String(content || '').matchAll(pattern)) {
+    let url = match[0];
+    while (/[.,!?;:)\]}]$/u.test(url)) url = url.slice(0, -1);
+    if (match.index > last) parent.append(document.createTextNode(String(content).slice(last, match.index)));
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('invalid protocol');
+      const link = document.createElement('a');
+      link.href = parsed.href;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer nofollow';
+      link.className = 'chat-hyperlink';
+      link.textContent = url;
+      parent.append(link);
+      if (match[0].length > url.length) parent.append(document.createTextNode(match[0].slice(url.length)));
+    } catch { parent.append(document.createTextNode(match[0])); }
+    last = match.index + match[0].length;
+  }
+  if (last < String(content).length) parent.append(document.createTextNode(String(content).slice(last)));
+}
+
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 }
@@ -342,7 +367,7 @@ export function initSocial(ctx) {
       row.className = `dm-row${dm.sender === me() ? ' own' : ''}`;
       const bubble = document.createElement('p');
       bubble.className = 'dm-bubble';
-      bubble.textContent = dm.content;
+      linkifyDmText(bubble, dm.content);
       const time = document.createElement('time');
       time.textContent = formatTime(dm.created_at);
       row.append(bubble, time);
