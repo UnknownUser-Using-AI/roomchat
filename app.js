@@ -538,7 +538,7 @@ function extractYouTubeVideoId(content) {
   for (const candidate of candidates) {
     const cleaned = candidate.replace(/[),.!?;]+$/u, '');
     let url;
-    try { url = new URL(/^https?:\/\//iu.test(cleaned) ? cleaned : \`https://\${cleaned}\`); } catch { continue; }
+    try { url = new URL(/^https?:\/\//iu.test(cleaned) ? cleaned : 'https://' + cleaned); } catch { continue; }
     const host = url.hostname.toLowerCase().replace(/^www\./u, '');
     let id = null;
     if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || null;
@@ -563,7 +563,7 @@ function createYouTubeEmbed(videoId) {
   const frame = document.createElement('iframe');
   frame.className = 'message-youtube-player';
   // Explicit inline playback improves the mobile experience, especially on iOS.
-  frame.src = \`https://www.youtube-nocookie.com/embed/\${videoId}?playsinline=1&rel=0\`;
+  frame.src = 'https://www.youtube-nocookie.com/embed/' + videoId + '?playsinline=1&rel=0';
   frame.title = 'YouTube 동영상 플레이어';
   frame.loading = 'lazy';
   frame.referrerPolicy = 'strict-origin-when-cross-origin';
