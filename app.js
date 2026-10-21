@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261018-giphy';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-links-mobile-v2';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-dm-gif-emoji-v1';
 import { ensureFont, fontStack } from './fonts.js?v=20261020-social';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -550,7 +550,7 @@ function renderMessage(message) {
     gif.loading = 'lazy';
     gifLink.append(gif);
     body.append(gifLink);
-  } else if (message.content) {
+  } else if (message.content && !youtubeVideoId) {
     const text = document.createElement('p');
     text.className = 'message-content';
     if (message.user_id) { text.dataset.styleUser = message.user_id; text.dataset.styleKind = 'text'; }
