@@ -1048,7 +1048,7 @@ function updateMentionSuggestions() {
   if (!match) return closeMentionPopup();
   const query = match[1].toLocaleLowerCase();
   const start = caret - match[0].length + match[0].lastIndexOf('@');
-  const names = [...new Set(getMentionNames().filter(Boolean))]
+  const names = [...new Set(['everyone', ...getMentionNames().filter(Boolean)])]
     .filter((name) => name.toLocaleLowerCase().includes(query))
     .sort((a, b) => {
       const aStarts = a.toLocaleLowerCase().startsWith(query);
@@ -1063,13 +1063,17 @@ function updateMentionSuggestions() {
 }
 function renderMentionPopup() {
   ui.mentionPopup.replaceChildren();
+  const hint = document.createElement('div');
+  hint.className = 'mention-popup-hint';
+  hint.textContent = '사람 또는 전체 멘션';
+  ui.mentionPopup.append(hint);
   mentionItems.forEach((name, index) => {
     const option = document.createElement('button');
     option.type = 'button';
-    option.className = `mention-option${index === mentionActiveIndex ? ' active' : ''}`;
+    option.className = `mention-option${name === 'everyone' ? ' mention-everyone-option' : ''}${index === mentionActiveIndex ? ' active' : ''}`;
     option.setAttribute('role', 'option');
     option.setAttribute('aria-selected', String(index === mentionActiveIndex));
-    option.textContent = `@${name}`;
+    option.textContent = name === 'everyone' ? '@everyone · 이 채널의 모든 사람' : `@${name}`;
     option.addEventListener('click', () => chooseMention(name));
     ui.mentionPopup.append(option);
   });
