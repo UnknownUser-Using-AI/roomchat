@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261018-giphy';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-unread-typing-v1';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261021-sidebar-connection-v1';
 import { ensureFont, fontStack } from './fonts.js?v=20261020-social';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -30,7 +30,8 @@ const ui = {
   messageSearch: $('#message-search'), messageSearchDate: $('#message-search-date'), messageSearchClear: $('#message-search-clear'),
   chatSettingsButton: $('#chat-settings-button'), chatSettings: $('#chat-settings'),
   settingDark: $('#setting-dark'), settingFontSize: $('#setting-font-size'),
-  settingWide: $('#setting-wide'), settingHideSidebar: $('#setting-hide-sidebar'),
+  settingWide: $('#setting-wide'), settingHideSidebar: $('#setting-hide-sidebar'), settingYouTubePreview: $('#setting-youtube-preview'),
+  sidebarCollapseButton: $('#sidebar-collapse-button'),
   settingSound: $('#setting-sound'), clearNotificationHistory: $('#clear-notification-history'),
   notificationHistoryList: $('#notification-history-list'),
   accountModeGroup: $('#account-mode-group'), adminCodeHelp: $('#admin-code-help'),
@@ -196,7 +197,13 @@ function errorText(error, fallback = '요청을 완료하지 못했어요. 잠�
 }
 function setConnection(connected, label = connected ? '실시간 연결됨' : '연결 중') {
   ui.connection.classList.toggle('online', connected);
-  ui.connection.querySelector('i').nextSibling.textContent = ` ${label}`;
+  ui.connection.classList.toggle('offline', !connected);
+  ui.connection.setAttribute('role', 'status');
+  ui.connection.setAttribute('aria-label', label);
+  const textNode = [...ui.connection.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+  const labelNode = ui.connection.querySelector('.connection-label');
+  if (labelNode) labelNode.textContent = label;
+  else if (textNode) textNode.textContent = ` ${label}`;
 }
 function avatarPublicUrl(path) {
   return path ? supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl : '';
@@ -775,7 +782,7 @@ function renderMessage(message) {
   if (replyQuote) body.append(replyQuote);
   const gifMatch = typeof message.content === 'string' ? message.content.match(GIF_URL_PATTERN) : null;
   const youtubeVideoId = !gifMatch ? extractYouTubeVideoId(message.content) : null;
-  if (youtubeVideoId) {
+  if (youtubeVideoId && state.youtubePreviewEnabled !== false) {
     const videoCard = document.createElement('div');
     videoCard.className = 'message-youtube';
     videoCard.append(createYouTubeEmbed(youtubeVideoId));
@@ -2164,6 +2171,14 @@ function setupEvents() {
     document.documentElement.classList.toggle('roomchat-dark', Boolean(settings.dark));
     document.documentElement.classList.toggle('roomchat-wide', Boolean(settings.wide));
     document.documentElement.classList.toggle('roomchat-hide-members', Boolean(settings.hideSidebar));
+    document.documentElement.classList.toggle('roomchat-sidebar-collapsed', Boolean(settings.sidebarCollapsed));
+    state.youtubePreviewEnabled = settings.youtubePreview !== false;
+    if (ui.settingYouTubePreview) ui.settingYouTubePreview.checked = state.youtubePreviewEnabled;
+    if (ui.sidebarCollapseButton) {
+      ui.sidebarCollapseButton.setAttribute('aria-pressed', String(Boolean(settings.sidebarCollapsed)));
+      ui.sidebarCollapseButton.textContent = settings.sidebarCollapsed ? '사이드바 열기' : '사이드바 접기';
+      ui.sidebarCollapseButton.title = settings.sidebarCollapsed ? '채팅방 목록 펼치기' : '채팅방 목록 접기';
+    }
     document.documentElement.style.setProperty('--roomchat-message-font-size', `${[14,16,18,20].includes(Number(settings.fontSize)) ? Number(settings.fontSize) : 16}px`);
     state.soundEnabled = settings.sound !== false;
     if (ui.settingDark) ui.settingDark.checked = Boolean(settings.dark);
@@ -2184,13 +2199,24 @@ function setupEvents() {
       dark: Boolean(ui.settingDark?.checked),
       wide: Boolean(ui.settingWide?.checked),
       hideSidebar: Boolean(ui.settingHideSidebar?.checked),
+      sidebarCollapsed: document.documentElement.classList.contains('roomchat-sidebar-collapsed'),
+      youtubePreview: Boolean(ui.settingYouTubePreview?.checked),
       sound: Boolean(ui.settingSound?.checked),
       fontSize: Number(ui.settingFontSize?.value || 16),
     };
     try { localStorage.setItem(settingKey, JSON.stringify(chatSettings)); } catch {}
     applyChatSettings(chatSettings);
   };
-  [ui.settingDark, ui.settingWide, ui.settingHideSidebar, ui.settingSound, ui.settingFontSize].forEach((control) => control?.addEventListener('change', saveChatSettings));
+  [ui.settingDark, ui.settingWide, ui.settingHideSidebar, ui.settingYouTubePreview, ui.settingSound, ui.settingFontSize].forEach((control) => control?.addEventListener('change', () => {
+    saveChatSettings();
+    if (control === ui.settingYouTubePreview) renderMessages();
+  }));
+  ui.sidebarCollapseButton?.addEventListener('click', () => {
+    const next = !document.documentElement.classList.contains('roomchat-sidebar-collapsed');
+    chatSettings.sidebarCollapsed = next;
+    try { localStorage.setItem(settingKey, JSON.stringify(chatSettings)); } catch {}
+    applyChatSettings(chatSettings);
+  });
   ui.messageSearch?.addEventListener('input', () => {
     state.messageSearchQuery = ui.messageSearch.value;
     renderMessages();
@@ -2225,6 +2251,14 @@ function setupEvents() {
       ui.chatSettings.hidden = true;
       ui.chatSettingsButton?.setAttribute('aria-expanded', 'false');
     }
+  });
+  window.addEventListener('offline', () => {
+    setConnection(false, '오프라인');
+    showToast('인터넷 연결이 끊겼어요. 연결이 복구되면 자동으로 다시 연결을 시도해요.');
+  });
+  window.addEventListener('online', () => {
+    setConnection(false, '재연결 중');
+    showToast('인터넷 연결이 복구됐어요. 채팅 서버에 다시 연결하고 있어요.');
   });
   document.addEventListener('pointerdown', unlockAudio, { passive: true });
   ui.gifButton.addEventListener('click', openGifDialog);
