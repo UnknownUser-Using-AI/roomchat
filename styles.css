@@ -1664,3 +1664,6 @@ img, video, iframe { max-width: 100%; }
   .composer-wrap { padding-top: 5px; }
   .paste-hint, .composer-foot { display: none; }
 }
+
+/* 자동 인식되는 채팅 하이퍼링크 */
+.chat-hyperlink{color:#6478f5;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;overflow-wrap:anywhere;cursor:pointer;font-weight:600}.chat-hyperlink:hover{color:#394dc7;text-decoration-thickness:2px}.chat-hyperlink:focus-visible{outline:2px solid #6478f5;outline-offset:2px;border-radius:3px}.dm-bubble .chat-hyperlink{color:#4058d6}.dm-row.own .dm-bubble .chat-hyperlink{color:#263f9f}
