@@ -529,7 +529,7 @@ async function toggleMessageReaction(message, emoji, button) {
       : supabase.from('roomchat_message_reactions').insert({ message_id: message.id, user_id: state.user.id, emoji });
     const { error } = await request;
     if (error) throw error;
-    await refreshMessageReactions([message.id]);
+    await refreshMessageReactions();
     const row = ui.messages.querySelector(`[data-message-id="${CSS.escape(String(message.id))}"]`);
     if (row) {
       const oldBar = row.querySelector('.message-reactions');
@@ -1004,7 +1004,7 @@ async function switchRoom(room) {
     }
   } else {
     const result = await supabase.from('messages')
-      .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified')
+      .select('id,room_id,nickname,content,image_path,created_at,user_id,guest_session_id,is_verified,edited_at')
       .eq('room_id', room.id).order('created_at', { ascending: true }).limit(30);
     data = result.data || [];
     error = result.error;
