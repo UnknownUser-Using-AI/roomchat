@@ -2438,6 +2438,7 @@ function setupAIChat() {
     event.preventDefault();
     const prompt = input.value.trim();
     if (!prompt || busy) return;
+    messagesNode.querySelector('.ai-chat-welcome')?.remove();
     history.push({ role: 'user', content: prompt });
     addBubble('user', prompt);
     input.value = '';
