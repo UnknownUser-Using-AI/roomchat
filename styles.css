@@ -3459,3 +3459,167 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
 @media(prefers-reduced-motion:reduce){
   .room-banner::before{display:none!important}
 }
+
+
+/* Final mobile guardrails — authoritative rules after the earlier incremental style patches. */
+@media (max-width: 760px) {
+  html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  body { overflow: hidden; }
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+  .server-rail, .sidebar, .member-sidebar { display: none !important; }
+  .chat-panel {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .topbar {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    gap: 8px;
+  }
+  .channel-heading { flex: 1 1 auto; min-width: 0; }
+  .current-room-name {
+    min-width: 0;
+    max-width: clamp(5rem, 32vw, 11rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .top-actions {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 58%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .top-actions::-webkit-scrollbar { display: none; }
+  .mobile-room-strip {
+    display: flex;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .mobile-room-list {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+  }
+  .message-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+  .message-row, .message-body, .message-content, .message-meta {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .message-content, .message-reply-quote {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  .message-youtube {
+    display: block;
+    width: min(100%, 480px);
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    overflow: hidden;
+    background: #000;
+  }
+  .message-youtube-player {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .composer-wrap {
+    flex: 0 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  .composer {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    gap: 6px;
+  }
+  .composer textarea, .composer input {
+    flex: 1 1 0;
+    width: 1%;
+    min-width: 0;
+  }
+  .attach-button { flex: 0 0 34px; width: 34px; }
+  .send-button { flex: 0 0 auto; white-space: nowrap; }
+  .tag-hover-card.is-touch-popup {
+    position: fixed !important;
+    z-index: 2147483000 !important;
+    pointer-events: auto !important;
+    transform: none !important;
+  }
+  .tag-hover-card .tag-follow-button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .modal {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+  .modal-card {
+    max-width: 100%;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-sizing: border-box;
+  }
+}
+@media (max-width: 420px) {
+  .topbar { padding-inline: 8px; gap: 5px; }
+  .current-room-name { max-width: 28vw; }
+  .top-actions { max-width: 61%; gap: 3px; }
+  .topbar .header-tool {
+    flex: 0 0 auto;
+    min-width: 32px;
+    min-height: 36px;
+    padding-inline: 7px;
+  }
+  .mobile-room-strip { gap: 6px; padding-inline: 8px; }
+}
+@media (max-height: 560px) and (max-width: 760px) {
+  .message-tools { padding-block: 4px; }
+  .composer-wrap { padding-top: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .top-actions, .mobile-room-list, .message-list { scroll-behavior: auto !important; }
+}
