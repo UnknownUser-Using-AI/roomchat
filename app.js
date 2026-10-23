@@ -2545,8 +2545,28 @@ function hideAppLoading() {
 // Never keep the entire app covered while a slow network request is pending.
 // Boot continues in the background and updates the UI when data arrives.
 const appLoadingFailsafe = window.setTimeout(hideAppLoading, 900);
+// If Supabase never reports a channel status, show a useful state instead of "연결 중" forever.
+let roomchatConnectionResolved = false;
+const roomchatConnectionWatchdog = window.setTimeout(() => {
+  if (roomchatConnectionResolved) return;
+  setConnection(false, navigator.onLine ? '서버 응답 지연' : '오프라인');
+  console.warn('RoomChat connection watchdog: no successful realtime subscription yet.');
+}, 8000);
+const markRoomchatConnected = () => {
+  roomchatConnectionResolved = true;
+  window.clearTimeout(roomchatConnectionWatchdog);
+};
+const originalSetConnection = setConnection;
+setConnection = function(connected, label = connected ? '실시간 연결됨' : '연결 중') {
+  if (connected) markRoomchatConnected();
+  originalSetConnection(connected, label);
+};
+window.addEventListener('online', () => {
+  if (!roomchatConnectionResolved) setConnection(false, '재연결 중');
+});
+window.addEventListener('offline', () => setConnection(false, '오프라인'));
 boot().catch((error) => {
-  console.error('RoomChat startup failed', error);
+  console.error('RoomChat startup failed:', error);
   setConnection(false, '연결 확인 필요');
   showToast('초기 로딩이 지연되고 있어요. 연결 상태를 확인해 주세요.');
 }).finally(() => {
