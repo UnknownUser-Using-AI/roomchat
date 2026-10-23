@@ -2957,3 +2957,25 @@ button:not(:disabled):hover,.icon-button:hover,.header-tool:hover,.secondary-but
 .guide-list article :is(div,p,span,small,strong,b,em){
   text-shadow:none!important;
 }
+
+
+/* Final high-specificity guide card contrast fix */
+.messages .guide-card{
+  background:#f7fcff!important;color:#123d5b!important;border:1px solid #acdff2!important;
+}
+.messages .guide-card .guide-lead{
+  color:#355d76!important;-webkit-text-fill-color:#355d76!important;
+}
+.messages .guide-card .guide-list>li{
+  display:list-item!important;list-style:none!important;
+  background:#f7fcff!important;color:#244b66!important;
+  -webkit-text-fill-color:#244b66!important;
+  border:1px solid #b5e2f3!important;border-left:4px solid #00a7df!important;
+  border-radius:10px!important;box-shadow:0 3px 12px rgba(0,105,160,.07)!important;
+  padding:12px 14px!important;opacity:1!important;text-shadow:none!important;
+}
+.messages .guide-card .guide-list>li strong{
+  color:#006da6!important;-webkit-text-fill-color:#006da6!important;font-weight:800!important;
+}
+.messages .guide-card .guide-list>li:hover{background:#e6f7ff!important}
+.messages .guide-card h2{color:#103b5b!important;-webkit-text-fill-color:#103b5b!important}
