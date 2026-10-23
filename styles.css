@@ -4497,3 +4497,170 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
     line-height: 1.35 !important;
   }
 }
+
+
+/* Mobile readability correction: prevent message text from collapsing into
+   a narrow vertical column when action controls share the message row. */
+@media screen and (max-width: 760px) {
+  .message-row {
+    display: flex !important;
+    flex-flow: row wrap !important;
+    align-items: flex-start !important;
+    column-gap: 9px !important;
+    row-gap: 5px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    padding: 10px 8px !important;
+    overflow: visible !important;
+  }
+  .message-row > .message-avatar,
+  .message-row > .avatar-wrap {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+  }
+  .message-row > .message-body {
+    flex: 1 1 calc(100% - 48px) !important;
+    width: calc(100% - 48px) !important;
+    min-width: 0 !important;
+    max-width: calc(100% - 48px) !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
+  .message-row .message-meta {
+    display: flex !important;
+    flex-flow: row wrap !important;
+    align-items: baseline !important;
+    gap: 4px 7px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+  }
+  .message-row .message-author,
+  .message-row .message-nickname,
+  .message-row .styled-name {
+    display: inline !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: keep-all !important;
+    line-height: 1.4 !important;
+  }
+  .message-row .message-content,
+  .message-row .message-reply-quote {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    writing-mode: horizontal-tb !important;
+    line-height: 1.55 !important;
+  }
+  .message-row > .admin-action {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 30px !important;
+    margin: 0 !important;
+    padding: 5px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+  }
+  .nickname-chip {
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    max-width: 46vw !important;
+    overflow: hidden !important;
+  }
+  .nickname-chip #nickname-label {
+    display: inline-block !important;
+    min-width: 0 !important;
+    max-width: 30vw !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+  }
+  #nickname-dialog .nickname-modal-card {
+    width: calc(100vw - 24px) !important;
+    max-width: 440px !important;
+    max-height: calc(var(--rc-visual-height, 100dvh) - 24px) !important;
+    min-width: 0 !important;
+    padding: 24px 18px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    gap: 0 !important;
+  }
+  #nickname-dialog .nickname-modal-card h2 {
+    font-size: clamp(22px, 6vw, 28px) !important;
+    line-height: 1.25 !important;
+    letter-spacing: 0 !important;
+    overflow-wrap: normal !important;
+    word-break: keep-all !important;
+  }
+  #nickname-dialog .nickname-modal-card p,
+  #nickname-dialog .safety-caption {
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+    overflow-wrap: break-word !important;
+    word-break: keep-all !important;
+  }
+  #nickname-dialog .avatar-drop {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  #nickname-dialog .avatar-copy {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow-wrap: break-word !important;
+    word-break: keep-all !important;
+  }
+  #nickname-dialog .text-field,
+  #nickname-dialog .primary-button,
+  #nickname-dialog .secondary-button {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  /* Checkbox labels stay in a clear two-column row, never between text lines. */
+  .room-unlimited-choice {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .room-unlimited-choice > input[type="checkbox"] {
+    flex: 0 0 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin: 2px 0 0 !important;
+  }
+  .room-unlimited-choice > span {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    line-height: 1.45 !important;
+    overflow-wrap: break-word !important;
+    word-break: keep-all !important;
+  }
+}
