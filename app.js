@@ -2188,7 +2188,7 @@ function setupEvents() {
   state.notificationHistory = readNotificationHistory();
   renderNotificationHistory();
   const settingKey = 'roomchat:chat-settings:v1';
-  const savedSettings = (() => { try { return JSON.parse(localStorage.getItem(settingKey) || '{}'); } catch { return {}; } })();
+  try { localStorage.removeItem(settingKey); } catch {}
   const applyChatSettings = (settings = {}) => {
     document.documentElement.classList.toggle('roomchat-dark', Boolean(settings.dark));
     document.documentElement.classList.toggle('roomchat-wide', Boolean(settings.wide));
@@ -2210,7 +2210,7 @@ function setupEvents() {
     if (ui.settingSound) ui.settingSound.checked = state.soundEnabled;
     if (ui.settingFontSize) ui.settingFontSize.value = String(settings.fontSize || 16);
   };
-  let chatSettings = { ...savedSettings };
+  let chatSettings = { dark: false, wide: false, hideSidebar: false, sidebarCollapsed: false, youtubePreview: true, sound: true, fontSize: 16 };
   applyChatSettings(chatSettings);
   ui.chatSettingsButton?.addEventListener('click', () => {
     const opening = ui.chatSettings.hidden;
