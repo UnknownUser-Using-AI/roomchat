@@ -1224,7 +1224,7 @@ async function checkForKick(roomId, request) {
 const ROUTE_RESERVED = new Set(['messages','log-in','profile','friends','settings','new-room','help','404.html']);
 function roomSlug(name) {
   return String(name || '').normalize('NFC').trim().toLocaleLowerCase()
-    .replace(/[^\\p{L}\\p{N}]+/gu, '-').replace(/^-+|-+$/gu, '') || 'room';
+    .replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/gu, '') || 'room';
 }
 function routeBase() {
   return '/roomchat/';
@@ -1241,9 +1241,9 @@ function routeKind() {
   const base = routeBase();
   let path = window.location.pathname;
   if (path.startsWith(base)) path = path.slice(base.length);
-  else path = path.replace(/^\\/+/, '');
+  else path = path.replace(/^\/+/, '');
   try { path = decodeURIComponent(path); } catch {}
-  path = path.replace(/\\/+$/, '');
+  path = path.replace(/\/+$/, '');
   if (!path || path === 'index.html' || path === 'messages') return { type: 'messages' };
   if (path === 'log-in' || path === 'login') return { type: 'login' };
   if (path === 'profile') return { type: 'profile' };
