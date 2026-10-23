@@ -3742,3 +3742,80 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
   .composer .send-button { padding-inline: 8px; }
   .composer .send-button span:first-child { display: none !important; }
 }
+
+
+/* Mobile compact pass v11: prevent the search toolbar from consuming the chat viewport. */
+@media (max-width: 760px) {
+  .message-tools {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 6px 8px !important;
+    padding: 8px 10px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+  }
+  .message-tools .keyboard-hint { display: none !important; }
+  .message-tools .message-search-label {
+    display: block !important;
+    flex: 0 0 100%;
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2;
+  }
+  .message-tools .message-search {
+    display: block !important;
+    flex: 0 0 100%;
+    width: 100% !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    font-size: 15px !important;
+    box-sizing: border-box !important;
+  }
+  .message-tools .message-search-date-label {
+    display: block !important;
+    flex: 1 1 auto;
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.2;
+  }
+  .message-tools .message-search-date {
+    display: block !important;
+    flex: 0 1 155px;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    padding: 0 6px !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+  }
+  .message-tools #message-search-clear {
+    flex: 0 0 auto;
+    min-height: 38px !important;
+    height: 38px !important;
+    margin: 0 !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+  }
+  .messages-heading { flex: 0 0 auto; }
+  .message-list { flex: 1 1 0 !important; min-height: 0 !important; }
+  .composer textarea {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    min-height: 40px !important;
+    max-height: 88px !important;
+    padding: 9px 2px !important;
+    overflow-y: auto;
+  }
+  .composer .send-button { min-height: 40px !important; height: 40px !important; }
+  .composer .gif-button { min-height: 40px !important; height: 40px !important; }
+  .composer-wrap { padding-top: 6px !important; }
+}
+@media (max-width: 390px) {
+  .message-tools { padding-inline: 8px !important; gap: 6px !important; }
+  .message-tools .message-search-date { flex-basis: 135px; }
+}
