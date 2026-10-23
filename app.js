@@ -2461,4 +2461,10 @@ social = initSocial({
   supabase, state, showToast, errorText, avatarPublicUrl, paintAvatar, makeAvatar, applyAvatars,
   makeAvatarBlob, notifyUser, getMentionNames,
 });
-boot();
+function hideAppLoading() {
+  const loader = document.getElementById('app-loading');
+  if (!loader) return;
+  loader.classList.add('is-hidden');
+  window.setTimeout(() => loader.remove(), 360);
+}
+boot().finally(hideAppLoading);
