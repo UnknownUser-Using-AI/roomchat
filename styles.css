@@ -3287,3 +3287,104 @@ html,body,#app,.app-shell,.server-rail,.sidebar,.sidebar-header,.sidebar-content
 @keyframes app-loading-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
 @media(max-width:480px){.app-loading-card{padding:32px 22px 26px;border-radius:22px}.app-loading-brand{font-size:27px}.app-loading-title{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.app-loading-mark,.app-loading-track span,.app-loading-dots i{animation:none!important}.app-loading-track span{width:100%}.app-loading{transition:none}}
+
+
+/* React Bits-inspired polish: soft spotlight, sheen and springy micro-interactions.
+   Implemented in CSS to keep this vanilla-JS app lightweight (no React runtime added). */
+:root{
+  --rc-accent:#159bd7;
+  --rc-accent-bright:#48c8f4;
+  --rc-glow:rgba(35,174,231,.16);
+}
+@media (hover:hover) and (pointer:fine){
+  .room-item,.mobile-room-chip,.presence-card,.modal-card,.message-row{
+    transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,border-color .22s ease,background-color .22s ease;
+  }
+  .room-item:hover,.mobile-room-chip:hover{
+    transform:translateX(3px);
+    box-shadow:0 7px 20px rgba(14,145,199,.10),inset 3px 0 0 #35b9eb;
+  }
+  .message-row:hover{
+    box-shadow:0 8px 24px rgba(18,125,174,.075);
+  }
+  .presence-card:hover,.modal-card:hover{
+    border-color:rgba(53,185,235,.48);
+    box-shadow:0 14px 36px rgba(18,125,174,.10);
+  }
+}
+.room-item,.mobile-room-chip{
+  position:relative;
+  isolation:isolate;
+}
+.room-item::after,.mobile-room-chip::after,
+.primary-button::after,.send-button::after,.attach-button::after,.icon-button::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  opacity:0;
+  background:linear-gradient(115deg,transparent 15%,rgba(255,255,255,.62) 48%,transparent 78%);
+  transform:translateX(-115%);
+}
+@media (hover:hover) and (pointer:fine){
+  .room-item:hover::after,.mobile-room-chip:hover::after,
+  .primary-button:hover::after,.send-button:hover::after,.attach-button:hover::after,.icon-button:hover::after{
+    opacity:.8;
+    animation:rc-sheen .7s ease both;
+  }
+}
+.primary-button,.send-button,.attach-button,.icon-button{
+  position:relative;
+  overflow:hidden;
+  transition:transform .18s ease,box-shadow .2s ease,filter .2s ease;
+}
+.primary-button:active,.send-button:active,.attach-button:active,.icon-button:active{
+  transform:scale(.975);
+}
+.primary-button:hover,.send-button:hover{
+  filter:saturate(1.08);
+  box-shadow:0 7px 18px rgba(17,145,202,.2);
+}
+.brand-mark,.app-loading-mark{
+  filter:drop-shadow(0 4px 8px rgba(0,153,215,.12));
+}
+.current-room-name{
+  text-wrap:balance;
+  text-shadow:0 1px 0 rgba(255,255,255,.7);
+}
+.room-banner{
+  position:relative;
+  overflow:hidden;
+}
+.room-banner::after{
+  content:"";
+  position:absolute;
+  width:220px;height:220px;
+  right:-85px;top:-145px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(56,190,236,.16),rgba(56,190,236,0) 70%);
+  pointer-events:none;
+}
+.message-row{
+  animation:rc-message-in .28s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes rc-message-in{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes rc-sheen{
+  from{transform:translateX(-115%);opacity:0}
+  18%{opacity:.8}
+  to{transform:translateX(115%);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .room-item,.mobile-room-chip,.presence-card,.modal-card,.message-row,
+  .primary-button,.send-button,.attach-button,.icon-button{animation:none!important;transition:none!important}
+  .room-item::after,.mobile-room-chip::after,
+  .primary-button::after,.send-button::after,.attach-button::after,.icon-button::after{display:none!important}
+}
+@media(max-width:760px){
+  .room-item:hover,.mobile-room-chip:hover{transform:none}
+  .room-banner::after{width:150px;height:150px;right:-70px;top:-100px}
+}
