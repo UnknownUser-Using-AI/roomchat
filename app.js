@@ -2533,10 +2533,23 @@ social = initSocial({
   supabase, state, showToast, errorText, avatarPublicUrl, paintAvatar, makeAvatar, applyAvatars,
   makeAvatarBlob, notifyUser, getMentionNames,
 });
+let appLoadingHidden = false;
 function hideAppLoading() {
+  if (appLoadingHidden) return;
+  appLoadingHidden = true;
   const loader = document.getElementById('app-loading');
   if (!loader) return;
   loader.classList.add('is-hidden');
   window.setTimeout(() => loader.remove(), 360);
 }
-boot().finally(hideAppLoading);
+// Never keep the entire app covered while a slow network request is pending.
+// Boot continues in the background and updates the UI when data arrives.
+const appLoadingFailsafe = window.setTimeout(hideAppLoading, 900);
+boot().catch((error) => {
+  console.error('RoomChat startup failed', error);
+  setConnection(false, '연결 확인 필요');
+  showToast('초기 로딩이 지연되고 있어요. 연결 상태를 확인해 주세요.');
+}).finally(() => {
+  window.clearTimeout(appLoadingFailsafe);
+  hideAppLoading();
+});
