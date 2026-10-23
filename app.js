@@ -2395,9 +2395,91 @@ function setupEvents() {
   ui.accountCancel.addEventListener('click', () => { ui.accountDialog.close(); showNicknameDialog(); });
 }
 
+
+function setupAIChat() {
+  const dialog = document.querySelector('#ai-chat-dialog');
+  const openButton = document.querySelector('#ai-chat-button');
+  const closeButton = document.querySelector('#ai-chat-close');
+  const form = document.querySelector('#ai-chat-form');
+  const input = document.querySelector('#ai-chat-input');
+  const messagesNode = document.querySelector('#ai-chat-messages');
+  const sendButton = document.querySelector('#ai-chat-send');
+  if (!dialog || !openButton || !closeButton || !form || !input || !messagesNode || !sendButton) return;
+
+  const history = [];
+  let busy = false;
+  const addBubble = (role, text) => {
+    const bubble = document.createElement('article');
+    bubble.className = `ai-chat-message ${role === 'user' ? 'from-user' : 'from-ai'}`;
+    const label = document.createElement('span');
+    label.className = 'ai-chat-message-label';
+    label.textContent = role === 'user' ? '나' : 'RoomChat AI';
+    const body = document.createElement('p');
+    body.textContent = text;
+    bubble.append(label, body);
+    messagesNode.append(bubble);
+    messagesNode.scrollTop = messagesNode.scrollHeight;
+    return bubble;
+  };
+
+  openButton.addEventListener('click', () => {
+    if (!dialog.open) dialog.showModal();
+    window.setTimeout(() => input.focus(), 50);
+  });
+  closeButton.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const prompt = input.value.trim();
+    if (!prompt || busy) return;
+    history.push({ role: 'user', content: prompt });
+    addBubble('user', prompt);
+    input.value = '';
+    busy = true;
+    sendButton.disabled = true;
+    sendButton.textContent = '생성 중…';
+    const pending = addBubble('assistant', '답변을 준비하고 있어요…');
+    pending.classList.add('is-pending');
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/roomchat-ai`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: history.slice(-12) }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `AI 요청에 실패했어요 (HTTP ${response.status}).`);
+      const answer = typeof data.reply === 'string' ? data.reply.trim() : '';
+      if (!answer) throw new Error('AI가 빈 답변을 반환했어요. 잠시 후 다시 시도해 주세요.');
+      pending.remove();
+      history.push({ role: 'assistant', content: answer });
+      addBubble('assistant', answer);
+    } catch (error) {
+      pending.remove();
+      history.pop();
+      addBubble('assistant', error?.message || 'AI에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      busy = false;
+      sendButton.disabled = false;
+      sendButton.textContent = '보내기 ↑';
+      input.focus();
+    }
+  });
+}
+
 async function boot() {
   restoreAdminInvite();
   setupEvents();
+  setupAIChat();
   registerServiceWorker();
   try {
     const { data } = await supabase.auth.getSession();
