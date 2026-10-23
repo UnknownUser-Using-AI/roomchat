@@ -2464,3 +2464,128 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .message-tools .message-search-date { font-size: 12px; }
   .composer .send-button span:first-child { display: none; }
 }
+
+
+/* RoomChat Aurora UI — premium visual layer, progressive enhancement */
+:root{
+  color-scheme:dark;
+  --paper:#080b16;--white:#101629;--ink:#edf2ff;--muted:#9aa7c5;--line:rgba(164,180,255,.16);
+  --teal:#8b7cff;--teal-dark:#6658e8;--teal-soft:rgba(139,124,255,.15);--lilac:#1a2140;--coral:#ff7eb6;
+  --shadow:0 24px 80px rgba(0,0,0,.35);
+  --aurora-a:rgba(109,91,255,.22);--aurora-b:rgba(39,205,219,.12);--surface:rgba(17,24,45,.82);
+}
+html{background:#080b16;scrollbar-color:#414b75 #0d1222}
+body{
+  color:var(--ink);
+  background:
+    radial-gradient(ellipse at 15% 0%,rgba(93,78,235,.2),transparent 36%),
+    radial-gradient(ellipse at 90% 100%,rgba(30,176,196,.13),transparent 34%),
+    #080b16;
+}
+body:before{
+  content:"";position:fixed;inset:-35%;z-index:0;pointer-events:none;opacity:.28;
+  background:conic-gradient(from 0deg at 50% 50%,transparent 0 20%,rgba(99,102,241,.14) 28%,transparent 38%,rgba(34,211,238,.09) 50%,transparent 65%,rgba(217,70,239,.09) 78%,transparent 90%);
+  filter:blur(80px);animation:roomchat-aurora 36s linear infinite;
+}
+.app-shell{
+  position:relative;z-index:1;isolation:isolate;max-width:none;
+  background:linear-gradient(145deg,rgba(15,21,40,.97),rgba(8,12,25,.98));
+  box-shadow:0 0 0 1px rgba(164,180,255,.08),0 32px 100px rgba(0,0,0,.4);
+}
+.server-rail{background:rgba(8,12,25,.88);border-right:1px solid var(--line);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.sidebar{background:linear-gradient(180deg,rgba(17,24,45,.96),rgba(12,18,35,.96));border-right:1px solid var(--line);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.brand,.brand-name,.current-room-name,.channel-heading,.room-heading{color:#f1f4ff}
+.brand-mark i,.brand-mark b{border-color:#9a8cff;box-shadow:0 0 18px rgba(139,124,255,.22)}
+.brand-mark i{background:#11172b}.brand-mark b{background:linear-gradient(135deg,#7c6cff,#33d6dc)}
+.brand-period{color:#62d9e8}
+.eyebrow,.muted-label,.keyboard-hint,.channel-topic,.user-online-label{color:#98a6c8}
+.room-heading{color:#aeb9d6}
+.icon-button,.header-tool,.secondary-button,.settings-close,.settings-reset{
+  color:#dce4ff;background:rgba(24,33,59,.78);border:1px solid rgba(164,180,255,.17);
+  transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease;
+}
+button:not(:disabled){cursor:pointer}
+button:not(:disabled):hover,.icon-button:hover,.header-tool:hover,.secondary-button:hover{
+  border-color:rgba(139,124,255,.7);background:rgba(95,84,196,.18);
+  box-shadow:0 0 0 3px rgba(139,124,255,.08),0 8px 24px rgba(0,0,0,.16);transform:translateY(-1px)
+}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid #72e2f2;outline-offset:3px
+}
+.room-list,.rail-room-list{scrollbar-width:thin;scrollbar-color:#3e4770 transparent}
+.room-item,.room-row,.rail-room-item,.mobile-room-item{
+  transition:background .22s ease,border-color .22s ease,transform .22s ease,box-shadow .22s ease;
+}
+.room-item:hover,.room-row:hover,.rail-room-item:hover,.mobile-room-item:hover{
+  transform:translateX(3px);background:rgba(118,105,255,.12);border-color:rgba(139,124,255,.3)
+}
+.room-item.active,.room-row.active,.mobile-room-item.active{
+  background:linear-gradient(100deg,rgba(124,108,255,.22),rgba(45,202,221,.08));
+  border-color:rgba(139,124,255,.38);box-shadow:inset 3px 0 #9587ff,0 8px 22px rgba(0,0,0,.12)
+}
+.sidebar-user-panel,.nickname-chip{background:rgba(22,30,54,.78);border-color:var(--line);color:#edf2ff}
+.avatar-dot{box-shadow:0 0 0 3px rgba(139,124,255,.13)}
+.chat-panel{background:linear-gradient(180deg,rgba(13,19,36,.94),rgba(9,14,28,.98));min-width:0}
+.topbar{background:rgba(12,18,35,.76);border-bottom:1px solid var(--line);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.channel-hash{color:#9a8cff;text-shadow:0 0 16px rgba(139,124,255,.35)}
+.connection-state i{box-shadow:0 0 12px currentColor}
+.message-tools,.messages-heading{background:rgba(12,18,35,.42);border-color:var(--line);color:#b8c3e2}
+.message-tools input,.message-search,.message-search-date,.text-field,.composer textarea,.dm-input,select{
+  color:#f0f3ff;background:rgba(6,11,25,.76);border:1px solid rgba(164,180,255,.2);border-radius:12px;
+}
+.message-tools input::placeholder,.composer textarea::placeholder,.text-field::placeholder{color:#8290b2}
+.message-list{background:radial-gradient(ellipse at 50% 0%,rgba(83,72,190,.055),transparent 55%)}
+.message-row,.message-item{transition:background .18s ease}
+.message-row:hover,.message-item:hover{background:rgba(139,124,255,.055)}
+.message-avatar{box-shadow:0 0 0 1px rgba(164,180,255,.16),0 5px 18px rgba(0,0,0,.2)}
+.message-content,.message-meta,.message-body{color:#e0e7ff}
+.message-meta time,.message-time{color:#8d9abb}
+.message-reply-quote,.reply-preview,.attachment-preview,.paste-hint{
+  background:rgba(23,32,58,.78);border-color:rgba(164,180,255,.18);color:#dce4ff;border-radius:12px
+}
+.composer-wrap{background:linear-gradient(180deg,rgba(10,15,30,.5),rgba(10,15,30,.96));border-top:1px solid var(--line);padding-bottom:max(12px,env(safe-area-inset-bottom))}
+.composer{background:rgba(20,28,51,.92);border:1px solid rgba(164,180,255,.2);border-radius:18px;box-shadow:0 12px 38px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);transition:border-color .2s ease,box-shadow .2s ease}
+.composer:focus-within{border-color:rgba(139,124,255,.62);box-shadow:0 0 0 4px rgba(139,124,255,.08),0 12px 38px rgba(0,0,0,.28)}
+.primary-button,.send-button{
+  color:white!important;border:1px solid rgba(255,255,255,.18)!important;
+  background:linear-gradient(135deg,#7968ff,#5868e8 52%,#26b9cb)!important;
+  box-shadow:0 8px 24px rgba(92,92,235,.28);transition:transform .2s ease,filter .2s ease,box-shadow .2s ease
+}
+.primary-button:hover,.send-button:hover{filter:brightness(1.12);box-shadow:0 10px 30px rgba(92,92,235,.38);transform:translateY(-2px)}
+.attach-button{color:#b8b4ff;background:rgba(139,124,255,.12);border-color:rgba(139,124,255,.25)}
+.chat-settings,.settings-group,.modal-card,.modal-card section,.friends-card,.admin-panel-card{
+  color:#eaf0ff;background:linear-gradient(145deg,rgba(22,30,55,.97),rgba(12,18,35,.98));
+  border:1px solid rgba(164,180,255,.19);box-shadow:0 28px 90px rgba(0,0,0,.45)
+}
+.settings-group{border-radius:16px}
+.settings-group h3,.settings-header h2,.modal-card h2{color:#f2f4ff}
+.settings-group p,.settings-group small,.modal-card p,.safety-caption{color:#a5b2d1}
+.setting-row{border-color:rgba(164,180,255,.12)}
+input[type=checkbox]{accent-color:#9284ff}
+.tag,.message-tag,.badge{border:1px solid rgba(139,124,255,.25);background:rgba(139,124,255,.13);color:#d8d2ff}
+.modal::backdrop{background:rgba(3,6,16,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.modal-card{border-radius:24px;animation:roomchat-rise .24s cubic-bezier(.2,.8,.2,1) both}
+.toast{background:rgba(24,32,58,.96);color:#f1f4ff;border:1px solid rgba(164,180,255,.22);box-shadow:var(--shadow);backdrop-filter:blur(16px)}
+.mobile-room-strip{background:rgba(13,19,37,.94);border-color:var(--line)}
+.mobile-room-strip .eyebrow{color:#8e9dc3}
+.mobile-add-room{color:#dcd7ff;background:rgba(139,124,255,.15);border:1px solid rgba(139,124,255,.25)}
+hr,.divider,.channel-divider,.server-divider{border-color:var(--line);background:var(--line)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:rgba(6,10,22,.5)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#4b4c86,#2c7990);border:3px solid transparent;background-clip:padding-box;border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#8274ff,#38c7d8);background-clip:padding-box}
+@keyframes roomchat-aurora{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.08)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes roomchat-rise{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media (max-width:760px){
+  body:before{opacity:.16;filter:blur(90px)}
+  .app-shell{box-shadow:none}
+  .sidebar{background:rgba(15,22,42,.98)}
+  .topbar{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .composer-wrap{padding-inline:10px}
+  .composer{border-radius:15px}
+  .modal-card{border-radius:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
+  body:before{animation:none}
+}
