@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261023-reactlike-polish-v8" />
+  <link rel="stylesheet" href="./styles.css?v=20261023-mobile-guardrails-v9" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -215,7 +215,7 @@
         <button id="gif-close" class="secondary-button gif-close" type="button">닫기</button>
       </header>
       <form id="gif-form" class="gif-search" role="search">
-        <input id="gif-query" class="text-field" type="search" maxlength="60" placeholder="GIF 검색 (예: 박수, cat)" aria-label="GIF 검색어" autocomplete="off" />
+        <input id="gif-query" class="text-field" type="search" maxlength="50" placeholder="GIF 검색 (예: 박수, cat)" aria-label="GIF 검색어" autocomplete="off" />
         <button class="primary-button gif-search-button" type="submit">검색</button>
       </form>
       <div id="gif-status" class="gif-status" aria-live="polite"></div>
@@ -360,6 +360,6 @@
       <section id="admin-panel-content" class="admin-panel-content" role="tabpanel" aria-live="polite"></section>
     </section>
   </dialog>
-  <script type="module" src="./app.js?v=20261023-reactbits-polish-v7"></script>
+  <script type="module" src="./app.js?v=20261023-gif-fix-v8"></script>
 </body>
 </html>
