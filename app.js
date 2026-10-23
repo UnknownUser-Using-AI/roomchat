@@ -2174,7 +2174,7 @@ async function refreshIdentity() {
 }
 function setupEvents() {
   ui.nicknameForm.addEventListener('submit', (event) => { event.preventDefault(); setNickname(ui.nicknameInput.value); });
-  ui.nicknameButton.addEventListener('click', () => { navigatePath(routeBase() + 'profile'); showNicknameDialog(); });
+  ui.nicknameButton.addEventListener('click', () => { navigatePath(routeBase() + 'profile'); if (state.user) social?.openProfile(state.user.id); else showNicknameDialog(); });
   $('#sidebar-account-settings')?.addEventListener('click', () => { navigatePath(routeBase() + 'settings'); ui.nicknameButton.click(); });
   $('#nickname-close')?.addEventListener('click', () => ui.nicknameDialog.close());
   ui.accountOpen.addEventListener('click', () => { navigatePath(routeBase() + 'log-in'); ui.nicknameDialog.close(); showAccountDialog(); });
@@ -2456,7 +2456,8 @@ async function boot() {
     }
   }
   try {
-    await loadRooms();
+    window.__roomchatRouting = true;
+    try { await loadRooms(); } finally { window.__roomchatRouting = false; }
     const initialRoute = routeKind();
     const routeRoom = findRoomForRoute(initialRoute);
     if (routeRoom && routeRoom.id !== state.room?.id) {
