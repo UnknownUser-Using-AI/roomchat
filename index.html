@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261023-guide-contrast-v1" />
+  <link rel="stylesheet" href="./styles.css?v=20261023-unified-view-v1" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -29,8 +29,7 @@
       <div class="room-heading">
         <span>채널</span>
         <div class="room-heading-actions">
-          <button id="sidebar-collapse-button" class="icon-button small sidebar-collapse-button" type="button" aria-pressed="false" aria-label="사이드바 접기" title="채팅방 목록 접기">⇤</button>
-          <button id="new-room-button" class="icon-button small" type="button" aria-label="새 방 만들기" title="새 방 만들기">＋</button>
+            <button id="new-room-button" class="icon-button small" type="button" aria-label="새 방 만들기" title="새 방 만들기">＋</button>
         </div>
       </div>
       <div id="room-list" class="room-list" aria-live="polite"></div>
@@ -92,65 +91,7 @@
         <label class="message-search-date-label" for="message-search-date">날짜</label>
         <input id="message-search-date" class="message-search-date" type="date" aria-label="대화 날짜로 검색" />
         <button id="message-search-clear" class="header-tool" type="button">초기화</button>
-        <button id="chat-settings-button" class="header-tool" type="button" aria-expanded="false">화면 설정</button>
       </div>
-      <section id="chat-settings" class="chat-settings" hidden aria-label="채팅 화면 설정">
-        <header class="settings-header">
-          <div>
-            <h2>채팅 화면 설정</h2>
-            <p>바꾸면 바로 적용되고, 이 기기에 저장돼요.</p>
-          </div>
-          <button id="chat-settings-close" class="settings-close" type="button" aria-label="화면 설정 닫기">닫기 ✕</button>
-        </header>
-        <div class="settings-groups">
-          <section class="settings-group" aria-labelledby="settings-appearance-title">
-            <h3 id="settings-appearance-title">화면 모양</h3>
-            <label class="setting-row" for="setting-dark">
-              <span class="setting-copy"><strong>어두운 테마</strong><small>채팅 배경을 어둡게 바꿔요.</small></span>
-              <input id="setting-dark" type="checkbox" />
-            </label>
-            <label class="setting-row setting-row-font" for="setting-font-size">
-              <span class="setting-copy"><strong>메시지 글자 크기</strong><small>읽기 편한 크기를 선택하세요.</small></span>
-              <select id="setting-font-size">
-                <option value="14">작게</option><option value="16" selected>보통</option><option value="18">크게</option><option value="20">아주 크게</option>
-              </select>
-            </label>
-          </section>
-          <section class="settings-group" aria-labelledby="settings-layout-title">
-            <h3 id="settings-layout-title">채팅 배치</h3>
-            <label class="setting-row" for="setting-wide">
-              <span class="setting-copy"><strong>채팅 영역 넓히기</strong><small>메시지를 표시하는 공간을 넓혀요.</small></span>
-              <input id="setting-wide" type="checkbox" />
-            </label>
-            <label class="setting-row" for="setting-hide-sidebar">
-              <span class="setting-copy"><strong>접속자 목록 숨기기</strong><small>화면 오른쪽의 접속자 목록을 감춰요.</small></span>
-              <input id="setting-hide-sidebar" type="checkbox" />
-            </label>
-          </section>
-          <section class="settings-group" aria-labelledby="settings-media-title">
-            <h3 id="settings-media-title">동영상과 소리</h3>
-            <label class="setting-row" for="setting-youtube-preview">
-              <span class="setting-copy"><strong>YouTube 영상 미리보기</strong><small>채팅에 붙인 영상 링크를 플레이어로 보여줘요.</small></span>
-              <input id="setting-youtube-preview" type="checkbox" checked />
-            </label>
-            <label class="setting-row" for="setting-sound">
-              <span class="setting-copy"><strong>새 메시지 소리</strong><small>새 메시지가 오면 알림음을 재생해요.</small></span>
-              <input id="setting-sound" type="checkbox" checked />
-            </label>
-          </section>
-          <section class="settings-group settings-notifications" aria-labelledby="settings-notifications-title">
-            <div class="notification-history-heading">
-              <div class="setting-copy"><h3 id="settings-notifications-title">이 기기의 알림 기록</h3><small>이 브라우저에 저장된 채팅 알림이에요.</small></div>
-              <button id="clear-notification-history" class="header-tool" type="button">기록 지우기</button>
-            </div>
-            <ol id="notification-history-list" class="notification-history-list"><li class="notification-history-empty">아직 알림 기록이 없어요.</li></ol>
-          </section>
-        </div>
-        <footer class="settings-footer">
-          <button id="reset-chat-settings" class="settings-reset" type="button">기본 설정으로 되돌리기</button>
-          <span>언제든 다시 바꿀 수 있어요.</span>
-        </footer>
-      </section>
       <div class="messages-heading"><span>메시지</span><span id="message-count-label" class="muted-label">최근 대화</span></div>
       <section id="message-list" class="message-list" aria-label="메시지" aria-live="polite" aria-relevant="additions text">
         <div class="loading-state"><span class="spinner"></span><span>메시지를 불러오는 중…</span></div>
