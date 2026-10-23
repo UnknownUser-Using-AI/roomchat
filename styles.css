@@ -3213,3 +3213,22 @@ html,body,#app,.app-shell,.server-rail,.sidebar,.sidebar-header,.sidebar-content
 :root.roomchat-dark .message-list .message-row .message-delete{
   background:#f7fcff!important;color:#145071!important;border-color:#a9dff1!important;
 }
+
+
+/* Light-only message controls: override legacy dark theme styles */
+:root{color-scheme:light!important;--surface:#f8fdff;--text:#123d5b;--muted:#557b93;--line:#b9e4f4;--roomchat-accent:#079fd4}
+:root.roomchat-dark{color-scheme:light!important;--surface:#f8fdff!important;--text:#123d5b!important;--muted:#557b93!important;--line:#b9e4f4!important;background:#e8f8ff!important;color:#123d5b!important}
+:root.roomchat-dark body,:root.roomchat-dark .app-shell,:root.roomchat-dark .main-panel,:root.roomchat-dark .message-list,:root.roomchat-dark .composer-wrap,:root.roomchat-dark .member-sidebar,:root.roomchat-dark .sidebar,:root.roomchat-dark .topbar,:root.roomchat-dark .chat-panel,:root.roomchat-dark .message-tools,:root.roomchat-dark .messages-heading{background:#e8f8ff!important;color:#123d5b!important;border-color:#b9e4f4!important}
+.message-list .message-row{color:#123d5b!important;background:transparent!important;border-color:#c6e9f5!important}
+.message-list .message-row:hover,.message-list .message-row:focus-within{background:#dff5ff!important}
+.message-list .message-row .message-meta,.message-list .message-row .message-meta time,.message-list .message-row .message-body,.message-list .message-row .message-content{color:#123d5b!important;-webkit-text-fill-color:#123d5b;text-shadow:none!important}
+.message-list .message-row .message-meta .styled-name{-webkit-text-fill-color:transparent!important}
+.message-list .message-row>.admin-action,.message-list .message-row .message-copy,.message-list .message-row .message-reply,.message-list .message-row .message-link,.message-list .message-row .message-pin,.message-list .message-row .message-edit,.message-list .message-row .message-delete,:root.roomchat-dark .message-list .message-row>.admin-action,:root.roomchat-dark .message-list .message-row .message-copy,:root.roomchat-dark .message-list .message-row .message-reply,:root.roomchat-dark .message-list .message-row .message-link,:root.roomchat-dark .message-list .message-row .message-pin,:root.roomchat-dark .message-list .message-row .message-edit,:root.roomchat-dark .message-list .message-row .message-delete{appearance:none!important;background:#f7fcff!important;color:#145071!important;border:1px solid #a9dff1!important;border-radius:10px!important;box-shadow:0 2px 7px rgba(0,112,165,.07)!important;text-shadow:none!important;opacity:1!important}
+.message-list .message-row>.admin-action:hover,.message-list .message-row .message-copy:hover,.message-list .message-row .message-reply:hover,.message-list .message-row .message-link:hover,.message-list .message-row .message-pin:hover,.message-list .message-row .message-edit:hover{background:#dff5ff!important;color:#075985!important;border-color:#52c6e9!important;box-shadow:0 3px 10px rgba(0,112,165,.12)!important}
+.message-list .message-row .message-pin{background:#fff8df!important;color:#76520b!important;border-color:#f0d58b!important}
+.message-list .message-row .message-delete{background:#fff1f1!important;color:#a3313d!important;border-color:#f2c0c5!important}
+.message-list .message-row .message-delete:hover{background:#ffe2e5!important;color:#8c1f2b!important;border-color:#e99aa4!important}
+.message-list .message-row .message-reactions .message-reaction,:root.roomchat-dark .message-list .message-row .message-reactions .message-reaction{appearance:none!important;background:#f7fcff!important;color:#145071!important;border:1px solid #a9dff1!important;box-shadow:0 2px 7px rgba(0,112,165,.07)!important;text-shadow:none!important;opacity:1!important}
+.message-list .message-row .message-reactions .message-reaction:hover{background:#dff5ff!important;border-color:#52c6e9!important}
+.message-list .message-row .message-reactions .message-reaction.selected,:root.roomchat-dark .message-list .message-row .message-reactions .message-reaction.selected{background:#c9f0ff!important;color:#075985!important;border-color:#31b8e6!important}
+.message-list .message-row .message-reactions .message-reaction:disabled,.message-list .message-row>.admin-action:disabled{background:#eef7fb!important;color:#64859a!important;opacity:.7!important}
