@@ -2190,7 +2190,7 @@ function setupEvents() {
   const settingKey = 'roomchat:chat-settings:v1';
   try { localStorage.removeItem(settingKey); } catch {}
   const applyChatSettings = (settings = {}) => {
-    document.documentElement.classList.toggle('roomchat-dark', Boolean(settings.dark));
+    document.documentElement.classList.remove('roomchat-dark');
     document.documentElement.classList.toggle('roomchat-wide', Boolean(settings.wide));
     document.documentElement.classList.toggle('roomchat-hide-members', Boolean(settings.hideSidebar));
     document.documentElement.classList.toggle('roomchat-sidebar-collapsed', Boolean(settings.sidebarCollapsed));
@@ -2204,7 +2204,7 @@ function setupEvents() {
     }
     document.documentElement.style.setProperty('--roomchat-message-font-size', `${[14,16,18,20].includes(Number(settings.fontSize)) ? Number(settings.fontSize) : 16}px`);
     state.soundEnabled = settings.sound !== false;
-    if (ui.settingDark) ui.settingDark.checked = Boolean(settings.dark);
+    if (ui.settingDark) { ui.settingDark.checked = false; ui.settingDark.disabled = true; }
     if (ui.settingWide) ui.settingWide.checked = Boolean(settings.wide);
     if (ui.settingHideSidebar) ui.settingHideSidebar.checked = Boolean(settings.hideSidebar);
     if (ui.settingSound) ui.settingSound.checked = state.soundEnabled;
@@ -2219,7 +2219,7 @@ function setupEvents() {
   });
   const saveChatSettings = () => {
     chatSettings = {
-      dark: Boolean(ui.settingDark?.checked),
+      dark: false,
       wide: Boolean(ui.settingWide?.checked),
       hideSidebar: Boolean(ui.settingHideSidebar?.checked),
       sidebarCollapsed: document.documentElement.classList.contains('roomchat-sidebar-collapsed'),
