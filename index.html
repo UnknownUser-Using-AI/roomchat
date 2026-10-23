@@ -13,6 +13,16 @@
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
+  <div id="app-loading" class="app-loading" role="status" aria-live="polite" aria-label="RoomChat 불러오는 중">
+    <div class="app-loading-card">
+      <span class="app-loading-mark" aria-hidden="true"><i></i><b></b></span>
+      <div class="app-loading-brand">roomchat<span>.</span></div>
+      <div class="app-loading-track" aria-hidden="true"><span></span></div>
+      <p class="app-loading-title">대화 공간을 준비하고 있어요</p>
+      <p class="app-loading-subtitle">채널과 메시지를 불러오는 중</p>
+      <div class="app-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+    </div>
+  </div>
   <main class="app-shell">
     <nav class="server-rail" aria-label="바로 가기">
       <span class="server-divider"></span>
@@ -349,6 +359,6 @@
       <section id="admin-panel-content" class="admin-panel-content" role="tabpanel" aria-live="polite"></section>
     </section>
   </dialog>
-  <script type="module" src="./app.js?v=20261023-light-message-controls-v1"></script>
+  <script type="module" src="./app.js?v=20261023-app-loading-v1"></script>
 </body>
 </html>
