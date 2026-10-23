@@ -2990,3 +2990,53 @@ html,body{background:#e4f7ff!important;color:#123d5b}
 #nickname-dialog .modal-card h2,#nickname-dialog .field-label,#nickname-dialog .modal-card p,#nickname-dialog .safety-caption{color:#244e68!important}
 #nickname-dialog .text-field{background:#fbfeff!important;color:#123d5b!important;border-color:#b5e1f2!important}
 .icon-button,.header-tool,.secondary-button,.settings-close,.settings-reset{background:#f8fdff!important;color:#124568!important;border-color:#b7e3f3!important}
+
+
+/* Final visual correction: remove black UI blocks, keep black only as nickname outline */
+html,body,#app,.app-shell,.server-rail,.sidebar,.sidebar-header,.sidebar-content,
+.sidebar-bottom,.chat-panel,.chat-header,.topbar,.messages-toolbar,.messages-heading,
+.message-list,.composer-wrap,.composer,.mobile-room-strip,.room-list,.room-search-wrap{
+  background-color:#e8f8ff!important;
+  color:#123d5b!important;
+}
+.server-rail .server-button,.server-rail .server-icon,.server-rail .add-server,
+.server-rail button,.rail-button,.add-server-button{
+  background:#d5f2ff!important;color:#075985!important;
+  border:1px solid #9bdcf3!important;box-shadow:0 4px 14px rgba(0,130,190,.12)!important;
+}
+.server-rail .server-button.active,.server-rail button.active{
+  background:#bdeaff!important;color:#075985!important;
+}
+.topbar .connection-state,.connection-state,.connection-pill{
+  background:#e5f8ed!important;color:#236b4a!important;border-color:#b8e6ca!important;
+}
+#nickname-button,#nickname-button:hover,.nickname-chip,.sidebar-user-panel{
+  background:#f8fdff!important;color:#123d5b!important;border:1px solid #b5e2f3!important;
+}
+#nickname-label,.nickname-chip #nickname-label,.sidebar-user-panel #nickname-label{
+  display:inline-block!important;
+  font-family:inherit!important;
+  font-weight:800!important;
+  color:transparent!important;
+  background-image:linear-gradient(90deg,#e83e65 0%,#f28b2e 16%,#d4a91d 29%,#50a64b 43%,#00a6a6 57%,#3978dc 72%,#8b50cc 86%,#e83e65 100%)!important;
+  background-size:200% 100%!important;
+  background-position:0 50%!important;
+  background-clip:text!important;
+  -webkit-background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+  -webkit-text-stroke:1.15px #101820!important;
+  paint-order:stroke fill!important;
+  text-shadow:0 0 1px #101820!important;
+}
+#nickname-label.admin-name,.admin-name{
+  -webkit-text-stroke:1.15px #101820!important;
+  paint-order:stroke fill!important;
+  text-shadow:0 0 1px #101820!important;
+}
+#nickname-dialog .modal-card,.modal-card,.friends-card,.admin-panel-card,
+.chat-settings,.settings-group{
+  background:#f5fcff!important;color:#123d5b!important;border-color:#b5e2f3!important;
+}
+.settings-close,.settings-reset,.setting-row select{
+  background:#f8fdff!important;color:#123d5b!important;border-color:#b5e2f3!important;
+}
