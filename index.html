@@ -9,10 +9,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261023-fast-loading-v1" />
+  <link rel="stylesheet" href="./styles.css?v=20261023-js-failsafe-v2" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
+  <script id="roomchat-loading-failsafe">window.setTimeout(function(){var el=document.getElementById("app-loading");if(el){el.classList.add("is-hidden");window.setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},400);}},2500);</script>
   <div id="app-loading" class="app-loading" role="status" aria-live="polite" aria-label="RoomChat 불러오는 중">
     <div class="app-loading-card">
       <span class="app-loading-mark" aria-hidden="true"><i></i><b></b></span>
@@ -359,6 +360,6 @@
       <section id="admin-panel-content" class="admin-panel-content" role="tabpanel" aria-live="polite"></section>
     </section>
   </dialog>
-  <script type="module" src="./app.js?v=20261023-fast-loading-v1"></script>
+  <script type="module" src="./app.js?v=20261023-js-failsafe-v2"></script>
 </body>
 </html>
