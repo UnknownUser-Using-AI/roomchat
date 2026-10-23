@@ -4313,3 +4313,84 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
   .composer .gif-button { width: 32px !important; min-width: 32px !important; }
   .composer .send-button { width: 38px !important; min-width: 38px !important; }
 }
+
+
+/* v14 hotfix: force the composer into one horizontal row on phones. */
+@media screen and (max-width: 760px) {
+  #message-form.composer {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    gap: 5px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    padding: 6px !important;
+    overflow: hidden !important;
+  }
+  #message-form.composer > .attach-button:not(.gif-button),
+  #message-form.composer > #gif-button {
+    display: flex !important;
+    flex: 0 0 34px !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    align-self: stretch !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    writing-mode: horizontal-tb !important;
+  }
+  #message-form.composer > #message-input {
+    display: block !important;
+    flex: 1 1 0% !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 104px !important;
+    margin: 0 !important;
+    padding: 10px 8px !important;
+    resize: none !important;
+    box-sizing: border-box !important;
+    writing-mode: horizontal-tb !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    line-height: 1.4 !important;
+    font-size: 14px !important;
+  }
+  #message-form.composer > #send-button {
+    display: flex !important;
+    flex: 0 0 42px !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+  #message-form.composer > #send-button span:first-child { display: none !important; }
+  #message-form.composer > #send-button span:last-child { display: inline !important; }
+  #message-form.composer .attach-button,
+  #message-form.composer #gif-button,
+  #message-form.composer #send-button { writing-mode: horizontal-tb !important; }
+  .composer-wrap { flex: 0 0 auto !important; min-height: 0 !important; padding: 6px 7px max(7px, env(safe-area-inset-bottom)) !important; }
+  .message-list { flex: 1 1 0 !important; min-height: 0 !important; overflow-y: auto !important; }
+  .message-body, .message-content { writing-mode: horizontal-tb !important; word-break: normal !important; overflow-wrap: anywhere !important; }
+}
+@media screen and (max-width: 390px) {
+  #message-form.composer { gap: 4px !important; padding: 5px !important; }
+  #message-form.composer > .attach-button:not(.gif-button),
+  #message-form.composer > #gif-button { flex-basis: 30px !important; width: 30px !important; min-width: 30px !important; max-width: 30px !important; }
+  #message-form.composer > #send-button { flex-basis: 38px !important; width: 38px !important; min-width: 38px !important; max-width: 38px !important; }
+}
