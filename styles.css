@@ -2913,3 +2913,47 @@ button:not(:disabled):hover,.icon-button:hover,.header-tool:hover,.secondary-but
 .sidebar .room-list{background:transparent}
 .sidebar .room-heading,.sidebar .brand,.sidebar .brand-name{color:#103b5b!important}
 .sidebar .sidebar-user-panel,.sidebar .sidebar-user-panel *{color:#103b5b}
+
+
+/* Guide panel contrast repair: legacy list items were still dark themed */
+.guide-card,
+.guide-card > *,
+.guide-list,
+.guide-list li,
+.guide-list li *,
+.guide-list article,
+.guide-list article *{
+  text-shadow:none!important;
+}
+.guide-card{
+  color:#123d5b!important;
+  background:linear-gradient(145deg,#f8fdff,#e3f6ff)!important;
+  border:1px solid #b9e4f4!important;
+}
+.guide-card>p{color:#456b84!important}
+.guide-list li,
+.guide-list article{
+  background:#f5fcff!important;
+  color:#244c67!important;
+  border:1px solid #b9e4f4!important;
+  border-left:4px solid #29b6e6!important;
+  border-radius:10px!important;
+  box-shadow:0 3px 10px rgba(0,104,158,.06)!important;
+}
+.guide-list li:hover,
+.guide-list article:hover{
+  background:#e6f7ff!important;
+  border-color:#75cfea!important;
+}
+.guide-list li strong,.guide-list article strong,
+.guide-list li b,.guide-list article b{
+  color:#006fa8!important;font-weight:750!important;
+}
+.guide-list li span,.guide-list article span,
+.guide-list li p,.guide-list article p{
+  color:#315b75!important;opacity:1!important;
+}
+.guide-list li :is(div,p,span,small,strong,b,em),
+.guide-list article :is(div,p,span,small,strong,b,em){
+  text-shadow:none!important;
+}
