@@ -3253,3 +3253,37 @@ html,body,#app,.app-shell,.server-rail,.sidebar,.sidebar-header,.sidebar-content
   box-shadow:0 3px 12px rgba(0,112,165,.1)!important;
 }
 .message-list{scrollbar-color:#7bcde9 #e8f8ff!important}
+
+
+/* Branded initial loading screen */
+.app-loading{
+  position:fixed;inset:0;z-index:100000;display:grid;place-items:center;
+  padding:24px;background:radial-gradient(ellipse at 50% 30%,#ffffff 0%,#effbff 42%,#dff5ff 100%);
+  opacity:1;visibility:visible;transition:opacity .32s ease,visibility .32s ease;
+}
+.app-loading.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.app-loading-card{
+  width:min(360px,100%);display:flex;flex-direction:column;align-items:center;
+  padding:38px 30px 30px;border:1px solid #b9e8f8;border-radius:26px;
+  background:rgba(255,255,255,.82);box-shadow:0 22px 70px rgba(0,137,190,.12),inset 0 1px 0 #fff;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.app-loading-mark{position:relative;display:block;width:58px;height:46px;margin-bottom:14px;filter:drop-shadow(0 7px 12px rgba(0,145,220,.2));animation:app-loading-float 2.4s ease-in-out infinite}
+.app-loading-mark i,.app-loading-mark b{position:absolute;display:block;width:38px;height:29px;border:3px solid #078fdf;border-radius:15px;background:#fff}
+.app-loading-mark i{left:2px;top:2px}
+.app-loading-mark b{right:2px;bottom:2px;border-color:#565cf4;background:linear-gradient(135deg,#2cc8f0,#4d7cff)}
+.app-loading-brand{font-size:29px;font-weight:850;letter-spacing:-1.2px;color:#103e60;line-height:1.2}
+.app-loading-brand span{color:#08a9dc}
+.app-loading-track{width:100%;height:6px;margin-top:27px;overflow:hidden;border-radius:99px;background:#dff3fb}
+.app-loading-track span{display:block;width:42%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#18c4e8,#2389f5,#7668ff);animation:app-loading-progress 1.35s ease-in-out infinite}
+.app-loading-title{margin:19px 0 0;color:#164967;font-size:15px;font-weight:750;text-align:center}
+.app-loading-subtitle{margin:7px 0 0;color:#64879b;font-size:12px;text-align:center}
+.app-loading-dots{display:flex;gap:6px;margin-top:18px}
+.app-loading-dots i{width:6px;height:6px;border-radius:50%;background:#2cb9e3;animation:app-loading-dot 1s ease-in-out infinite}
+.app-loading-dots i:nth-child(2){animation-delay:.14s;background:#438ff0}
+.app-loading-dots i:nth-child(3){animation-delay:.28s;background:#7b75f5}
+@keyframes app-loading-progress{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+@keyframes app-loading-dot{0%,60%,100%{opacity:.4;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+@keyframes app-loading-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+@media(max-width:480px){.app-loading-card{padding:32px 22px 26px;border-radius:22px}.app-loading-brand{font-size:27px}.app-loading-title{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.app-loading-mark,.app-loading-track span,.app-loading-dots i{animation:none!important}.app-loading-track span{width:100%}.app-loading{transition:none}}
