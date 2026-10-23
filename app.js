@@ -2616,3 +2616,28 @@ boot().catch((error) => {
   window.clearTimeout(appLoadingFailsafe);
   hideAppLoading();
 });
+
+
+// Keep mobile app sizing in sync with the visible viewport when browser chrome
+// or the on-screen keyboard changes its height.
+(() => {
+  const root = document.documentElement;
+  let frame = 0;
+  const syncVisibleViewport = () => {
+    if (frame) cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      const viewport = window.visualViewport;
+      const height = viewport && Number.isFinite(viewport.height)
+        ? viewport.height
+        : window.innerHeight;
+      if (height > 0) root.style.setProperty('--rc-visual-height', height + 'px');
+    });
+  };
+  syncVisibleViewport();
+  window.addEventListener('resize', syncVisibleViewport, { passive: true });
+  window.addEventListener('orientationchange', syncVisibleViewport, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncVisibleViewport, { passive: true });
+  }
+})();
