@@ -1230,7 +1230,7 @@ function routeBase() {
   return '/roomchat/';
 }
 function routePathForRoom(room) {
-  return routeBase() + encodeURIComponent(roomSlug(room?.name || 'room'));
+  return routeBase() + roomSlug(room?.name || 'room');
 }
 function navigatePath(path, replace = false) {
   const target = path.startsWith('/') ? path : routeBase() + path;
