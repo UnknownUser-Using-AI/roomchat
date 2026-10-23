@@ -143,6 +143,22 @@ mediaGalleryButton.addEventListener('click', () => {
   renderMessages();
 });
 ui.messageSearch?.parentElement?.append(mediaGalleryButton);
+
+const mobileSearchOptionsButton = document.createElement('button');
+mobileSearchOptionsButton.type = 'button';
+mobileSearchOptionsButton.className = 'header-tool mobile-search-options';
+mobileSearchOptionsButton.textContent = '검색 옵션';
+mobileSearchOptionsButton.setAttribute('aria-expanded', 'false');
+mobileSearchOptionsButton.setAttribute('aria-controls', 'message-search-date');
+mobileSearchOptionsButton.addEventListener('click', () => {
+  const toolbar = ui.messageSearch?.closest('.message-tools');
+  if (!toolbar) return;
+  const expanded = toolbar.classList.toggle('mobile-search-expanded');
+  mobileSearchOptionsButton.setAttribute('aria-expanded', String(expanded));
+  mobileSearchOptionsButton.textContent = expanded ? '옵션 닫기' : '검색 옵션';
+});
+ui.messageSearch?.parentElement?.append(mobileSearchOptionsButton);
+
 let roomFavorites = new Set((() => { try { const value = JSON.parse(localStorage.getItem(ROOM_FAVORITES_KEY) || '[]'); return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : []; } catch { return []; } })());
 const roomSearchInput = document.createElement('input');
 roomSearchInput.type = 'search';
