@@ -1220,8 +1220,46 @@ async function checkForKick(roomId, request) {
   const other = sortedRooms().find((room) => room.id !== roomId && room.is_featured) || sortedRooms().find((room) => room.id !== roomId);
   if (other) { state.room = null; await switchRoom(other); }
 }
+
+const ROUTE_RESERVED = new Set(['messages','log-in','profile','friends','settings','new-room','help','404.html']);
+function roomSlug(name) {
+  return String(name || '').normalize('NFC').trim().toLocaleLowerCase()
+    .replace(/[^\\p{L}\\p{N}]+/gu, '-').replace(/^-+|-+$/gu, '') || 'room';
+}
+function routeBase() {
+  return '/roomchat/';
+}
+function routePathForRoom(room) {
+  return routeBase() + encodeURIComponent(roomSlug(room?.name || 'room'));
+}
+function navigatePath(path, replace = false) {
+  const target = path.startsWith('/') ? path : routeBase() + path;
+  if (window.location.pathname === target) return;
+  window.history[replace ? 'replaceState' : 'pushState']({ roomchatRoute: true }, '', target);
+}
+function routeKind() {
+  const base = routeBase();
+  let path = window.location.pathname;
+  if (path.startsWith(base)) path = path.slice(base.length);
+  else path = path.replace(/^\\/+/, '');
+  try { path = decodeURIComponent(path); } catch {}
+  path = path.replace(/\\/+$/, '');
+  if (!path || path === 'index.html' || path === 'messages') return { type: 'messages' };
+  if (path === 'log-in' || path === 'login') return { type: 'login' };
+  if (path === 'profile') return { type: 'profile' };
+  if (path === 'friends') return { type: 'friends' };
+  if (path === 'settings') return { type: 'settings' };
+  if (ROUTE_RESERVED.has(path)) return { type: 'messages' };
+  return { type: 'room', slug: roomSlug(path) };
+}
+function findRoomForRoute(route) {
+  if (route.type !== 'room') return null;
+  return state.rooms.find((room) => roomSlug(room.name) === route.slug) || null;
+}
+
 async function switchRoom(room) {
   if (!room || (state.room?.id === room.id && state.roomChannel)) return;
+  if (!window.__roomchatRouting) navigatePath(routePathForRoom(room));
   clearReplyTarget();
   state.room = room;
   const request = ++state.roomRequest;
@@ -2136,10 +2174,10 @@ async function refreshIdentity() {
 }
 function setupEvents() {
   ui.nicknameForm.addEventListener('submit', (event) => { event.preventDefault(); setNickname(ui.nicknameInput.value); });
-  ui.nicknameButton.addEventListener('click', showNicknameDialog);
-  $('#sidebar-account-settings')?.addEventListener('click', () => ui.nicknameButton.click());
+  ui.nicknameButton.addEventListener('click', () => { navigatePath(routeBase() + 'profile'); showNicknameDialog(); });
+  $('#sidebar-account-settings')?.addEventListener('click', () => { navigatePath(routeBase() + 'settings'); ui.nicknameButton.click(); });
   $('#nickname-close')?.addEventListener('click', () => ui.nicknameDialog.close());
-  ui.accountOpen.addEventListener('click', () => { ui.nicknameDialog.close(); showAccountDialog(); });
+  ui.accountOpen.addEventListener('click', () => { navigatePath(routeBase() + 'log-in'); ui.nicknameDialog.close(); showAccountDialog(); });
   ui.styleOpen.addEventListener('click', () => { ui.nicknameDialog.close(); social?.openStyleDialog(); });
   ui.signOut.addEventListener('click', async () => {
     await supabase.auth.signOut();
@@ -2419,6 +2457,12 @@ async function boot() {
   }
   try {
     await loadRooms();
+    const initialRoute = routeKind();
+    const routeRoom = findRoomForRoute(initialRoute);
+    if (routeRoom && routeRoom.id !== state.room?.id) {
+      window.__roomchatRouting = true;
+      try { await switchRoom(routeRoom); } finally { window.__roomchatRouting = false; }
+    }
     const sharedLinkParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
     const sharedRoomId = sharedLinkParams.get('room');
     if (sharedRoomId) {
@@ -2452,8 +2496,35 @@ async function boot() {
     setConnection(false, '연결 확인 필요');
     showToast('채팅 서버에 연결하지 못했어요. Supabase 설정을 확인해 주세요.');
   }
+  const initialRoute = routeKind();
+  if (initialRoute.type === 'login') {
+    ui.nicknameDialog.close();
+    showAccountDialog();
+  } else if (initialRoute.type === 'profile' && state.user) {
+    social?.openProfile(state.user.id);
+  } else if (initialRoute.type === 'friends' && state.user) {
+    social?.openFriends();
+  } else if (initialRoute.type === 'settings') {
+    ui.nicknameButton.click();
+  } else if (initialRoute.type === 'room' && !findRoomForRoute(initialRoute)) {
+    showToast('해당 주소의 방을 찾을 수 없어요. 방 목록에서 선택해 주세요.');
+  }
   if (!state.user && state.pendingAdminInvite) showAccountDialog();
-  else if (!state.user && !state.nickname) showNicknameDialog();
+  else if (!state.user && !state.nickname && initialRoute.type !== 'login') showNicknameDialog();
+  window.addEventListener('popstate', async () => {
+    const route = routeKind();
+    if (route.type === 'room') {
+      const room = findRoomForRoute(route);
+      if (room) {
+        window.__roomchatRouting = true;
+        try { await switchRoom(room); } finally { window.__roomchatRouting = false; }
+      }
+    } else if (route.type === 'login') {
+      ui.nicknameDialog.close(); showAccountDialog();
+    } else if (route.type === 'profile' && state.user) social?.openProfile(state.user.id);
+    else if (route.type === 'friends' && state.user) social?.openFriends();
+    else if (route.type === 'settings') ui.nicknameButton.click();
+  });
   state.identityTimer = window.setInterval(refreshIdentity, 45000);
 }
 
