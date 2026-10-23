@@ -4394,3 +4394,106 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
   #message-form.composer > #gif-button { flex-basis: 30px !important; width: 30px !important; min-width: 30px !important; max-width: 30px !important; }
   #message-form.composer > #send-button { flex-basis: 38px !important; width: 38px !important; min-width: 38px !important; max-width: 38px !important; }
 }
+
+
+/* Mobile context-menu/layout distortion fix (2026-10-23).
+   Keep interactive controls intrinsic-sized and track the actually visible viewport. */
+@media screen and (max-width: 760px) {
+  html, body {
+    min-width: 0;
+    max-width: 100%;
+    overscroll-behavior: none;
+  }
+  .app-shell,
+  .chat-panel {
+    height: var(--rc-visual-height, 100dvh) !important;
+    max-height: var(--rc-visual-height, 100dvh) !important;
+    min-height: 0 !important;
+  }
+  .message-row {
+    height: auto !important;
+    min-height: 0 !important;
+    align-items: flex-start !important;
+  }
+  .message-row > .admin-action,
+  .message-actions button,
+  .message-buttons button,
+  .message-row-actions button,
+  .message-reaction,
+  .dm-tool-button,
+  .dm-emoji {
+    box-sizing: border-box !important;
+    flex: 0 0 auto !important;
+    align-self: flex-start;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    line-height: 1.35 !important;
+    transform: none;
+  }
+  .message-row > .admin-action {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 32px !important;
+    padding: 7px 9px !important;
+    white-space: nowrap !important;
+  }
+  .message-reaction {
+    width: auto !important;
+    height: auto !important;
+    min-height: 30px !important;
+    aspect-ratio: auto !important;
+    white-space: nowrap !important;
+  }
+  .dm-tool-button {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+  }
+  .dm-emoji {
+    min-width: 0 !important;
+    min-height: 36px !important;
+    height: auto !important;
+    aspect-ratio: auto !important;
+    justify-content: center !important;
+  }
+  .modal,
+  .modal-card,
+  .gif-card,
+  .profile-card,
+  .style-card {
+    box-sizing: border-box !important;
+    max-height: calc(var(--rc-visual-height, 100dvh) - 16px) !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+  .context-menu,
+  [role="menu"],
+  [role="listbox"],
+  .mention-popup {
+    box-sizing: border-box !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(var(--rc-visual-height, 100dvh) - 16px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+  .context-menu button,
+  [role="menu"] button,
+  [role="listbox"] button {
+    flex: 0 0 auto !important;
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    height: auto !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    line-height: 1.35 !important;
+  }
+}
