@@ -2795,3 +2795,71 @@ button:not(:disabled):hover,.icon-button:hover,.header-tool:hover,.secondary-but
 @media(max-width:760px){
  .sidebar{background:linear-gradient(180deg,#f1fbff,#dff5ff)}
 }
+
+
+/* Contrast and consistency fix after blue theme rollout */
+:root{--ink:#083657;--muted:#52758d;--line:#b9e4f4}
+.app-shell,.sidebar,.chat-panel,.topbar,.message-list,.composer-wrap{color:#103b5c}
+.brand,.brand-name,.room-heading,.channel-heading,.current-room-name,.messages-heading,
+.room-item .room-title,.room-item .room-subtitle,.room-item .room-meta,
+.sidebar-user-panel,.nickname-chip,.setting-copy strong,.setting-copy small,
+.message-content,.message-body,.message-meta strong,.message-meta time,
+.chat-panel h1,.chat-panel h2,.chat-panel h3,.chat-panel p,.chat-panel li{
+  color:#103b5c;
+}
+.room-item.active .room-title,.room-item.active .room-subtitle,
+.room-item.active .room-meta,.room-item.active .room-arrow{
+  color:#075b89!important;
+}
+.room-item:hover .room-title,.room-item:hover .room-subtitle,.room-item:hover .room-meta{
+  color:#075b89!important;
+}
+.room-item.active,.room-item:hover,.room-row.active,.mobile-room-item.active{
+  background:linear-gradient(105deg,#c9efff,#e5f8ff)!important;
+  border-color:#91d8f2!important;
+}
+.room-item.active{box-shadow:inset 4px 0 #009fdf,0 5px 16px rgba(0,119,180,.08)!important}
+.room-number,.room-item.active .room-number{
+  background:#d4f2ff!important;color:#0874aa!important;border:1px solid #a8def2;
+}
+.side-intro,.guide-card,.guide-list article,.empty-state,.welcome-panel,.welcome-card,
+.onboarding-card,.message-guide,.guide-list{
+  color:#123f60!important;background:linear-gradient(135deg,#effbff,#dff5ff)!important;
+  border-color:#b9e4f4!important;
+}
+.side-intro p,.sidebar-hero-copy,.side-intro .sidebar-hero-copy,
+.guide-card>p,.guide-dialog-header h2,.guide-list article strong,.guide-list article span,
+.empty-state h1,.empty-state h2,.empty-state p,.welcome-panel h1,.welcome-panel h2,
+.welcome-panel p,.welcome-card h1,.welcome-card h2,.welcome-card p,
+.onboarding-card h1,.onboarding-card h2,.onboarding-card p,
+.message-guide h1,.message-guide h2,.message-guide p{
+  color:#123f60!important;
+}
+.guide-list article{background:#f8fdff!important;border-color:#c4e8f5!important}
+.guide-list article strong{color:#007db5!important}
+.guide-list article span{color:#456f88!important}
+.message-list .message-row,.message-list .message-item{color:#123f60}
+.message-list strong,.message-list h1,.message-list h2,.message-list h3{color:#103b5c}
+.message-list p,.message-list li,.message-list span{ text-shadow:none }
+.message-list .message-guide,.message-list .welcome-card,.message-list .onboarding-card,
+.message-list .side-intro,.message-list .guide-list article{
+  background:#e8f8ff!important;color:#123f60!important;border-color:#c0e7f4!important;
+}
+.composer textarea,.message-search,.message-tools input,.text-field,.dm-input,select{
+  color:#103b5c!important;background:#fbfeff!important;border-color:#b5e1f2!important;
+}
+.composer textarea::placeholder,.message-search::placeholder,.message-tools input::placeholder,
+.text-field::placeholder,.dm-input::placeholder{color:#6d8da2!important;opacity:1}
+.top-actions .header-tool,.topbar .header-tool,.icon-button,.secondary-button{
+  color:#124568!important;background:#f8fdff!important;border-color:#b7e3f3!important;
+}
+.top-actions .connection-state{color:#2b6d56}
+.top-actions .connection-state .connection-label{color:#2b6d56}
+.nickname-chip{background:#f8fdff!important;color:#103b5c!important}
+.nickname-chip #nickname-label{color:#103b5c!important}
+.sidebar-bottom{background:linear-gradient(180deg,rgba(221,245,255,.9),#d9f3ff)!important}
+.sidebar-user-panel{background:#f7fcff!important;border-color:#c2e7f4!important}
+@media(max-width:760px){
+ .room-item.active .room-title,.room-item.active .room-subtitle{color:#075b89!important}
+ .sidebar-bottom{background:#e3f6ff!important}
+}
