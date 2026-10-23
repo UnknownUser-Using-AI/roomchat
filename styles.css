@@ -3623,3 +3623,122 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
 @media (prefers-reduced-motion: reduce) {
   .top-actions, .mobile-room-list, .message-list { scroll-behavior: auto !important; }
 }
+
+/* Mobile layout: prioritize actual chat space over desktop controls. */
+@media (max-width: 760px) {
+  .topbar {
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    min-height: 58px;
+  }
+  .channel-heading { gap: 6px; }
+  .channel-topic, .channel-divider { display: none !important; }
+  .current-room-name { max-width: 38vw; font-size: 15px; }
+  .top-actions { max-width: 44%; gap: 5px; }
+  .top-actions .header-tool {
+    min-height: 38px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  .top-actions .connection-state { display: none !important; }
+  .mobile-room-strip {
+    padding: 6px 8px;
+    gap: 6px;
+    min-height: 52px;
+  }
+  .mobile-room-strip > .eyebrow { display: none !important; }
+  .mobile-room-list { gap: 6px; }
+  .mobile-room-list > * { max-width: 72vw; }
+  .message-tools {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "search search"
+      "date clear";
+    align-items: center;
+    gap: 7px;
+    padding: 8px 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .message-tools .keyboard-hint { display: none !important; }
+  .message-tools .message-search-label { grid-area: search; margin: 0; }
+  .message-tools .message-search {
+    grid-area: search;
+    margin-top: 22px;
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    box-sizing: border-box;
+  }
+  .message-tools .message-search-date-label {
+    grid-area: date;
+    margin: 0;
+    align-self: center;
+  }
+  .message-tools .message-search-date {
+    grid-area: date;
+    justify-self: end;
+    width: min(58%, 190px);
+    min-width: 0;
+    height: 40px;
+    box-sizing: border-box;
+    margin: 0;
+  }
+  .message-tools #message-search-clear {
+    grid-area: clear;
+    min-height: 40px;
+    margin: 0;
+    padding: 6px 12px;
+  }
+  .messages-heading { padding: 6px 12px; }
+  .message-list { padding-top: 6px; }
+  .composer-wrap { padding: 8px 8px max(8px, env(safe-area-inset-bottom)); }
+  .composer {
+    display: grid !important;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 6px;
+    align-items: end;
+  }
+  .composer .attach-button:not(.gif-button) { display: none !important; }
+  .composer .gif-button {
+    grid-column: 1;
+    grid-row: 1;
+    width: 38px;
+    min-width: 38px;
+    height: 42px;
+    padding: 0;
+  }
+  .composer textarea {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    max-height: 112px;
+    padding: 9px 4px;
+    box-sizing: border-box;
+  }
+  .composer .send-button {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0 12px;
+  }
+  .composer .send-button span:first-child { display: inline !important; }
+  .composer-foot { display: none !important; }
+}
+@media (max-width: 390px) {
+  .topbar { padding-inline: 7px; }
+  .current-room-name { max-width: 34vw; font-size: 14px; }
+  .top-actions { max-width: 42%; }
+  .top-actions .header-tool { padding-inline: 7px; }
+  .message-tools { gap: 6px; padding-inline: 8px; }
+  .composer { grid-template-columns: 34px minmax(0, 1fr) 42px; gap: 5px; }
+  .composer .gif-button { width: 34px; min-width: 34px; }
+  .composer .send-button { padding-inline: 8px; }
+  .composer .send-button span:first-child { display: none !important; }
+}
