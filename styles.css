@@ -3232,3 +3232,24 @@ html,body,#app,.app-shell,.server-rail,.sidebar,.sidebar-header,.sidebar-content
 .message-list .message-row .message-reactions .message-reaction:hover{background:#dff5ff!important;border-color:#52c6e9!important}
 .message-list .message-row .message-reactions .message-reaction.selected,:root.roomchat-dark .message-list .message-row .message-reactions .message-reaction.selected{background:#c9f0ff!important;color:#075985!important;border-color:#31b8e6!important}
 .message-list .message-row .message-reactions .message-reaction:disabled,.message-list .message-row>.admin-action:disabled{background:#eef7fb!important;color:#64859a!important;opacity:.7!important}
+
+
+/* Remove remaining legacy charcoal hover/button surfaces across the interface */
+.admin-action{
+  background:#f4fbff!important;color:#145071!important;border:1px solid #b5e2f3!important;
+  box-shadow:0 2px 7px rgba(0,112,165,.06)!important;
+}
+.admin-action:hover,.admin-action:focus-visible{
+  background:#dff5ff!important;color:#075985!important;border-color:#52c6e9!important;
+}
+.danger-action,.admin-action.danger-action,.room-list .danger-action{
+  background:#fff1f1!important;color:#a3313d!important;border-color:#f2c0c5!important;
+}
+.room-list button:hover,.room-list a:hover,
+.notification-button:hover,.nickname-chip:hover,.friends-button:hover,
+.admin-panel-button:hover,.icon-button:hover,.header-tool:hover,
+.secondary-button:hover,.attach-button:hover{
+  background:#dff5ff!important;color:#075985!important;border-color:#52c6e9!important;
+  box-shadow:0 3px 12px rgba(0,112,165,.1)!important;
+}
+.message-list{scrollbar-color:#7bcde9 #e8f8ff!important}
