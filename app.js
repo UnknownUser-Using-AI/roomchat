@@ -2436,6 +2436,16 @@ function setupEvents() {
 
 
 
+function withStartupTimeout(promise, label, timeoutMs = 7000) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = window.setTimeout(() => reject(new Error(label + ' timed out after ' + timeoutMs + 'ms')), timeoutMs);
+    }),
+  ]).finally(() => window.clearTimeout(timer));
+}
+
 async function boot() {
   restoreAdminInvite();
   setupEvents();
@@ -2447,9 +2457,17 @@ async function boot() {
   } catch (error) { console.warn('Could not restore account session'); }
   if (state.user && state.pendingAdminInvite) clearAdminInvite();
   if (!state.user) {
-    const { data: guestName, error: guestError } = await supabase.rpc('roomchat_refresh_guest', {
-      p_guest_session_id: guestSessionId, p_guest_token: guestToken,
-    });
+    let guestName = null;
+    let guestError = null;
+    try {
+      const result = await withStartupTimeout(supabase.rpc('roomchat_refresh_guest', {
+        p_guest_session_id: guestSessionId, p_guest_token: guestToken,
+      }), 'Guest session refresh', 4000);
+      guestName = result.data;
+      guestError = result.error;
+    } catch (error) {
+      console.warn('Guest refresh delayed; continuing room startup:', error);
+    }
     if (!guestError && guestName) {
       state.nickname = guestName;
       updateIdentityUI();
@@ -2457,7 +2475,7 @@ async function boot() {
   }
   try {
     window.__roomchatRouting = true;
-    try { await loadRooms(); } finally { window.__roomchatRouting = false; }
+    try { await withStartupTimeout(loadRooms(), 'Room list load', 10000); } finally { window.__roomchatRouting = false; }
     const initialRoute = routeKind();
     const routeRoom = findRoomForRoute(initialRoute);
     if (routeRoom && routeRoom.id !== state.room?.id) {
@@ -2493,7 +2511,7 @@ async function boot() {
         renderRoomLists();
       }).subscribe();
   } catch (error) {
-    console.error('Room bootstrap failed');
+    console.error('Room bootstrap failed:', error);
     setConnection(false, '연결 확인 필요');
     showToast('채팅 서버에 연결하지 못했어요. Supabase 설정을 확인해 주세요.');
   }
