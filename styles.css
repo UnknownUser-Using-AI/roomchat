@@ -3040,3 +3040,23 @@ html,body,#app,.app-shell,.server-rail,.sidebar,.sidebar-header,.sidebar-content
 .settings-close,.settings-reset,.setting-row select{
   background:#f8fdff!important;color:#123d5b!important;border-color:#b5e2f3!important;
 }
+
+
+/* Rainbow nickname only: remove the black outline and shadow */
+#nickname-label,
+.nickname-chip #nickname-label,
+.sidebar-user-panel #nickname-label,
+#nickname-label.admin-name,
+.admin-name{
+  color:transparent!important;
+  background-image:linear-gradient(90deg,#ff4d78 0%,#ff9f43 16%,#f4d84b 30%,#59d66f 45%,#21c7c9 60%,#4388ff 75%,#b65cff 88%,#ff4d78 100%)!important;
+  background-size:200% 100%!important;
+  background-position:0 50%!important;
+  background-clip:text!important;
+  -webkit-background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+  -webkit-text-stroke:0!important;
+  text-shadow:none!important;
+  filter:none!important;
+  paint-order:normal!important;
+}
