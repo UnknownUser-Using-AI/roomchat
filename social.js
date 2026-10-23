@@ -560,14 +560,90 @@ export function initSocial(ctx) {
   const emojiPanel = document.createElement('div'); emojiPanel.className = 'dm-emoji-panel'; emojiPanel.hidden = true; emojiPanel.setAttribute('aria-label','이모지 선택');
   for (const emoji of DM_EMOJIS) { const button = document.createElement('button'); button.type='button'; button.className='dm-emoji'; button.textContent=emoji; button.addEventListener('click',()=>{const start=el.dmInput.selectionStart ?? el.dmInput.value.length; const end=el.dmInput.selectionEnd ?? start; el.dmInput.setRangeText(emoji,start,end,'end'); el.dmInput.focus(); emojiPanel.hidden=true;}); emojiPanel.append(button); }
   const gifPanel = document.createElement('div'); gifPanel.className='dm-gif-panel'; gifPanel.hidden=true;
-  const gifSearchForm=document.createElement('form'); gifSearchForm.className='dm-gif-search'; const gifSearch=document.createElement('input'); gifSearch.className='text-field'; gifSearch.type='search'; gifSearch.placeholder='GIF 검색'; gifSearch.setAttribute('aria-label','GIF 검색어');
+  const gifSearchForm=document.createElement('form'); gifSearchForm.className='dm-gif-search'; const gifSearch=document.createElement('input'); gifSearch.className='text-field'; gifSearch.type='search'; gifSearch.maxLength=50; gifSearch.autocomplete='off'; gifSearch.enterKeyHint='search'; gifSearch.placeholder='GIF 검색'; gifSearch.setAttribute('aria-label','GIF 검색어');
   const gifSearchButton=document.createElement('button'); gifSearchButton.className='secondary-button'; gifSearchButton.type='submit'; gifSearchButton.textContent='검색'; gifSearchForm.append(gifSearch,gifSearchButton);
   const gifStatus=document.createElement('div'); gifStatus.className='dm-gif-status'; gifStatus.textContent='인기 GIF를 불러오는 중…'; const gifGrid=document.createElement('div'); gifGrid.className='dm-gif-grid'; gifPanel.append(gifSearchForm,gifStatus,gifGrid);
   el.dmForm.parentElement.insertBefore(emojiPanel,el.dmForm); el.dmForm.parentElement.insertBefore(gifPanel,el.dmForm); let dmGifRequest=0;
   function cleanDmGifUrl(value) { try { const url=new URL(value); if(url.protocol!=='https:' || !/(^|\.)giphy\.com$/u.test(url.hostname) || !/^\/media\/[A-Za-z0-9_\-/.]+\.(gif|webp)$/iu.test(url.pathname)) return null; return url.href; } catch { return null; } }
-  async function loadDmGifs(query='') { const request=++dmGifRequest; gifGrid.replaceChildren(); if(!GIPHY_API_KEY){gifStatus.textContent='GIF 검색 API 키가 설정되지 않았어요.';return;} gifStatus.textContent=query?'검색 중…':'인기 GIF를 불러오는 중…'; const params=new URLSearchParams({api_key:GIPHY_API_KEY,limit:'18',rating:'g',lang:'en',bundle:'messaging_non_clips'}); if(query) params.set('q',query);
-    try { const response=await fetch('https://api.giphy.com/v1/gifs/'+(query?'search':'trending')+'?'+params); let result={}; try { result=await response.json(); } catch {} if(request!==dmGifRequest)return; if(!response.ok){gifStatus.textContent=response.status===401||response.status===403?'GIPHY API 키가 거부됐어요. 키와 API 앱 상태를 확인해 주세요.':response.status===429?'GIF 검색 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.':`GIPHY 검색 오류 (HTTP ${response.status})`;return;} const items=(result.data||[]).map(item=>({title:String(item.title||'GIF').slice(0,80),preview:cleanDmGifUrl(item.images?.fixed_width_small?.url||item.images?.fixed_width?.url||item.images?.downsized_small?.mp4),send:cleanDmGifUrl(item.images?.downsized_medium?.url||item.images?.fixed_height?.url||item.images?.original?.url||item.images?.downsized_small?.mp4)})).filter(item=>item.preview&&item.send); gifStatus.textContent=items.length?(query?'검색 결과를 선택하세요.':'인기 GIF'):(result.data?.length?'GIF는 검색됐지만 지원되는 미리보기 파일이 없어요. 다른 검색어로 시도해 주세요.':'검색 결과가 없어요. 영어 검색어도 시도해 보세요.');
-      for(const item of items){const button=document.createElement('button');button.type='button';button.className='dm-gif-item';button.setAttribute('aria-label',item.title+' 보내기');const image=document.createElement('img');image.src=item.preview;image.alt=item.title;image.loading='lazy';button.append(image);button.addEventListener('click',async()=>{if(!activeFriend)return;gifPanel.hidden=true;const {data,error}=await supabase.rpc('roomchat_send_dm',{p_to:activeFriend,p_content:DM_GIF_PREFIX+item.send});if(error)return ctx.showToast(ctx.errorText(error,'GIF를 보내지 못했어요.'));const row=Array.isArray(data)?data[0]:data;if(row&&!thread.some(message=>String(message.id)===String(row.id)))thread.push(row);renderThread();});gifGrid.append(button);} } catch (error) {if(request===dmGifRequest)gifStatus.textContent=error instanceof Error && error.message!=='Failed to fetch'?error.message:'GIF 서버에 연결하지 못했어요. 네트워크나 브라우저 확장 프로그램을 확인해 주세요.';} }
+  async function loadDmGifs(query = '') {
+    query = String(query ?? '').trim().slice(0, 50);
+    const request = ++dmGifRequest;
+    gifGrid.replaceChildren();
+    if (!GIPHY_API_KEY) {
+      gifStatus.textContent = 'GIF 검색 API 키가 설정되지 않았어요.';
+      return;
+    }
+    gifStatus.textContent = query ? '검색 중…' : '인기 GIF를 불러오는 중…';
+    const params = new URLSearchParams({
+      api_key: GIPHY_API_KEY,
+      limit: '18',
+      rating: 'g',
+      bundle: 'messaging_non_clips',
+    });
+    if (query) {
+      params.set('q', query);
+      // GIPHY does not document Korean as a supported lang code; avoid forcing en for Hangul.
+      if (!/[가-힣ㄱ-ㅎㅏ-ㅣ]/u.test(query)) params.set('lang', 'en');
+    }
+    try {
+      const response = await fetch('https://api.giphy.com/v1/gifs/' + (query ? 'search' : 'trending') + '?' + params);
+      let result = {};
+      try { result = await response.json(); } catch { /* The HTTP status below still explains non-JSON failures. */ }
+      if (request !== dmGifRequest) return;
+      if (!response.ok) {
+        gifStatus.textContent = response.status === 401 || response.status === 403
+          ? 'GIPHY API 키가 거부됐어요. 키와 API 앱 상태를 확인해 주세요.'
+          : response.status === 429
+            ? 'GIF 검색 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
+            : `GIPHY 검색 오류 (HTTP ${response.status})`;
+        return;
+      }
+      const items = (result.data || []).map((item) => ({
+        title: String(item.title || 'GIF').slice(0, 80),
+        preview: cleanDmGifUrl(item.images?.fixed_width_small?.url || item.images?.fixed_width?.url || item.images?.downsized_small?.url),
+        send: cleanDmGifUrl(item.images?.downsized_medium?.url || item.images?.fixed_height?.url || item.images?.original?.url),
+      })).filter((item) => item.preview && item.send);
+      gifStatus.textContent = items.length
+        ? (query ? '검색 결과를 선택하세요.' : '인기 GIF')
+        : ((result.data || []).length
+          ? 'GIF는 검색됐지만 지원되는 미리보기 파일이 없어요. 다른 검색어로 시도해 주세요.'
+          : '검색 결과가 없어요. 짧은 검색어나 영어 검색어도 시도해 보세요.');
+      for (const item of items) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'dm-gif-item';
+        button.setAttribute('aria-label', item.title + ' 보내기');
+        const image = document.createElement('img');
+        image.src = item.preview;
+        image.alt = item.title;
+        image.loading = 'lazy';
+        button.append(image);
+        button.addEventListener('click', async () => {
+          if (!activeFriend) return;
+          gifPanel.hidden = true;
+          try {
+            const { data, error } = await supabase.rpc('roomchat_send_dm', {
+              p_to: activeFriend,
+              p_content: DM_GIF_PREFIX + item.send,
+            });
+            if (error) throw error;
+            const row = Array.isArray(data) ? data[0] : data;
+            if (row && !thread.some((message) => String(message.id) === String(row.id))) thread.push(row);
+            renderThread();
+          } catch (error) {
+            ctx.showToast(ctx.errorText(error, 'GIF를 보내지 못했어요. 다시 시도해 주세요.'));
+          }
+        });
+        gifGrid.append(button);
+      }
+    } catch (error) {
+      if (request === dmGifRequest) {
+        gifStatus.textContent = error instanceof Error && error.message !== 'Failed to fetch'
+          ? error.message
+          : 'GIF 서버에 연결하지 못했어요. 네트워크나 브라우저 확장 프로그램을 확인해 주세요.';
+      }
+    }
+  }
   emojiButton.addEventListener('click',()=>{emojiPanel.hidden=!emojiPanel.hidden;gifPanel.hidden=true;}); gifButton.addEventListener('click',()=>{gifPanel.hidden=!gifPanel.hidden;emojiPanel.hidden=true;if(!gifPanel.hidden&&!gifGrid.childElementCount)loadDmGifs('');}); gifSearchForm.addEventListener('submit',event=>{event.preventDefault();loadDmGifs(gifSearch.value.trim());});
   function validDmImagePath(path) {
     return typeof path === 'string'
