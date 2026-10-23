@@ -1876,6 +1876,7 @@ function cleanGiphyUrl(value) {
   } catch { return null; }
 }
 async function loadGifs(query = '') {
+  query = String(query ?? '').trim().slice(0, 50);
   const request = ++state.gifRequest;
   ui.gifGrid.replaceChildren();
   if (!GIPHY_API_KEY) {
@@ -1883,8 +1884,12 @@ async function loadGifs(query = '') {
     return;
   }
   ui.gifStatus.textContent = query ? `“${query}” 검색 중…` : '인기 GIF를 불러오는 중…';
-  const params = new URLSearchParams({ api_key: GIPHY_API_KEY, limit: '24', rating: 'g', lang: 'en', bundle: 'messaging_non_clips' });
-  if (query) params.set('q', query);
+  const params = new URLSearchParams({ api_key: GIPHY_API_KEY, limit: '24', rating: 'g', bundle: 'messaging_non_clips' });
+  if (query) {
+    params.set('q', query);
+    // GIPHY currently documents a limited set of lang values; do not force English for Hangul.
+    if (!/[가-힣ㄱ-ㅎㅏ-ㅣ]/u.test(query)) params.set('lang', 'en');
+  }
   try {
     const response = await fetch(`https://api.giphy.com/v1/gifs/${query ? 'search' : 'trending'}?${params}`);
     if (!response.ok) {
@@ -1914,8 +1919,12 @@ async function loadGifs(query = '') {
       button.addEventListener('click', () => sendGif(item.send));
       ui.gifGrid.append(button);
     }
-  } catch {
-    if (request === state.gifRequest) ui.gifStatus.textContent = error instanceof Error && error.message !== 'Failed to fetch' ? error.message : 'GIF 서버에 연결하지 못했어요. 네트워크나 브라우저 확장 프로그램을 확인해 주세요.';
+  } catch (error) {
+    if (request === state.gifRequest) {
+      ui.gifStatus.textContent = error instanceof Error && error.message !== 'Failed to fetch'
+        ? error.message
+        : 'GIF 서버에 연결하지 못했어요. 네트워크나 브라우저 확장 프로그램을 확인해 주세요.';
+    }
   }
 }
 function openGifDialog() {
