@@ -2863,3 +2863,53 @@ button:not(:disabled):hover,.icon-button:hover,.header-tool:hover,.secondary-but
  .room-item.active .room-title,.room-item.active .room-subtitle{color:#075b89!important}
  .sidebar-bottom{background:#e3f6ff!important}
 }
+
+
+/* Critical sidebar readability patch: never use pale text on pale room cards */
+.room-list .room-item,
+.room-list .room-item *,
+.room-row .room-item,
+.room-row .room-item *{
+  color:#123d5b!important;
+  text-shadow:none!important;
+  -webkit-text-fill-color:currentColor;
+}
+.room-list .room-item .room-title,
+.room-row .room-item .room-title{
+  color:#103b5b!important;font-weight:700!important;opacity:1!important;
+}
+.room-list .room-item .room-subtitle,
+.room-list .room-item small,
+.room-list .room-item .room-meta,
+.room-row .room-item .room-subtitle,
+.room-row .room-item small,
+.room-row .room-item .room-meta{
+  color:#4b7188!important;opacity:1!important;
+}
+.room-list .room-item .room-arrow,
+.room-list .room-item .room-favorite-button,
+.room-row .room-item .room-arrow,
+.room-row .room-item .room-favorite-button{
+  color:#3b7899!important;
+}
+.room-list .room-item.active,
+.room-list .room-item:hover,
+.room-row .room-item.active,
+.room-row .room-item:hover{
+  background:linear-gradient(110deg,#c9efff,#e6f8ff)!important;
+}
+.room-list .room-item.active *,
+.room-list .room-item:hover *,
+.room-row .room-item.active *,
+.room-row .room-item:hover *{
+  color:#103b5b!important;
+  -webkit-text-fill-color:currentColor;
+}
+.room-list .room-item .room-number,
+.room-list .room-item.active .room-number,
+.room-row .room-item .room-number{
+  color:#0876a8!important;background:#d5f3ff!important;border:1px solid #a9e0f3!important;
+}
+.sidebar .room-list{background:transparent}
+.sidebar .room-heading,.sidebar .brand,.sidebar .brand-name{color:#103b5b!important}
+.sidebar .sidebar-user-panel,.sidebar .sidebar-user-panel *{color:#103b5b}
