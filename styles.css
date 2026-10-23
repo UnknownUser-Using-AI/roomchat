@@ -4664,3 +4664,39 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
     word-break: keep-all !important;
   }
 }
+
+
+/* Mobile typography scale: compact, readable text on narrow screens. */
+@media screen and (max-width: 760px) {
+  body, button, input, textarea, select { font-size: 14px; }
+  .message-row { padding: 8px 7px !important; column-gap: 8px !important; row-gap: 4px !important; }
+  .message-row > .message-avatar, .message-row > .avatar-wrap {
+    flex-basis: 32px !important; width: 32px !important; min-width: 32px !important; height: 32px !important;
+  }
+  .message-row > .message-body {
+    flex-basis: calc(100% - 42px) !important; width: calc(100% - 42px) !important; max-width: calc(100% - 42px) !important;
+  }
+  .message-row .message-author, .message-row .message-nickname, .message-row .styled-name {
+    font-size: 13px !important; line-height: 1.35 !important;
+  }
+  .message-row .message-content, .message-row .message-reply-quote {
+    font-size: 14px !important; line-height: 1.48 !important;
+  }
+  .message-row .message-meta, .message-row .message-meta time { font-size: 11px !important; line-height: 1.35 !important; }
+  .current-room-name { font-size: 14px !important; }
+  .top-actions .header-tool, .topbar .header-tool, .friends-button, .admin-panel-button, .notification-button, .secondary-button {
+    font-size: 12px !important; padding: 7px 9px !important;
+  }
+  .composer textarea, .composer input, #message-input { font-size: 14px !important; line-height: 1.4 !important; }
+  .composer .attach-button, .composer .gif-button { font-size: 12px !important; }
+  .composer .send-button { font-size: 12px !important; padding-inline: 10px !important; }
+  #nickname-dialog .nickname-modal-card { padding: 20px 16px !important; }
+  #nickname-dialog .nickname-modal-card h2 { font-size: clamp(19px, 5.2vw, 22px) !important; }
+  #nickname-dialog .text-field, #nickname-dialog .primary-button, #nickname-dialog .secondary-button { font-size: 14px !important; }
+  .room-unlimited-choice > span { font-size: 13px !important; line-height: 1.4 !important; }
+}
+@media screen and (max-width: 390px) {
+  .message-row .message-content, .message-row .message-reply-quote { font-size: 13px !important; }
+  .message-row .message-author, .message-row .message-nickname, .message-row .styled-name { font-size: 12px !important; }
+  .top-actions .header-tool, .topbar .header-tool { font-size: 11px !important; padding-inline: 7px !important; }
+}
