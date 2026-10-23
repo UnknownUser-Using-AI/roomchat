@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261023-ai-chat-v1" />
+  <link rel="stylesheet" href="./styles.css?v=20261023-remove-ai-chat-v1" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -65,7 +65,7 @@
             <span aria-hidden="true">♟</span><span id="presence-count">—</span>
           </button>
           <button id="admin-panel-button" class="header-tool admin-panel-button" type="button" aria-haspopup="dialog" title="관리자 운영 패널" hidden>운영</button>
-          <button id="ai-chat-button" class="header-tool ai-chat-button" type="button" aria-haspopup="dialog" title="AI와 대화">✦ <span>AI 대화</span></button>
+
           <button id="friends-button" class="header-tool friends-button" type="button" aria-haspopup="dialog" title="친구와 DM" hidden>
             <svg class="friends-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="friends-label">친구</span><span id="friends-badge" class="friends-badge" hidden>0</span>
           </button>
@@ -409,23 +409,6 @@
       <section id="admin-panel-content" class="admin-panel-content" role="tabpanel" aria-live="polite"></section>
     </section>
   </dialog>
-
-  <dialog id="ai-chat-dialog" class="modal ai-chat-dialog">
-    <section class="modal-card ai-chat-card" aria-label="AI 대화">
-      <header class="ai-chat-header">
-        <div><span class="eyebrow">ROOMCHAT AI</span><h2>AI 대화</h2><p>질문하고, 아이디어를 정리하고, 이어서 대화해 보세요.</p></div>
-        <button id="ai-chat-close" class="secondary-button ai-chat-close" type="button" aria-label="AI 대화 닫기">✕</button>
-      </header>
-      <div id="ai-chat-messages" class="ai-chat-messages" aria-live="polite">
-        <div class="ai-chat-welcome"><span class="ai-chat-sparkle">✦</span><strong>무엇이든 물어보세요</strong><span>AI가 답변을 준비해 드릴게요.</span></div>
-      </div>
-      <form id="ai-chat-form" class="ai-chat-form">
-        <textarea id="ai-chat-input" class="text-field ai-chat-input" rows="2" maxlength="4000" placeholder="AI에게 메시지 보내기…" aria-label="AI 메시지" required></textarea>
-        <div class="ai-chat-form-footer"><span>AI 답변은 틀릴 수 있으니 중요한 정보는 확인해 주세요.</span><button id="ai-chat-send" class="primary-button" type="submit">보내기 ↑</button></div>
-      </form>
-    </section>
-  </dialog>
-
-  <script type="module" src="./app.js?v=20261023-ai-chat-v1"></script>
+  <script type="module" src="./app.js?v=20261023-remove-ai-chat-v1"></script>
 </body>
 </html>
