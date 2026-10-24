@@ -4968,3 +4968,27 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
   .soundboard-preview-audio { height: 44px !important; min-height: 44px !important; }
   .soundboard-preview #soundboard-insert { width: 100% !important; min-width: 0 !important; }
 }
+
+
+/* Native player for shared sound messages: mobile browsers require direct controls. */
+.message-sound-card {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.message-sound-title {
+  flex: 1 1 140px;
+}
+.message-sound-audio {
+  display: block;
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  margin-top: 3px;
+  accent-color: #176b63;
+}
+@media (max-width: 520px) {
+  .message-sound-card { align-items: center; }
+  .message-sound-title { flex-basis: calc(100% - 52px); }
+  .message-sound-audio { height: 44px; }
+}
