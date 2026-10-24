@@ -84,7 +84,7 @@ function isAllowedRoomSoundUrl(value) {
 const state = {
   nickname: '', loginNickname: '', isVerified: false, isAdmin: false, user: null,
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
-  attachment: null, attachmentUrl: '', notifications: false, toastTimer: 0,
+  attachment: null, attachmentUrl: '', pendingSound: null, soundPreviewNode: null, notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
@@ -1242,8 +1242,6 @@ async function subscribeCurrentRoom(request) {
       else if (payload.new) {
         addMessage(payload.new);
         if (payload.eventType === 'INSERT' && !isOwnMessage(payload.new)) {
-          const soundItem = parseRoomchatSound(payload.new.content);
-          if (soundItem) window.dispatchEvent(new CustomEvent('roomchat:soundboard-play', { detail: soundItem }));
           if (state.notifications) notifyIncoming(payload.new);
         }
       }
@@ -1268,37 +1266,33 @@ async function subscribeCurrentRoom(request) {
   window.clearInterval(state.memberTimer);
   state.kickTimer = window.setInterval(() => checkForKick(room.id, request), 4500);
 }
-window.addEventListener('roomchat:soundboard-send', async (event) => {
+function clearPendingSound() {
+  state.pendingSound = null;
+  state.soundPreviewNode?.remove();
+  state.soundPreviewNode = null;
+  ui.messageInput.placeholder = '메시지를 입력하세요…';
+}
+window.addEventListener('roomchat:soundboard-insert', (event) => {
   const item = event.detail;
-  if (!item || typeof item.title !== 'string' || typeof item.mp3 !== 'string') return;
-  if (!isAllowedRoomSoundUrl(item.mp3)) return;
-  if (!state.room || !state.roomChannel) {
-    showToast('먼저 효과음을 보낼 채팅방에 들어가 주세요.');
-    return;
+  if (!item || typeof item.title !== 'string' || typeof item.mp3 !== 'string' || !isAllowedRoomSoundUrl(item.mp3)) return;
+  state.pendingSound = { title: item.title.slice(0, 120), mp3: item.mp3 };
+  if (!state.soundPreviewNode) {
+    const preview = document.createElement('div');
+    preview.className = 'composer-sound-preview';
+    preview.innerHTML = '<span class="composer-sound-icon" aria-hidden="true">♫</span><span class="composer-sound-copy"><strong></strong><small>효과음이 첨부됨 · 보내기 전까지 나만 볼 수 있어요</small></span>';
+    preview.querySelector('strong').textContent = state.pendingSound.title;
+    const remove = document.createElement('button');
+    remove.type = 'button'; remove.className = 'composer-sound-remove'; remove.textContent = '×'; remove.setAttribute('aria-label', '효과음 첨부 취소');
+    remove.addEventListener('click', clearPendingSound);
+    preview.append(remove);
+    ui.messageForm.before(preview);
+    state.soundPreviewNode = preview;
+  } else {
+    state.soundPreviewNode.querySelector('strong').textContent = state.pendingSound.title;
   }
-  if (!state.nickname) { showNicknameDialog(); return; }
-  // Store a compact, versioned sound card in the normal message table so it
-  // survives reloads and appears in the room history for every participant.
-  const soundContent = '[[roomchat-sound:v1]]' + JSON.stringify({
-    title: item.title.slice(0, 120),
-    mp3: item.mp3
-  });
-  try {
-    const { data, error } = await supabase.rpc('roomchat_post_message', {
-      p_room_id: state.room.id,
-      p_content: soundContent,
-      p_image_path: null,
-      p_guest_session_id: state.user ? null : guestSessionId,
-      p_guest_token: state.user ? null : guestToken,
-    });
-    if (error) throw error;
-    const inserted = normalizeRpcRow(data);
-    if (inserted) addMessage(inserted);
-    showToast('효과음을 채팅 기록에 보냈어요.');
-  } catch (error) {
-    showToast(errorText(error, '효과음을 채팅방에 저장하지 못했어요.'));
-    console.error('RoomChat sound message failed:', error);
-  }
+  ui.messageInput.placeholder = '효과음에 덧붙일 메시지(선택)…';
+  ui.messageInput.focus();
+  showToast('효과음을 입력창에 붙여넣었어요. 보내기를 눌러 공유하세요.');
 });
 window.addEventListener('roomchat:soundboard-stop-send', async () => {
   if (!state.roomChannel) return;
@@ -1680,7 +1674,11 @@ async function sendMessage(event) {
   if (isGuideRoom(state.room)) return showToast('안내 채널에서는 메시지를 보낼 수 없어요.');
   if (!state.nickname) { showNicknameDialog(); return; }
   if (!state.room) return showToast('먼저 채널을 선택해 주세요.');
-  const content = ui.messageInput.value.trim();
+  const typedContent = ui.messageInput.value.trim();
+  const pendingSound = state.pendingSound;
+  const content = pendingSound
+    ? '[[roomchat-sound:v1]]' + JSON.stringify({ title: pendingSound.title, mp3: pendingSound.mp3 })
+    : typedContent;
   const image = state.attachment;
   if (!content && !image) return;
   ui.send.disabled = true;
@@ -1712,6 +1710,7 @@ async function sendMessage(event) {
     const inserted = normalizeRpcRow(data);
     if (inserted) addMessage(inserted);
     ui.messageInput.value = '';
+    clearPendingSound();
     clearReplyTarget();
     ui.messageInput.style.height = 'auto';
     ui.charCount.textContent = '0 / 2000';
