@@ -1,3 +1,9 @@
+function isAllowedSoundUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && (url.hostname === 'myinstants.com' || url.hostname === 'www.myinstants.com') && url.pathname.startsWith('/media/sounds/');
+  } catch { return false; }
+}
 const API_BASE = 'https://losuyalyjcurntylbwgy.supabase.co/functions/v1/myinstants-proxy';
 const SUPABASE_PUBLIC_KEY = 'sb_publishable_VopMfIi4AwCelhTcp_88mg_dh2s6Ael';
 const dialog = document.getElementById('soundboard-dialog');
@@ -185,7 +191,7 @@ volumeInput?.addEventListener('input', () => { if (currentAudio) currentAudio.vo
 window.addEventListener('roomchat:soundboard-play', (event) => {
   const item = event.detail;
   if (!item || typeof item.title !== 'string' || typeof item.mp3 !== 'string') return;
-  if (!/^https:\/\/(www\\.)?myinstants\\.com\/media\/sounds\//i.test(item.mp3)) return;
+  if (!isAllowedSoundUrl(item.mp3)) return;
   playSound(item, true);
 });
 window.addEventListener('roomchat:soundboard-stop', () => stopSound());
