@@ -871,7 +871,7 @@ function renderMessage(message) {
   } else {
     // Keep any caption the sender wrote next to a video. If previews are disabled,
     // retain the original URL text so the message never disappears from the thread.
-    const displayContent = soundItem ? '' : (showYoutubePreview ? stripYouTubeUrls(message.content) : String(message.content || '');
+    const displayContent = soundItem ? '' : (showYoutubePreview ? stripYouTubeUrls(message.content) : String(message.content || ''));
     if (displayContent) {
       const text = document.createElement('p');
       text.className = 'message-content';
