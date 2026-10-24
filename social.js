@@ -68,7 +68,7 @@ export function initSocial(ctx) {
     friendsButton: byId('friends-button'), friendsBadge: byId('friends-badge'),
     profileDialog: byId('profile-dialog'), profileClose: byId('profile-close'), profileBanner: byId('profile-banner'),
     profileAvatar: byId('profile-avatar'), profileStatus: byId('profile-status'), profileName: byId('profile-name'),
-    profileTags: byId('profile-tags'), profileActions: byId('profile-actions'), profileJoined: byId('profile-joined'),
+    profileTags: byId('profile-tags'), profileActions: byId('profile-actions'), profileJoined: byId('profile-joined'), profileLoginNickname: byId('profile-login-nickname'),
     profileRoles: byId('profile-roles'), profileBio: byId('profile-bio'), profileNoteWrap: byId('profile-note-wrap'),
     profileNote: byId('profile-note'), profileNoteState: byId('profile-note-state'),
     styleDialog: byId('style-dialog'), styleClose: byId('style-close'), styleForm: byId('style-form'),
@@ -179,9 +179,9 @@ export function initSocial(ctx) {
     const need = [...new Set((ids || []).filter((id) => id && (force || !profiles.has(id))))].slice(0, 100);
     if (!need.length) return;
     let result = await supabase.from('roomchat_profiles')
-      .select('id,nickname,is_verified,created_at,avatar_path,bio,nick_font,nick_weight,nick_color').in('id', need);
+      .select('id,nickname,login_nickname,is_verified,created_at,avatar_path,bio,nick_font,nick_weight,nick_color').in('id', need);
     // 마이그레이션 전에도 아바타만큼은 계속 보이도록 예전 열만으로 한 번 더 시도합니다.
-    if (result.error) result = await supabase.from('roomchat_profiles').select('id,nickname,is_verified,created_at,avatar_path').in('id', need);
+    if (result.error) result = await supabase.from('roomchat_profiles').select('id,nickname,login_nickname,is_verified,created_at,avatar_path').in('id', need);
     if (result.error) { need.forEach((id) => { if (!profiles.has(id)) profiles.set(id, { id, missing: true }); }); return; }
     const worn = new Map();
     const tagResult = await supabase.from('roomchat_user_tags').select('user_id,position,roomchat_tags(id,name,image_path)').in('user_id', need).order('position');
@@ -960,6 +960,7 @@ export function initSocial(ctx) {
     el.profileName.style.cssText = '';
     styleNode(el.profileName, profile, 'name');
     el.profileTags.replaceChildren(...(profile.tags || []).map(tagPill));
+    if (el.profileLoginNickname) el.profileLoginNickname.textContent = profile.login_nickname || '미설정';
     el.profileJoined.textContent = formatDate(profile.created_at);
     const roles = [];
     if (profile.is_verified) roles.push(['[인증됨] 관리자', 'role-admin']);
