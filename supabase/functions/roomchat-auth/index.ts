@@ -4,6 +4,7 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 const allowedOrigins = new Set([
+  "https://xlg77.github.io",
   "https://unknownuser-using-ai.github.io",
   "http://localhost:8080",
   "http://127.0.0.1:8080",
