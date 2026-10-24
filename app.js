@@ -77,6 +77,10 @@ function sessionValue(key, makeValue) {
 }
 const guestSessionId = sessionValue(GUEST_ID_KEY, () => crypto.randomUUID());
 const guestToken = sessionValue(GUEST_TOKEN_KEY, () => `${crypto.randomUUID()}${crypto.randomUUID()}`.replaceAll('-', ''));
+function isAllowedRoomSoundUrl(value) {
+  try { const url = new URL(value); return url.protocol === 'https:' && (url.hostname === 'myinstants.com' || url.hostname === 'www.myinstants.com') && url.pathname.startsWith('/media/sounds/'); }
+  catch { return false; }
+}
 const state = {
   nickname: '', loginNickname: '', isVerified: false, isAdmin: false, user: null,
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
@@ -1196,7 +1200,7 @@ async function subscribeCurrentRoom(request) {
     .on('broadcast', { event: 'roomchat_sound' }, ({ payload }) => {
       if (request !== state.roomRequest || !payload || payload.sender === (state.user?.id || `guest:${guestSessionId}`)) return;
       if (typeof payload.title !== 'string' || typeof payload.mp3 !== 'string') return;
-      if (!/^https:\/\/(www\.)?myinstants\.com\/media\/sounds\//i.test(payload.mp3)) return;
+      if (!isAllowedRoomSoundUrl(payload.mp3)) return;
       window.dispatchEvent(new CustomEvent('roomchat:soundboard-play', { detail: { title: payload.title.slice(0, 120), mp3: payload.mp3, url: 'https://www.myinstants.com/' } }));
       showToast((payload.nickname || '누군가') + '님이 효과음을 재생했어요: ' + payload.title.slice(0, 70));
     })
@@ -1235,7 +1239,7 @@ async function subscribeCurrentRoom(request) {
 window.addEventListener('roomchat:soundboard-send', async (event) => {
   const item = event.detail;
   if (!item || typeof item.title !== 'string' || typeof item.mp3 !== 'string') return;
-  if (!/^https:\/\/(www\.)?myinstants\.com\/media\/sounds\//i.test(item.mp3)) return;
+  if (!isAllowedRoomSoundUrl(item.mp3)) return;
   if (!state.room || !state.roomChannel) {
     showToast('먼저 효과음을 보낼 채팅방에 들어가 주세요.');
     return;
