@@ -1,4 +1,5 @@
-const API_BASE = 'https://myinstants-api.vercel.app';
+const API_BASE = 'https://losuyalyjcurntylbwgy.supabase.co/functions/v1/myinstants-proxy';
+const SUPABASE_PUBLIC_KEY = 'sb_publishable_VopMfIi4AwCelhTcp_88mg_dh2s6Ael';
 const dialog = document.getElementById('soundboard-dialog');
 const openButton = document.getElementById('soundboard-button');
 const closeButton = document.getElementById('soundboard-close');
@@ -32,12 +33,13 @@ const normalizeItems = (payload) => {
   })).filter((item) => item.mp3.startsWith('https://www.myinstants.com/media/sounds/') || item.mp3.startsWith('https://myinstants.com/media/sounds/'));
 };
 async function fetchSounds(endpoint, params = {}) {
-  const url = new URL(API_BASE + endpoint);
+  const url = new URL(API_BASE);
+  url.searchParams.set('endpoint', endpoint.replace(/^\\//, ''));
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
   const key = url.toString();
   if (cache.has(key)) return cache.get(key);
-  const response = await fetch(key, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(12000) });
-  if (!response.ok) throw new Error('API 응답 오류 (' + response.status + ')');
+  const response = await fetch(key, { headers: { Accept: 'application/json', apikey: SUPABASE_PUBLIC_KEY }, signal: AbortSignal.timeout(12000) });
+  if (!response.ok) { let detail = ''; try { const body = await response.clone().json(); detail = body?.message || body?.detail || ''; } catch {} throw new Error('사운드 API 오류 (' + response.status + ')' + (detail ? ': ' + detail : '')); }
   const payload = await response.json();
   if (payload?.status && Number(payload.status) >= 400) throw new Error(payload.message || '사운드를 불러오지 못했어요.');
   const items = normalizeItems(payload);
