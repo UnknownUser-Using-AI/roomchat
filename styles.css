@@ -4845,3 +4845,126 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
 
 /* Keep the preview player reachable instead of clipping it inside the modal. */
 .soundboard-card { overflow-x:hidden !important; overflow-y:auto !important; }
+
+
+/* Soundboard layout repair: keep close, results, and preview visible together. */
+.soundboard-modal {
+  width: min(900px, calc(100% - 28px)) !important;
+  height: auto !important;
+  max-height: min(90dvh, 820px) !important;
+  overflow: hidden !important;
+}
+.soundboard-card {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  max-height: min(90dvh, 820px) !important;
+  height: auto !important;
+  gap: 12px !important;
+  padding: clamp(16px, 2.2vw, 26px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.soundboard-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 16px !important;
+}
+.soundboard-header > button,
+.soundboard-header .primary-button,
+.soundboard-header .secondary-button {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 88px !important;
+  max-width: 120px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 18px !important;
+  justify-content: center !important;
+  align-self: start !important;
+  white-space: nowrap !important;
+}
+.soundboard-results {
+  flex: 0 1 auto !important;
+  min-height: 90px !important;
+  max-height: clamp(120px, 25dvh, 230px) !important;
+  overflow: auto !important;
+  scrollbar-gutter: stable;
+}
+.soundboard-preview {
+  position: relative !important;
+  z-index: 1 !important;
+  flex: 0 0 auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px 14px !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border: 1px solid #b9c9ff !important;
+  border-radius: 16px !important;
+  background: #182139 !important;
+  color: #f4f7ff !important;
+  box-shadow: 0 8px 22px rgba(16, 27, 52, .14) !important;
+}
+.soundboard-preview-copy { min-width: 0 !important; }
+.soundboard-preview-label { color: #a9bcff !important; }
+.soundboard-preview-copy strong {
+  color: #f4f7ff !important;
+  font-size: clamp(16px, 1.7vw, 21px) !important;
+  overflow-wrap: anywhere !important;
+}
+.soundboard-preview-copy span:last-child {
+  color: #c0cbe2 !important;
+  line-height: 1.45 !important;
+}
+.soundboard-preview-audio {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  margin: 0 !important;
+}
+.soundboard-preview #soundboard-insert {
+  align-self: center !important;
+  width: auto !important;
+  min-width: 140px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+.soundboard-footer { flex: 0 0 auto !important; }
+@media (max-width: 600px) {
+  .soundboard-modal {
+    width: calc(100% - 16px) !important;
+    max-height: calc(var(--rc-visual-height, 100dvh) - 16px) !important;
+  }
+  .soundboard-card {
+    max-height: calc(var(--rc-visual-height, 100dvh) - 16px) !important;
+    padding: 14px !important;
+    gap: 10px !important;
+  }
+  .soundboard-header { grid-template-columns: minmax(0, 1fr) auto !important; gap: 8px !important; }
+  .soundboard-header > button,
+  .soundboard-header .primary-button,
+  .soundboard-header .secondary-button {
+    min-width: 68px !important;
+    max-width: 82px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+  }
+  .soundboard-results { max-height: 20dvh !important; min-height: 72px !important; }
+  .soundboard-preview {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 13px !important;
+    gap: 9px !important;
+  }
+  .soundboard-preview-audio { height: 44px !important; min-height: 44px !important; }
+  .soundboard-preview #soundboard-insert { width: 100% !important; min-width: 0 !important; }
+}
