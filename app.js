@@ -1,7 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261018-giphy';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261024-dual-nickname-v1';
-import { ensureFont, fontStack } from './fonts.js?v=20261020-social';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261024-update-refresh-v2';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261024-update-refresh-v2';
+import { ensureFont, fontStack } from './fonts.js?v=20261024-update-refresh-v2';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   realtime: { params: { eventsPerSecond: 8 } },
