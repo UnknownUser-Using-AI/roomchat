@@ -205,6 +205,28 @@
       </div>
       <button id="account-submit-button" class="primary-button" type="submit">계정 만들기 <span aria-hidden="true">↗</span></button>
       <button id="account-cancel-button" class="secondary-button account-open" type="button">돌아가기</button>
+      <button id="admin-recovery-open" class="text-button" type="button" hidden>관리자 비밀번호 재설정</button>
+    </form>
+  </dialog>
+
+  <dialog id="admin-recovery-dialog" class="modal">
+    <form id="admin-recovery-form" class="modal-card">
+      <span class="modal-icon">🔐</span>
+      <span class="eyebrow">ACCOUNT RECOVERY</span>
+      <h2>관리자 비밀번호 재설정</h2>
+      <p>일회용 복구 코드로 기존 관리자 계정의 비밀번호를 바꿉니다. 계정과 채팅 기록은 유지됩니다.</p>
+      <label class="field-label" for="admin-recovery-account">복구할 계정</label>
+      <select id="admin-recovery-account" class="text-field" required>
+        <option value="천사">천사 · 현재 닉네임: 𝕬𝖗𝖈𝖍 𝕬𝖓𝖌𝖊𝖑</option>
+        <option value="크리스탈">크리스탈 · 현재 닉네임: 느긋한 시사</option>
+      </select>
+      <label class="field-label" for="admin-recovery-code">일회용 복구 코드</label>
+      <input id="admin-recovery-code" class="text-field" type="password" inputmode="text" autocomplete="off" minlength="64" maxlength="64" placeholder="64자리 복구 코드" required />
+      <label class="field-label" for="admin-recovery-password">새 비밀번호</label>
+      <input id="admin-recovery-password" class="text-field" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="8자 이상" required />
+      <span class="safety-caption">복구 코드는 계정별로 한 번만 사용할 수 있으며, 다른 사람과 공유하지 마세요.</span>
+      <button id="admin-recovery-submit" class="primary-button" type="submit">비밀번호 재설정</button>
+      <button id="admin-recovery-cancel" class="secondary-button" type="button">취소</button>
     </form>
   </dialog>
 
