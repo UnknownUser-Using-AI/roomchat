@@ -936,7 +936,11 @@ export function initSocial(ctx) {
       box.append(hint);
       return;
     }
-    if (id === me()) { add('프로필 꾸미기', 'primary', () => { el.profileDialog.close(); openStyleDialog(); }); return; }
+    if (id === me()) {
+      add('디스플레이 닉네임 변경', 'primary', () => { el.profileDialog.close(); ctx.showNicknameDialog?.(); });
+      add('프로필 꾸미기', '', () => { el.profileDialog.close(); openStyleDialog(); });
+      return;
+    }
     const status = relation(id);
     if (status === 'none') add('친구 추가', 'primary', () => requestFriend(id));
     if (status === 'outgoing') add('요청 취소', '', () => removeFriend(id));
