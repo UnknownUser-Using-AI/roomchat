@@ -4732,3 +4732,45 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
 .soundboard-footer a{color:#176b63}
 .soundboard-footer .secondary-button{height:32px;font-size:10px}
 @media(max-width:520px){.soundboard-modal{width:calc(100% - 16px);max-height:calc(var(--rc-visual-height,100dvh) - 24px)}.soundboard-card{max-height:calc(var(--rc-visual-height,100dvh) - 24px);padding:16px;gap:11px}.soundboard-header h2{font-size:21px}.soundboard-results{grid-template-columns:minmax(0,1fr);gap:6px}.soundboard-item{padding:9px}.soundboard-volume input{width:72px}.soundboard-tab{padding:7px 8px}.soundboard-footer{font-size:9px}}
+
+
+/* Persisted RoomChat sound messages */
+.message-sound-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 440px);
+  min-width: 0;
+  margin: 8px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border, #3a4050);
+  border-radius: 14px;
+  background: var(--surface-raised, rgba(127, 140, 170, .10));
+}
+.message-sound-icon {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--accent-soft, rgba(100, 130, 255, .16));
+  color: var(--accent, #8ea7ff);
+  font-size: 22px;
+}
+.message-sound-title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: .95rem;
+}
+.message-sound-play {
+  flex: 0 0 auto;
+  min-height: 36px;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .message-sound-card { gap: 8px; padding: 10px; }
+  .message-sound-icon { flex-basis: 32px; width: 32px; height: 32px; }
+  .message-sound-play { padding-inline: 10px; }
+}
