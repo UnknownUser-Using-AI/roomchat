@@ -18,6 +18,7 @@ const stopButton = document.getElementById('soundboard-stop');
 const previewEl = document.getElementById('soundboard-preview');
 const previewTitleEl = document.getElementById('soundboard-preview-title');
 const insertButton = document.getElementById('soundboard-insert');
+const previewAudio = document.getElementById('soundboard-preview-audio');
 let selectedItem = null;
 const tabButtons = [...document.querySelectorAll('[data-sound-tab]')];
 let currentTab = 'popular';
@@ -78,15 +79,20 @@ function renderItems(items) {
     play.type = 'button'; play.className = 'soundboard-item'; play.style.cssText = 'padding:0;border:0;background:transparent;flex:1;min-width:0';
     play.setAttribute('aria-label', '재생: ' + item.title);
     play.innerHTML = '<span class="soundboard-play" aria-hidden="true">▶</span><span class="soundboard-item-copy"><span class="soundboard-item-title">' + escapeHtml(item.title) + '</span><span class="soundboard-item-source">MyInstants · 재생</span></span>';
-    play.addEventListener('click', () => {
+    const selectForPreview = () => {
       selectedItem = item;
       if (previewEl) previewEl.hidden = false;
       if (previewTitleEl) previewTitleEl.textContent = item.title;
       if (insertButton) insertButton.disabled = false;
-      playSound(item);
       resultsEl.querySelectorAll('.soundboard-item.is-selected').forEach((node) => node.classList.remove('is-selected'));
       card.classList.add('is-selected');
+      playSound(item);
+    };
+    // Desktop: hovering previews the sound. Touch: tapping selects and previews it.
+    play.addEventListener('pointerenter', (event) => {
+      if (event.pointerType === 'mouse') selectForPreview();
     });
+    play.addEventListener('click', selectForPreview);
     const favorite = document.createElement('button');
     favorite.type = 'button'; favorite.className = 'soundboard-favorite' + (favorites.some((fav) => fav.id === item.id) ? ' is-favorite' : '');
     favorite.textContent = favorites.some((fav) => fav.id === item.id) ? '★' : '☆';
@@ -163,18 +169,27 @@ async function searchSounds(query) {
 function playSound(item, remote = false) {
   if (!item?.mp3) return;
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
-  const audio = new Audio(item.mp3);
-  audio.preload = 'none';
-  audio.volume = Math.max(0, Math.min(1, Number(volumeInput.value) / 100));
+  // Local preview uses the visible audio player so the user can seek/pause/replay.
+  // Remote sound messages use a separate Audio object and never autoplay on receipt.
+  const audio = !remote && previewAudio ? previewAudio : new Audio(item.mp3);
+  if (!remote && previewAudio) {
+    previewAudio.src = item.mp3;
+    previewAudio.volume = Math.max(0, Math.min(1, Number(volumeInput.value) / 100));
+    previewAudio.load();
+  } else {
+    audio.preload = 'none';
+    audio.volume = Math.max(0, Math.min(1, Number(volumeInput.value) / 100));
+  }
   currentAudio = audio;
   const playPromise = audio.play();
-  if (playPromise?.catch) playPromise.catch(() => setStatus('재생할 수 없어요. 브라우저의 오디오 재생 설정을 확인해 주세요.'));
-  setStatus((remote ? '방에서 재생 중: ' : '재생 중: ') + item.title);
+  if (playPromise?.catch) playPromise.catch(() => setStatus('미리 듣기를 시작할 수 없어요. 재생 버튼을 눌러 다시 시도해 주세요.'));
+  setStatus((remote ? '방에서 재생 중: ' : '미리 듣기: ') + item.title);
   audio.addEventListener('ended', () => { if (currentAudio === audio) { currentAudio = null; setStatus('재생이 끝났어요.'); } }, { once: true });
   audio.addEventListener('error', () => { if (currentAudio === audio) { currentAudio = null; setStatus('이 사운드는 재생할 수 없어요. 다른 사운드를 선택해 주세요.'); } }, { once: true });
 }
 function stopSound() {
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (previewAudio) { previewAudio.pause(); previewAudio.currentTime = 0; }
   setStatus('재생을 중지했어요.');
 }
 function toggleFavorite(item) {
@@ -201,7 +216,7 @@ insertButton?.addEventListener('click', () => {
   setStatus('채팅 입력창에 추가했어요. 보내기 버튼을 누르면 방에 공유돼요.');
   dialog?.close();
 });
-volumeInput?.addEventListener('input', () => { if (currentAudio) currentAudio.volume = Number(volumeInput.value) / 100; });
+volumeInput?.addEventListener('input', () => { if (currentAudio) currentAudio.volume = Number(volumeInput.value) / 100; if (previewAudio) previewAudio.volume = Number(volumeInput.value) / 100; });
 
 window.addEventListener('roomchat:soundboard-play', (event) => {
   const item = event.detail;
