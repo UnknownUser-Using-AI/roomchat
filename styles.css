@@ -4791,3 +4791,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
 .composer-sound-copy small { color:var(--muted,#9ba4b5); font-size:.78rem; }
 .composer-sound-remove { border:0; background:transparent; color:inherit; font-size:22px; cursor:pointer; }
 @media(max-width:520px) { .soundboard-preview { align-items:stretch; flex-direction:column; } .soundboard-preview .primary-button { width:100%; } .composer-sound-preview { gap:8px; padding:8px 10px; } }
+
+
+/* Inline preview player shown after hovering/tapping a sound. */
+.soundboard-preview { flex-wrap:wrap; align-items:center; }
+.soundboard-preview-copy { flex:1 1 180px; }
+.soundboard-preview-audio { display:block; flex:1 1 100%; width:100%; min-width:0; height:40px; margin:2px 0 4px; }
+.soundboard-preview #soundboard-insert { flex:0 0 auto; }
+@media(max-width:520px) {
+  .soundboard-preview { gap:10px; }
+  .soundboard-preview-audio { width:100%; }
+  .soundboard-preview #soundboard-insert { width:100%; }
+}
