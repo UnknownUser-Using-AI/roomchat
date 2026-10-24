@@ -4842,3 +4842,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
   .soundboard-preview #soundboard-insert { width:100% !important; white-space:normal; }
   .soundboard-footer { flex-wrap:wrap; }
 }
+
+/* Keep the preview player reachable instead of clipping it inside the modal. */
+.soundboard-card { overflow-x:hidden !important; overflow-y:auto !important; }
