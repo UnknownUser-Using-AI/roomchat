@@ -1193,6 +1193,17 @@ async function subscribeCurrentRoom(request) {
       if (request !== state.roomRequest || payload?.sender === (state.user?.id || `guest:${guestSessionId}`)) return;
       showRemoteTyping(payload?.nickname || '누군가');
     })
+    .on('broadcast', { event: 'roomchat_sound' }, ({ payload }) => {
+      if (request !== state.roomRequest || !payload || payload.sender === (state.user?.id || `guest:${guestSessionId}`)) return;
+      if (typeof payload.title !== 'string' || typeof payload.mp3 !== 'string') return;
+      if (!/^https:\/\/(www\.)?myinstants\.com\/media\/sounds\//i.test(payload.mp3)) return;
+      window.dispatchEvent(new CustomEvent('roomchat:soundboard-play', { detail: { title: payload.title.slice(0, 120), mp3: payload.mp3, url: 'https://www.myinstants.com/' } }));
+      showToast((payload.nickname || '누군가') + '님이 효과음을 재생했어요: ' + payload.title.slice(0, 70));
+    })
+    .on('broadcast', { event: 'roomchat_sound_stop' }, ({ payload }) => {
+      if (request !== state.roomRequest || payload?.sender === (state.user?.id || `guest:${guestSessionId}`)) return;
+      window.dispatchEvent(new CustomEvent('roomchat:soundboard-stop'));
+    })
     .on('presence', { event: 'sync' }, () => refreshMembers(room.id))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `room_id=eq.${room.id}` }, (payload) => {
       if (payload.eventType === 'DELETE') removeMessage(payload.old?.id);
@@ -1221,6 +1232,34 @@ async function subscribeCurrentRoom(request) {
   window.clearInterval(state.memberTimer);
   state.kickTimer = window.setInterval(() => checkForKick(room.id, request), 4500);
 }
+window.addEventListener('roomchat:soundboard-send', async (event) => {
+  const item = event.detail;
+  if (!item || typeof item.title !== 'string' || typeof item.mp3 !== 'string') return;
+  if (!/^https:\/\/(www\.)?myinstants\.com\/media\/sounds\//i.test(item.mp3)) return;
+  if (!state.room || !state.roomChannel) {
+    showToast('먼저 효과음을 보낼 채팅방에 들어가 주세요.');
+    return;
+  }
+  const result = await state.roomChannel.send({
+    type: 'broadcast',
+    event: 'roomchat_sound',
+    payload: {
+      sender: state.user?.id || `guest:${guestSessionId}`,
+      nickname: String(state.nickname || '익명').slice(0, 40),
+      title: item.title.slice(0, 120),
+      mp3: item.mp3
+    }
+  });
+  if (result !== 'ok') showToast('방에 효과음을 전달하지 못했어요. 연결 상태를 확인해 주세요.');
+});
+window.addEventListener('roomchat:soundboard-stop-send', async () => {
+  if (!state.roomChannel) return;
+  await state.roomChannel.send({
+    type: 'broadcast', event: 'roomchat_sound_stop',
+    payload: { sender: state.user?.id || `guest:${guestSessionId}` }
+  });
+});
+
 async function checkForKick(roomId, request) {
   if (!state.nickname || !state.room || state.room.id !== roomId || request !== state.roomRequest) return;
   const { data, error } = await supabase.rpc('roomchat_is_kicked', {
