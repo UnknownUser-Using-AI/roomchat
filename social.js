@@ -285,6 +285,10 @@ export function initSocial(ctx) {
   }
   function applyProfileStyles() {
     closeAllTagPopovers();
+    document.querySelectorAll('.styled-name[data-style-user]').forEach((node) => {
+      const profile = profiles.get(node.dataset.styleUser);
+      if (profile?.nickname) node.textContent = profile.nickname;
+    });
     document.querySelectorAll('[data-style-user]').forEach((node) => styleNode(node, profiles.get(node.dataset.styleUser), node.dataset.styleKind));
     document.querySelectorAll('.tag-slot[data-user-id]').forEach((slot) => {
       const tags = profiles.get(slot.dataset.userId)?.tags || [];
