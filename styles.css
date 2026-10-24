@@ -4774,3 +4774,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
   .message-sound-icon { flex-basis: 32px; width: 32px; height: 32px; }
   .message-sound-play { padding-inline: 10px; }
 }
+
+
+/* Sound preview -> explicit chat insertion flow */
+.soundboard-preview { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:12px 0; padding:14px; border:1px solid var(--border,#3a4050); border-radius:14px; background:var(--surface-raised,rgba(127,140,170,.10)); }
+.soundboard-preview[hidden] { display:none !important; }
+.soundboard-preview-copy { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.soundboard-preview-copy strong { overflow-wrap:anywhere; }
+.soundboard-preview-copy span:last-child { color:var(--muted,#9ba4b5); font-size:.82rem; }
+.soundboard-preview-label { color:var(--accent,#8ea7ff); font-size:.75rem; font-weight:700; }
+.soundboard-item.is-selected { outline:2px solid var(--accent,#8ea7ff); outline-offset:1px; }
+.composer-sound-preview { display:flex; align-items:center; gap:10px; min-width:0; margin:0 0 8px; padding:10px 12px; border:1px solid var(--border,#3a4050); border-radius:12px; background:var(--surface-raised,rgba(127,140,170,.10)); }
+.composer-sound-icon { display:grid; place-items:center; flex:0 0 32px; height:32px; border-radius:9px; background:var(--accent-soft,rgba(100,130,255,.16)); font-size:20px; }
+.composer-sound-copy { display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
+.composer-sound-copy strong { overflow-wrap:anywhere; }
+.composer-sound-copy small { color:var(--muted,#9ba4b5); font-size:.78rem; }
+.composer-sound-remove { border:0; background:transparent; color:inherit; font-size:22px; cursor:pointer; }
+@media(max-width:520px) { .soundboard-preview { align-items:stretch; flex-direction:column; } .soundboard-preview .primary-button { width:100%; } .composer-sound-preview { gap:8px; padding:8px 10px; } }
