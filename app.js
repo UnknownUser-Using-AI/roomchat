@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261018-giphy';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261023-dm-gif-mobile-v3';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261024-dual-nickname-v1';
 import { ensureFont, fontStack } from './fonts.js?v=20261020-social';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -1460,8 +1460,8 @@ function setAccountMode(mode) {
   }
   ui.accountTitle.textContent = mode === 'register' ? '계정 만들기' : '로그인';
   ui.accountDescription.textContent = mode === 'register'
-    ? '닉네임과 비밀번호로 간편하게 계정을 만들 수 있어요. 이메일은 필요하지 않아요.'
-    : '등록한 닉네임과 비밀번호로 로그인하세요.';
+    ? '진짜 닉네임과 비밀번호로 계정을 만들어요. 디스플레이 닉네임은 나중에 바꿀 수 있어요.'
+    : '진짜 닉네임과 비밀번호로 로그인하세요.';
   ui.accountSubmit.innerHTML = `${mode === 'register' ? '계정 만들기' : '로그인'} <span aria-hidden="true">↗</span>`;
   ui.accountPassword.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
   updateAdminCodeVisibility();
@@ -1480,6 +1480,8 @@ function updateAdminCodeVisibility() {
   else if (!required) ui.adminCode.value = '';
 }
 function showNicknameDialog() {
+  const nicknameFieldLabel = $('#nickname-input-label');
+  if (nicknameFieldLabel) nicknameFieldLabel.textContent = state.user ? '디스플레이 닉네임' : '게스트 닉네임';
   ui.nicknameEyebrow.textContent = state.user ? 'DISPLAY NICKNAME' : 'GUEST MODE';
   ui.nicknameTitle.innerHTML = state.user ? '디스플레이 닉네임을<br />변경할까요?' : '어떤 닉네임으로<br />참여할까요?';
   ui.nicknameDescription.textContent = state.user
