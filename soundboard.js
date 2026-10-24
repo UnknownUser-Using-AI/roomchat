@@ -104,7 +104,7 @@ async function loadTab(tab = currentTab) {
   } catch (error) {
     if (thisRequest !== requestId) return;
     renderItems([]);
-    setStatus('MyInstants API에 연결할 수 없어요. 아래 링크에서 사운드를 직접 찾아볼 수 있어요.');
+    setStatus('사운드 API 오류: ' + (error?.message || '알 수 없는 오류') + ' · 직접 검색 링크도 사용할 수 있어요.');
     const link = document.createElement('a');
     link.href = 'https://www.myinstants.com/en/';
     link.target = '_blank';
@@ -131,7 +131,7 @@ async function searchSounds(query) {
   } catch (error) {
     if (thisRequest !== requestId) return;
     renderItems([]);
-    setStatus('검색 연결에 실패했어요. MyInstants에서 직접 검색할 수 있어요.');
+    setStatus('검색 API 오류: ' + (error?.message || '알 수 없는 오류') + ' · MyInstants 직접 검색을 이용해 주세요.');
     const link = document.createElement('a');
     link.href = 'https://www.myinstants.com/en/search/?name=' + encodeURIComponent(trimmed);
     link.target = '_blank';
