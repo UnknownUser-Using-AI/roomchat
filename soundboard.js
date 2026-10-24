@@ -23,7 +23,7 @@ const setFavorites = (value) => {
   try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(value)); } catch {}
 };
 const normalizeItems = (payload) => {
-  const data = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+  const data = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.results) ? payload.results : Array.isArray(payload) ? payload : [];
   return data.map((item) => ({
     id: String(item.id || item.mp3 || item.url || item.title || Math.random()),
     title: String(item.title || item.name || '이름 없는 사운드'),
@@ -102,7 +102,7 @@ async function loadTab(tab = currentTab) {
   } catch (error) {
     if (thisRequest !== requestId) return;
     renderItems([]);
-    setStatus('MyInstants API에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    setStatus('MyInstants API 연결에 실패했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.');
     console.warn('RoomChat soundboard:', error);
   }
 }
@@ -122,7 +122,7 @@ async function searchSounds(query) {
   } catch (error) {
     if (thisRequest !== requestId) return;
     renderItems([]);
-    setStatus('검색에 실패했어요. API 연결 상태를 확인해 주세요.');
+    setStatus('검색에 실패했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.');
     console.warn('RoomChat soundboard search:', error);
   }
 }
