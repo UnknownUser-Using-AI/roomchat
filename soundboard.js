@@ -15,6 +15,10 @@ const resultsEl = document.getElementById('soundboard-results');
 const statusEl = document.getElementById('soundboard-status');
 const volumeInput = document.getElementById('soundboard-volume');
 const stopButton = document.getElementById('soundboard-stop');
+const previewEl = document.getElementById('soundboard-preview');
+const previewTitleEl = document.getElementById('soundboard-preview-title');
+const insertButton = document.getElementById('soundboard-insert');
+let selectedItem = null;
 const tabButtons = [...document.querySelectorAll('[data-sound-tab]')];
 let currentTab = 'popular';
 let currentItems = [];
@@ -75,8 +79,13 @@ function renderItems(items) {
     play.setAttribute('aria-label', '재생: ' + item.title);
     play.innerHTML = '<span class="soundboard-play" aria-hidden="true">▶</span><span class="soundboard-item-copy"><span class="soundboard-item-title">' + escapeHtml(item.title) + '</span><span class="soundboard-item-source">MyInstants · 재생</span></span>';
     play.addEventListener('click', () => {
+      selectedItem = item;
+      if (previewEl) previewEl.hidden = false;
+      if (previewTitleEl) previewTitleEl.textContent = item.title;
+      if (insertButton) insertButton.disabled = false;
       playSound(item);
-      window.dispatchEvent(new CustomEvent('roomchat:soundboard-send', { detail: { title: item.title, mp3: item.mp3, url: item.url } }));
+      resultsEl.querySelectorAll('.soundboard-item.is-selected').forEach((node) => node.classList.remove('is-selected'));
+      card.classList.add('is-selected');
     });
     const favorite = document.createElement('button');
     favorite.type = 'button'; favorite.className = 'soundboard-favorite' + (favorites.some((fav) => fav.id === item.id) ? ' is-favorite' : '');
@@ -186,6 +195,12 @@ dialog?.addEventListener('close', stopSound);
 searchForm?.addEventListener('submit', (event) => { event.preventDefault(); searchSounds(queryInput.value); });
 tabButtons.forEach((button) => button.addEventListener('click', () => loadTab(button.dataset.soundTab)));
 stopButton?.addEventListener('click', stopSound);
+insertButton?.addEventListener('click', () => {
+  if (!selectedItem) return;
+  window.dispatchEvent(new CustomEvent('roomchat:soundboard-insert', { detail: { title: selectedItem.title, mp3: selectedItem.mp3, url: selectedItem.url } }));
+  setStatus('채팅 입력창에 추가했어요. 보내기 버튼을 누르면 방에 공유돼요.');
+  dialog?.close();
+});
 volumeInput?.addEventListener('input', () => { if (currentAudio) currentAudio.volume = Number(volumeInput.value) / 100; });
 
 window.addEventListener('roomchat:soundboard-play', (event) => {
