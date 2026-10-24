@@ -34,7 +34,7 @@ const normalizeItems = (payload) => {
 };
 async function fetchSounds(endpoint, params = {}) {
   const url = new URL(API_BASE);
-  url.searchParams.set('endpoint', endpoint.replace(/^\\//, ''));
+  url.searchParams.set('endpoint', endpoint.slice(1));
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
   const key = url.toString();
   if (cache.has(key)) return cache.get(key);
