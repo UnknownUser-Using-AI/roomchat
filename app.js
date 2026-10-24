@@ -2579,7 +2579,7 @@ async function boot() {
 
 social = initSocial({
   supabase, state, showToast, errorText, avatarPublicUrl, paintAvatar, makeAvatar, applyAvatars,
-  makeAvatarBlob, notifyUser, getMentionNames,
+  makeAvatarBlob, notifyUser, getMentionNames, showNicknameDialog,
 });
 let appLoadingHidden = false;
 function hideAppLoading() {
