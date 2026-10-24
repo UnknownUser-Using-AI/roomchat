@@ -1682,9 +1682,20 @@ async function sendMessage(event) {
   if (!state.room) return showToast('먼저 채널을 선택해 주세요.');
   const typedContent = ui.messageInput.value.trim();
   const pendingSound = state.pendingSound;
-  const content = pendingSound
-    ? '[[roomchat-sound:v1]]' + JSON.stringify({ title: pendingSound.title, mp3: pendingSound.mp3, caption: typedContent })
-    : typedContent;
+  // Keep the serialized sound payload below the chat message size limit,
+  // including the marker and JSON overhead (not just the visible caption).
+  let content = typedContent;
+  if (pendingSound) {
+    const prefix = '[[roomchat-sound:v1]]';
+    const payloadFor = (caption) => prefix + JSON.stringify({ title: pendingSound.title, mp3: pendingSound.mp3, caption });
+    let caption = typedContent;
+    content = payloadFor(caption);
+    if (content.length > 1900) {
+      caption = caption.slice(0, Math.max(0, 1900 - payloadFor('').length));
+      content = payloadFor(caption);
+      showToast('효과음과 함께 보낼 글이 길어 일부를 줄였어요.');
+    }
+  }
   const image = state.attachment;
   if (!content && !image) return;
   ui.send.disabled = true;
