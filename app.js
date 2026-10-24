@@ -64,15 +64,29 @@ const AVATAR_SIZE = 256;
 const AVATAR_INPUT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
 function sessionValue(key, makeValue) {
+  // Keep the guest identity stable across tabs and browser restarts. The server
+  // still enforces the guest-session expiry and validates the secret token.
   try {
-    let value = sessionStorage.getItem(key);
-    if (!value) {
-      value = makeValue();
-      sessionStorage.setItem(key, value);
-    }
+    let value = localStorage.getItem(key);
+    if (value) return value;
+
+    // Migrate an existing tab-scoped identity without breaking current sessions.
+    value = sessionStorage.getItem(key);
+    if (!value) value = makeValue();
+    localStorage.setItem(key, value);
+    try { sessionStorage.setItem(key, value); } catch { /* localStorage is authoritative */ }
     return value;
   } catch {
-    return makeValue();
+    try {
+      let value = sessionStorage.getItem(key);
+      if (!value) {
+        value = makeValue();
+        sessionStorage.setItem(key, value);
+      }
+      return value;
+    } catch {
+      return makeValue();
+    }
   }
 }
 const guestSessionId = sessionValue(GUEST_ID_KEY, () => crypto.randomUUID());
