@@ -767,7 +767,7 @@ function parseRoomchatSound(content) {
   try {
     const item = JSON.parse(content.slice(ROOMCHAT_SOUND_PREFIX.length));
     if (typeof item.title !== 'string' || typeof item.mp3 !== 'string' || !isAllowedRoomSoundUrl(item.mp3)) return null;
-    return { title: item.title.slice(0, 120), mp3: item.mp3 };
+    return { title: item.title.slice(0, 120), mp3: item.mp3, caption: typeof item.caption === 'string' ? item.caption.slice(0, 2000) : '' };
   } catch { return null; }
 }
 function renderMessage(message) {
@@ -846,6 +846,12 @@ function renderMessage(message) {
     play.addEventListener('click', () => window.dispatchEvent(new CustomEvent('roomchat:soundboard-play', { detail: soundItem })));
     card.append(label, title, play);
     body.append(card);
+    if (soundItem.caption) {
+      const caption = document.createElement('p');
+      caption.className = 'message-content';
+      caption.textContent = soundItem.caption;
+      body.append(caption);
+    }
   }
   if (showYoutubePreview) {
     const videoCard = document.createElement('div');
@@ -1677,7 +1683,7 @@ async function sendMessage(event) {
   const typedContent = ui.messageInput.value.trim();
   const pendingSound = state.pendingSound;
   const content = pendingSound
-    ? '[[roomchat-sound:v1]]' + JSON.stringify({ title: pendingSound.title, mp3: pendingSound.mp3 })
+    ? '[[roomchat-sound:v1]]' + JSON.stringify({ title: pendingSound.title, mp3: pendingSound.mp3, caption: typedContent })
     : typedContent;
   const image = state.attachment;
   if (!content && !image) return;
