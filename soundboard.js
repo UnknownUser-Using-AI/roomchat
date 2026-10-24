@@ -103,7 +103,7 @@ async function loadTab(tab = currentTab) {
     setStatus(items.length ? items.length + '개의 사운드' : '표시할 사운드가 없어요.');
   } catch (error) {
     if (thisRequest !== requestId) return;
-    renderItems([]);
+    resultsEl.replaceChildren();
     setStatus('사운드 API 오류: ' + (error?.message || '알 수 없는 오류') + ' · 직접 검색 링크도 사용할 수 있어요.');
     const link = document.createElement('a');
     link.href = 'https://www.myinstants.com/en/';
@@ -130,7 +130,7 @@ async function searchSounds(query) {
     setStatus(items.length ? '검색 결과 ' + items.length + '개' : '검색 결과가 없어요.');
   } catch (error) {
     if (thisRequest !== requestId) return;
-    renderItems([]);
+    resultsEl.replaceChildren();
     setStatus('검색 API 오류: ' + (error?.message || '알 수 없는 오류') + ' · MyInstants 직접 검색을 이용해 주세요.');
     const link = document.createElement('a');
     link.href = 'https://www.myinstants.com/en/search/?name=' + encodeURIComponent(trimmed);
