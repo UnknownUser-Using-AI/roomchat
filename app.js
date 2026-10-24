@@ -78,7 +78,7 @@ function sessionValue(key, makeValue) {
 const guestSessionId = sessionValue(GUEST_ID_KEY, () => crypto.randomUUID());
 const guestToken = sessionValue(GUEST_TOKEN_KEY, () => `${crypto.randomUUID()}${crypto.randomUUID()}`.replaceAll('-', ''));
 const state = {
-  nickname: '', isVerified: false, isAdmin: false, user: null,
+  nickname: '', loginNickname: '', isVerified: false, isAdmin: false, user: null,
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
   attachment: null, attachmentUrl: '', notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
@@ -1359,7 +1359,7 @@ async function setNickname(name) {
   if (!cleanName) return;
   let result;
   if (state.user) {
-    const { data, error } = await supabase.rpc('roomchat_update_my_nickname', { p_requested: cleanName });
+    const { data, error } = await supabase.rpc('roomchat_set_my_display_nickname', { p_nickname: cleanName });
     if (error) return showToast(errorText(error));
     result = data;
   } else {
@@ -1382,8 +1382,8 @@ async function setNickname(name) {
     state.room = null;
     await switchRoom(currentRoom);
   }
-  if (changed) showToast(`사용할 수 없거나 이미 사용 중인 이름이라 “${result}”로 바꿨어요.`);
-  else showToast(state.user ? '계정 닉네임을 저장했어요.' : '게스트 닉네임을 정했어요. 브라우저를 닫으면 유지되지 않아요.');
+  if (changed) showToast(`표시 이름이 “${result}”로 조정되었어요.`);
+  else showToast(state.user ? '디스플레이 닉네임을 저장했어요.' : '게스트 닉네임을 정했어요. 브라우저를 닫으면 유지되지 않아요.');
 }
 function updateIdentityUI() {
   ui.nicknameLabel.textContent = state.nickname || '닉네임';
@@ -1405,10 +1405,11 @@ function updateIdentityUI() {
   }
   renderMessages();
 }
-async function applySession(session, nicknameHint = '') {
+async function applySession(session, nicknameHint = '', loginNicknameHint = '') {
   state.user = session?.user || null;
   if (!state.user) {
     state.nickname = '';
+    state.loginNickname = '';
     state.isVerified = false;
     state.isAdmin = false;
     social?.stop();
@@ -1416,13 +1417,14 @@ async function applySession(session, nicknameHint = '') {
     return;
   }
   const { data: profile, error } = await supabase.from('roomchat_profiles')
-    .select('id,nickname,is_verified').eq('id', state.user.id).maybeSingle();
+    .select('id,nickname,login_nickname,is_verified').eq('id', state.user.id).maybeSingle();
   if (error || !profile) {
     await supabase.auth.signOut();
     state.user = null;
     throw new Error('계정 프로필을 찾을 수 없습니다.');
   }
   state.nickname = nicknameHint || profile.nickname;
+  state.loginNickname = loginNicknameHint || profile.login_nickname || profile.nickname;
   state.isVerified = Boolean(profile.is_verified);
   const { data: admin } = await supabase.rpc('roomchat_is_admin');
   state.isAdmin = admin === true;
@@ -1446,7 +1448,7 @@ async function callAuth(action, nickname, password, adminClaimCode = '') {
     refresh_token: result.session.refresh_token,
   });
   if (error || !data.session) throw error || new Error('로그인 세션을 만들지 못했습니다.');
-  await applySession(data.session, result.nickname);
+  await applySession(data.session, result.nickname, result.loginNickname);
   return result;
 }
 function setAccountMode(mode) {
@@ -1478,11 +1480,11 @@ function updateAdminCodeVisibility() {
   else if (!required) ui.adminCode.value = '';
 }
 function showNicknameDialog() {
-  ui.nicknameEyebrow.textContent = state.user ? 'ACCOUNT NICKNAME' : 'GUEST MODE';
-  ui.nicknameTitle.innerHTML = state.user ? '닉네임을<br />변경할까요?' : '어떤 닉네임으로<br />참여할까요?';
+  ui.nicknameEyebrow.textContent = state.user ? 'DISPLAY NICKNAME' : 'GUEST MODE';
+  ui.nicknameTitle.innerHTML = state.user ? '디스플레이 닉네임을<br />변경할까요?' : '어떤 닉네임으로<br />참여할까요?';
   ui.nicknameDescription.textContent = state.user
-    ? '계정 닉네임은 저장되어 다음에도 사용할 수 있어요. 닉네임을 변경해도 관리자 인증은 유지돼요.'
-    : '게스트 닉네임은 현재 탭에서만 사용돼요. 계정을 만들면 닉네임과 프로필을 저장해 계속 사용할 수 있어요.';
+    ? `로그인용 진짜 닉네임(${state.loginNickname || '계정'})은 유지되고, 채팅에 표시되는 이름만 바뀌어요.`
+    : '게스트 닉네임은 현재 탭에서만 사용돼요. 계정을 만들면 진짜 닉네임과 디스플레이 닉네임을 분리해 사용할 수 있어요.';
   ui.avatarSection.hidden = !state.user;
   ui.styleOpen.hidden = !state.user;
   applyAvatars();
@@ -2177,10 +2179,11 @@ async function refreshIdentity() {
   if (!state.nickname) return;
   let newName = state.nickname;
   if (state.user) {
-    const { data } = await supabase.from('roomchat_profiles').select('nickname,is_verified')
+    const { data } = await supabase.from('roomchat_profiles').select('nickname,login_nickname,is_verified')
       .eq('id', state.user.id).maybeSingle();
     if (data) {
       newName = data.nickname;
+      state.loginNickname = data.login_nickname || state.loginNickname;
       state.isVerified = Boolean(data.is_verified);
     }
   } else {
