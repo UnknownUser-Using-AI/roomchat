@@ -839,12 +839,16 @@ function renderMessage(message) {
     const title = document.createElement('strong');
     title.className = 'message-sound-title';
     title.textContent = soundItem.title;
-    const play = document.createElement('button');
-    play.type = 'button';
-    play.className = 'secondary-button message-sound-play';
-    play.textContent = '▶ 재생';
-    play.addEventListener('click', () => window.dispatchEvent(new CustomEvent('roomchat:soundboard-play', { detail: soundItem })));
-    card.append(label, title, play);
+    // Native audio controls are more reliable on mobile Safari/Chrome than
+    // starting a detached Audio() object from a custom event.
+    const player = document.createElement('audio');
+    player.className = 'message-sound-audio';
+    player.controls = true;
+    player.preload = 'none';
+    player.playsInline = true;
+    player.setAttribute('aria-label', soundItem.title + ' 효과음 재생');
+    player.src = soundItem.mp3;
+    card.append(label, title, player);
     body.append(card);
     if (soundItem.caption) {
       const caption = document.createElement('p');
