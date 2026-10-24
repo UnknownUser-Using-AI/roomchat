@@ -68,7 +68,10 @@ function renderItems(items) {
     play.type = 'button'; play.className = 'soundboard-item'; play.style.cssText = 'padding:0;border:0;background:transparent;flex:1;min-width:0';
     play.setAttribute('aria-label', '재생: ' + item.title);
     play.innerHTML = '<span class="soundboard-play" aria-hidden="true">▶</span><span class="soundboard-item-copy"><span class="soundboard-item-title">' + escapeHtml(item.title) + '</span><span class="soundboard-item-source">MyInstants · 재생</span></span>';
-    play.addEventListener('click', () => playSound(item));
+    play.addEventListener('click', () => {
+      playSound(item);
+      window.dispatchEvent(new CustomEvent('roomchat:soundboard-send', { detail: { title: item.title, mp3: item.mp3, url: item.url } }));
+    });
     const favorite = document.createElement('button');
     favorite.type = 'button'; favorite.className = 'soundboard-favorite' + (favorites.some((fav) => fav.id === item.id) ? ' is-favorite' : '');
     favorite.textContent = favorites.some((fav) => fav.id === item.id) ? '★' : '☆';
@@ -142,7 +145,7 @@ async function searchSounds(query) {
     console.warn('RoomChat soundboard search:', error);
   }
 }
-function playSound(item) {
+function playSound(item, remote = false) {
   if (!item?.mp3) return;
   if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
   const audio = new Audio(item.mp3);
@@ -151,7 +154,7 @@ function playSound(item) {
   currentAudio = audio;
   const playPromise = audio.play();
   if (playPromise?.catch) playPromise.catch(() => setStatus('재생할 수 없어요. 브라우저의 오디오 재생 설정을 확인해 주세요.'));
-  setStatus('재생 중: ' + item.title);
+  setStatus((remote ? '방에서 재생 중: ' : '재생 중: ') + item.title);
   audio.addEventListener('ended', () => { if (currentAudio === audio) { currentAudio = null; setStatus('재생이 끝났어요.'); } }, { once: true });
   audio.addEventListener('error', () => { if (currentAudio === audio) { currentAudio = null; setStatus('이 사운드는 재생할 수 없어요. 다른 사운드를 선택해 주세요.'); } }, { once: true });
 }
@@ -178,3 +181,11 @@ searchForm?.addEventListener('submit', (event) => { event.preventDefault(); sear
 tabButtons.forEach((button) => button.addEventListener('click', () => loadTab(button.dataset.soundTab)));
 stopButton?.addEventListener('click', stopSound);
 volumeInput?.addEventListener('input', () => { if (currentAudio) currentAudio.volume = Number(volumeInput.value) / 100; });
+
+window.addEventListener('roomchat:soundboard-play', (event) => {
+  const item = event.detail;
+  if (!item || typeof item.title !== 'string' || typeof item.mp3 !== 'string') return;
+  if (!/^https:\/\/(www\\.)?myinstants\\.com\/media\/sounds\//i.test(item.mp3)) return;
+  playSound(item, true);
+});
+window.addEventListener('roomchat:soundboard-stop', () => stopSound());
