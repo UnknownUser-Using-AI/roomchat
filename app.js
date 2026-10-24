@@ -1371,6 +1371,7 @@ async function setNickname(name) {
   }
   const changed = result !== cleanName;
   state.nickname = result;
+  if (state.user) { await social?.loadProfiles([state.user.id], true); social?.applyProfileStyles(); }
   ui.nicknameLabel.textContent = result;
   ui.nicknameButton.querySelector('.avatar-dot').textContent = [...result][0] || '•';
   ui.nicknameButton.querySelector('.verified-box').hidden = !state.isVerified;
