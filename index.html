@@ -123,6 +123,7 @@
         <form id="message-form" class="composer">
           <label class="attach-button" for="image-file" title="이미지 파일 선택" aria-label="이미지 파일 선택"><span aria-hidden="true">＋</span><input id="image-file" type="file" accept="image/*" hidden /></label>
           <button id="gif-button" class="attach-button gif-button" type="button" title="GIF 검색" aria-label="GIF 검색">GIF</button>
+          <button id="soundboard-button" class="attach-button soundboard-button" type="button" title="MyInstants 사운드보드" aria-label="사운드보드 열기">♪</button>
           <textarea id="message-input" rows="1" maxlength="2000" placeholder="메시지를 입력하세요…" aria-label="메시지 입력"></textarea>
           <button id="send-button" class="send-button" type="submit"><span>보내기</span><span aria-hidden="true">↗</span></button>
         </form>
@@ -383,6 +384,30 @@
       <section id="admin-panel-content" class="admin-panel-content" role="tabpanel" aria-live="polite"></section>
     </section>
   </dialog>
+  <dialog id="soundboard-dialog" class="modal soundboard-modal" aria-labelledby="soundboard-title">
+    <section class="modal-card soundboard-card">
+      <header class="soundboard-header">
+        <div><span class="eyebrow">MYINSTANTS SOUNDBOARD</span><h2 id="soundboard-title">사운드보드</h2><p>효과음을 검색하고 버튼을 눌러 재생하세요.</p></div>
+        <button id="soundboard-close" class="secondary-button" type="button">닫기</button>
+      </header>
+      <form id="soundboard-search-form" class="soundboard-search">
+        <input id="soundboard-query" class="text-field" type="search" maxlength="80" placeholder="예: vine boom, bruh, laugh" autocomplete="off" aria-label="사운드 검색어">
+        <button class="primary-button" type="submit">검색</button>
+      </form>
+      <div class="soundboard-controls">
+        <div class="soundboard-tabs" role="group" aria-label="사운드 목록">
+          <button type="button" class="soundboard-tab active" data-sound-tab="popular">인기</button>
+          <button type="button" class="soundboard-tab" data-sound-tab="recent">최신</button>
+          <button type="button" class="soundboard-tab" data-sound-tab="favorites">즐겨찾기</button>
+        </div>
+        <label class="soundboard-volume" for="soundboard-volume">음량 <input id="soundboard-volume" type="range" min="0" max="100" value="65"></label>
+      </div>
+      <div id="soundboard-status" class="soundboard-status" role="status" aria-live="polite">사운드를 불러오는 중…</div>
+      <div id="soundboard-results" class="soundboard-results" aria-label="사운드 결과"></div>
+      <footer class="soundboard-footer"><button id="soundboard-stop" class="secondary-button" type="button">■ 재생 중지</button><span>사운드 제공: <a href="https://www.myinstants.com/" target="_blank" rel="noopener noreferrer">MyInstants</a></span></footer>
+    </section>
+  </dialog>
+  <script type="module" src="./soundboard.js?v=20261024-soundboard-v1"></script>
   <script type="module" src="./app.js?v=20261024-dual-nickname-v1"></script>
 </body>
 </html>
