@@ -761,6 +761,15 @@ function createReplyQuote(message) {
   else quote.disabled = true;
   return quote;
 }
+const ROOMCHAT_SOUND_PREFIX = '[[roomchat-sound:v1]]';
+function parseRoomchatSound(content) {
+  if (typeof content !== 'string' || !content.startsWith(ROOMCHAT_SOUND_PREFIX)) return null;
+  try {
+    const item = JSON.parse(content.slice(ROOMCHAT_SOUND_PREFIX.length));
+    if (typeof item.title !== 'string' || typeof item.mp3 !== 'string' || !isAllowedRoomSoundUrl(item.mp3)) return null;
+    return { title: item.title.slice(0, 120), mp3: item.mp3 };
+  } catch { return null; }
+}
 function renderMessage(message) {
   const key = String(message.id);
   if (ui.messages.querySelector(`[data-message-id="${CSS.escape(key)}"]`)) return;
@@ -816,9 +825,28 @@ function renderMessage(message) {
   body.append(meta);
   const replyQuote = createReplyQuote(message);
   if (replyQuote) body.append(replyQuote);
-  const gifMatch = typeof message.content === 'string' ? message.content.match(GIF_URL_PATTERN) : null;
-  const youtubeVideoId = !gifMatch ? extractYouTubeVideoId(message.content) : null;
+  const soundItem = parseRoomchatSound(message.content);
+  const gifMatch = !soundItem && typeof message.content === 'string' ? message.content.match(GIF_URL_PATTERN) : null;
+  const youtubeVideoId = !soundItem && !gifMatch ? extractYouTubeVideoId(message.content) : null;
   const showYoutubePreview = Boolean(youtubeVideoId && state.youtubePreviewEnabled !== false);
+  if (soundItem) {
+    const card = document.createElement('div');
+    card.className = 'message-sound-card';
+    const label = document.createElement('span');
+    label.className = 'message-sound-icon';
+    label.textContent = '♫';
+    label.setAttribute('aria-hidden', 'true');
+    const title = document.createElement('strong');
+    title.className = 'message-sound-title';
+    title.textContent = soundItem.title;
+    const play = document.createElement('button');
+    play.type = 'button';
+    play.className = 'secondary-button message-sound-play';
+    play.textContent = '▶ 재생';
+    play.addEventListener('click', () => window.dispatchEvent(new CustomEvent('roomchat:soundboard-play', { detail: soundItem })));
+    card.append(label, title, play);
+    body.append(card);
+  }
   if (showYoutubePreview) {
     const videoCard = document.createElement('div');
     videoCard.className = 'message-youtube';
@@ -843,7 +871,7 @@ function renderMessage(message) {
   } else {
     // Keep any caption the sender wrote next to a video. If previews are disabled,
     // retain the original URL text so the message never disappears from the thread.
-    const displayContent = showYoutubePreview ? stripYouTubeUrls(message.content) : String(message.content || '');
+    const displayContent = soundItem ? '' : (showYoutubePreview ? stripYouTubeUrls(message.content) : String(message.content || '');
     if (displayContent) {
       const text = document.createElement('p');
       text.className = 'message-content';
@@ -1213,7 +1241,11 @@ async function subscribeCurrentRoom(request) {
       if (payload.eventType === 'DELETE') removeMessage(payload.old?.id);
       else if (payload.new) {
         addMessage(payload.new);
-        if (payload.eventType === 'INSERT' && !isOwnMessage(payload.new) && state.notifications) notifyIncoming(payload.new);
+        if (payload.eventType === 'INSERT' && !isOwnMessage(payload.new)) {
+          const soundItem = parseRoomchatSound(payload.new.content);
+          if (soundItem) window.dispatchEvent(new CustomEvent('roomchat:soundboard-play', { detail: soundItem }));
+          if (state.notifications) notifyIncoming(payload.new);
+        }
       }
     })
     .subscribe(async (status) => {
@@ -1244,17 +1276,29 @@ window.addEventListener('roomchat:soundboard-send', async (event) => {
     showToast('먼저 효과음을 보낼 채팅방에 들어가 주세요.');
     return;
   }
-  const result = await state.roomChannel.send({
-    type: 'broadcast',
-    event: 'roomchat_sound',
-    payload: {
-      sender: state.user?.id || `guest:${guestSessionId}`,
-      nickname: String(state.nickname || '익명').slice(0, 40),
-      title: item.title.slice(0, 120),
-      mp3: item.mp3
-    }
+  if (!state.nickname) { showNicknameDialog(); return; }
+  // Store a compact, versioned sound card in the normal message table so it
+  // survives reloads and appears in the room history for every participant.
+  const soundContent = '[[roomchat-sound:v1]]' + JSON.stringify({
+    title: item.title.slice(0, 120),
+    mp3: item.mp3
   });
-  if (result !== 'ok') showToast('방에 효과음을 전달하지 못했어요. 연결 상태를 확인해 주세요.');
+  try {
+    const { data, error } = await supabase.rpc('roomchat_post_message', {
+      p_room_id: state.room.id,
+      p_content: soundContent,
+      p_image_path: null,
+      p_guest_session_id: state.user ? null : guestSessionId,
+      p_guest_token: state.user ? null : guestToken,
+    });
+    if (error) throw error;
+    const inserted = normalizeRpcRow(data);
+    if (inserted) addMessage(inserted);
+    showToast('효과음을 채팅 기록에 보냈어요.');
+  } catch (error) {
+    showToast(errorText(error, '효과음을 채팅방에 저장하지 못했어요.'));
+    console.error('RoomChat sound message failed:', error);
+  }
 });
 window.addEventListener('roomchat:soundboard-stop-send', async () => {
   if (!state.roomChannel) return;
