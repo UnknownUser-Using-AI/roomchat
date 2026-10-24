@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261024-sound-preview-v1" />
+  <link rel="stylesheet" href="./styles.css?v=20261024-hover-preview-v1" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -405,13 +405,14 @@
       <div id="soundboard-status" class="soundboard-status" role="status" aria-live="polite">사운드를 불러오는 중…</div>
       <div id="soundboard-results" class="soundboard-results" aria-label="사운드 결과"></div>
       <section id="soundboard-preview" class="soundboard-preview" hidden aria-live="polite">
-        <div class="soundboard-preview-copy"><span class="soundboard-preview-label">미리 듣기</span><strong id="soundboard-preview-title">선택한 효과음</strong><span>재생해 확인한 뒤 채팅에 추가하세요.</span></div>
-        <button id="soundboard-insert" class="primary-button" type="button" disabled>채팅에 붙여넣기</button>
+        <div class="soundboard-preview-copy"><span class="soundboard-preview-label">미리 듣기</span><strong id="soundboard-preview-title">선택한 효과음</strong><span>아래 재생 바에서 듣고, 채팅에 넣을지 결정하세요.</span></div>
+        <audio id="soundboard-preview-audio" class="soundboard-preview-audio" controls preload="none" aria-label="선택한 효과음 미리 듣기"></audio>
+        <button id="soundboard-insert" class="primary-button" type="button" disabled>채팅에 붙이기</button>
       </section>
       <footer class="soundboard-footer"><button id="soundboard-stop" class="secondary-button" type="button">■ 재생 중지</button><span>사운드 제공: <a href="https://www.myinstants.com/" target="_blank" rel="noopener noreferrer">MyInstants</a></span></footer>
     </section>
   </dialog>
-  <script type="module" src="./soundboard.js?v=20261024-sound-preview-v1"></script>
+  <script type="module" src="./soundboard.js?v=20261024-hover-preview-v1"></script>
   <script type="module" src="./app.js?v=20261024-sound-preview-v2"></script>
 </body>
 </html>
